@@ -1,0 +1,73 @@
+{
+  "id": "gra4-pcp2",
+  "name": "SECOP II - Ubicaciones ejecucion contratos",
+  "description": "Información de las ubicaciones en donde se ejecutaron los contratos",
+  "rowsUpdatedAt": 1776177540,
+  "columns": [
+    {
+      "name": "Nombre Entidad",
+      "fieldName": "nombre_entidad",
+      "dataTypeName": "text"
+    },
+    {
+      "name": "Codigo Entidad",
+      "fieldName": "codigo_entidad",
+      "dataTypeName": "number"
+    },
+    {
+      "name": "Nit Entidad",
+      "fieldName": "nit_entidad",
+      "dataTypeName": "number"
+    },
+    {
+      "name": "Localización",
+      "fieldName": "localizaci_n",
+      "dataTypeName": "text"
+    },
+    {
+      "name": "Codigo Proveedor",
+      "fieldName": "codigo_proveedor",
+      "dataTypeName": "number"
+    },
+    {
+      "name": "TipoDocProveedor",
+      "fieldName": "tipodocproveedor",
+      "dataTypeName": "text"
+    },
+    {
+      "name": "Documento Proveedor",
+      "fieldName": "documento_proveedor",
+      "dataTypeName": "text"
+    },
+    {
+      "name": "Proveedor Adjudicado",
+      "fieldName": "proveedor_adjudicado",
+      "dataTypeName": "text"
+    },
+    {
+      "name": "ID Contrato",
+      "fieldName": "id_contrato",
+      "dataTypeName": "text"
+    },
+    {
+      "name": "Proceso de Compra",
+      "fieldName": "proceso_de_compra",
+      "dataTypeName": "text"
+    },
+    {
+      "name": "Referencia del Contrato",
+      "fieldName": "referencia_del_contrato",
+      "dataTypeName": "text"
+    },
+    {
+      "name": "URLProceso",
+      "fieldName": "urlproceso",
+      "dataTypeName": "url"
+    },
+    {
+      "name": "Ubicacion",
+      "fieldName": "ubicacion",
+      "dataTypeName": "text"
+    }
+  ]
+}

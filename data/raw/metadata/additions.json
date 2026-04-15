@@ -1,0 +1,33 @@
+{
+  "id": "cb9c-h8sn",
+  "name": "SECOP II - Adiciones",
+  "description": "Adiciones hechas a los contratos firmados en la plataforma SECOP II",
+  "rowsUpdatedAt": 1776174618,
+  "columns": [
+    {
+      "name": "Identificador",
+      "fieldName": "identificador",
+      "dataTypeName": "text"
+    },
+    {
+      "name": "ID_Contrato",
+      "fieldName": "id_contrato",
+      "dataTypeName": "text"
+    },
+    {
+      "name": "Tipo",
+      "fieldName": "tipo",
+      "dataTypeName": "text"
+    },
+    {
+      "name": "Descripcion",
+      "fieldName": "descripcion",
+      "dataTypeName": "text"
+    },
+    {
+      "name": "FechaRegistro",
+      "fieldName": "fecharegistro",
+      "dataTypeName": "calendar_date"
+    }
+  ]
+}

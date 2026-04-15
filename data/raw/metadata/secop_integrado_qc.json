@@ -1,0 +1,118 @@
+{
+  "id": "rpmr-utcd",
+  "name": "SECOP Integrado",
+  "description": "Información integrada de los procesos de compra pública que se han registrado en las plataformas SECOP I y II, que han finalizado con un contrato.",
+  "rowsUpdatedAt": 1776183577,
+  "columns": [
+    {
+      "name": "Nivel Entidad",
+      "fieldName": "nivel_entidad",
+      "dataTypeName": "text"
+    },
+    {
+      "name": "Codigo Entidad en SECOP",
+      "fieldName": "codigo_entidad_en_secop",
+      "dataTypeName": "text"
+    },
+    {
+      "name": "Nombre de la Entidad",
+      "fieldName": "nombre_de_la_entidad",
+      "dataTypeName": "text"
+    },
+    {
+      "name": "NIT de la Entidad",
+      "fieldName": "nit_de_la_entidad",
+      "dataTypeName": "text"
+    },
+    {
+      "name": "Departamento Entidad",
+      "fieldName": "departamento_entidad",
+      "dataTypeName": "text"
+    },
+    {
+      "name": "Municipio Entidad",
+      "fieldName": "municipio_entidad",
+      "dataTypeName": "text"
+    },
+    {
+      "name": "Estado del Proceso",
+      "fieldName": "estado_del_proceso",
+      "dataTypeName": "text"
+    },
+    {
+      "name": "Modalidad de Contratación",
+      "fieldName": "modalidad_de_contrataci_n",
+      "dataTypeName": "text"
+    },
+    {
+      "name": "Objeto del contrato",
+      "fieldName": "objeto_a_contratar",
+      "dataTypeName": "text"
+    },
+    {
+      "name": "Objeto del proceso",
+      "fieldName": "objeto_del_proceso",
+      "dataTypeName": "text"
+    },
+    {
+      "name": "Tipo de Contrato",
+      "fieldName": "tipo_de_contrato",
+      "dataTypeName": "text"
+    },
+    {
+      "name": "Fecha de Firma del Contrato",
+      "fieldName": "fecha_de_firma_del_contrato",
+      "dataTypeName": "calendar_date"
+    },
+    {
+      "name": "Fecha inicio ejecución",
+      "fieldName": "fecha_inicio_ejecuci_n",
+      "dataTypeName": "calendar_date"
+    },
+    {
+      "name": "Fecha fin ejecución",
+      "fieldName": "fecha_fin_ejecuci_n",
+      "dataTypeName": "calendar_date"
+    },
+    {
+      "name": "ID Contrato",
+      "fieldName": "numero_del_contrato",
+      "dataTypeName": "text"
+    },
+    {
+      "name": "ID Proceso",
+      "fieldName": "numero_de_proceso",
+      "dataTypeName": "text"
+    },
+    {
+      "name": "Valor Contrato",
+      "fieldName": "valor_contrato",
+      "dataTypeName": "number"
+    },
+    {
+      "name": "Nom Raz Social Contratista",
+      "fieldName": "nom_raz_social_contratista",
+      "dataTypeName": "text"
+    },
+    {
+      "name": "URL Contrato",
+      "fieldName": "url_contrato",
+      "dataTypeName": "text"
+    },
+    {
+      "name": "Origen",
+      "fieldName": "origen",
+      "dataTypeName": "text"
+    },
+    {
+      "name": "Tipo Documento Proveedor",
+      "fieldName": "tipo_documento_proveedor",
+      "dataTypeName": "text"
+    },
+    {
+      "name": "Documento Proveedor",
+      "fieldName": "documento_proveedor",
+      "dataTypeName": "text"
+    }
+  ]
+}

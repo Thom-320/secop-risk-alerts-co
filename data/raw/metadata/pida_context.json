@@ -1,0 +1,73 @@
+{
+  "id": "wmwy-ixwz",
+  "name": "Vista Diagnóstico Conjuntos de Datos Abiertos Programa Interamericano de Lucha Contra la Corrupción PIDA",
+  "description": "Este conjunto de datos presenta la vista diagnóstica del estado de los conjuntos de datos abiertos del Programa Interamericano de Datos contra la Corrupción (PIDA), implementado por Colombia desde 2021 como parte de sus compromisos de Estado Abierto para fortalecer la transparencia, la rendición de cuentas y la lucha contra la corrupción mediante datos abiertos.\n\nLa información corresponde a los 30 conjuntos de datos estratégicos priorizados, los cuales hacen parte de la Hoja de Ruta Nacional Estratégica de Datos Abiertos, y permite realizar seguimiento a su publicación, actualización y calidad por parte de las entidades públicas, apoyando la toma de decisiones y el control social.",
+  "rowsUpdatedAt": 1769520721,
+  "columns": [
+    {
+      "name": "Fecha Revisión",
+      "fieldName": "fecha_revisi_n",
+      "dataTypeName": "calendar_date"
+    },
+    {
+      "name": "Criterio de Priorización",
+      "fieldName": "criterio_de_priorizaci_n",
+      "dataTypeName": "text"
+    },
+    {
+      "name": "id",
+      "fieldName": "id",
+      "dataTypeName": "number"
+    },
+    {
+      "name": "Sector",
+      "fieldName": "categoria",
+      "dataTypeName": "text"
+    },
+    {
+      "name": "Entidades Responsables",
+      "fieldName": "entidades_responsables",
+      "dataTypeName": "text"
+    },
+    {
+      "name": "Nombre Conjunto Datos",
+      "fieldName": "conjunto_datos_priorizados",
+      "dataTypeName": "text"
+    },
+    {
+      "name": "Descripcion",
+      "fieldName": "descripcion",
+      "dataTypeName": "text"
+    },
+    {
+      "name": "Publicado en portal de datos",
+      "fieldName": "dato_abierto",
+      "dataTypeName": "text"
+    },
+    {
+      "name": "Enlace Portal Dato Abierto",
+      "fieldName": "enlace_portal_dato_abierto",
+      "dataTypeName": "text"
+    },
+    {
+      "name": "Estado",
+      "fieldName": "estado",
+      "dataTypeName": "text"
+    },
+    {
+      "name": "Sistema Información",
+      "fieldName": "sistema_informacion",
+      "dataTypeName": "text"
+    },
+    {
+      "name": "Recomendaciones",
+      "fieldName": "recomendaciones",
+      "dataTypeName": "text"
+    },
+    {
+      "name": "Observaciones",
+      "fieldName": "observaciones",
+      "dataTypeName": "text"
+    }
+  ]
+}

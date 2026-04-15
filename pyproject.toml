@@ -1,0 +1,47 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "secop-risk-alerts-co"
+version = "0.1.0"
+description = "MVP de alertas priorizadas de riesgo contractual sobre SECOP II para el concurso Datos al Ecosistema 2026."
+readme = "README.md"
+requires-python = ">=3.11,<3.13"
+dependencies = [
+  "duckdb>=1.2.2",
+  "httpx>=0.28.1",
+  "loguru>=0.7.3",
+  "pandas>=2.2.3",
+  "plotly>=6.0.1",
+  "pyarrow>=20.0.0",
+  "pydantic>=2.11.3",
+  "scikit-learn>=1.6.1",
+  "streamlit>=1.44.1",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.3.5",
+  "ruff>=0.11.7",
+]
+
+[project.scripts]
+extract-secop = "src.extract.secop_api:main"
+build-base-contracts = "src.transform.build_base_contracts:main"
+score-contracts = "src.scoring.score_contracts:main"
+
+[tool.setuptools.packages.find]
+include = ["src*"]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "UP", "B", "SIM"]
+
