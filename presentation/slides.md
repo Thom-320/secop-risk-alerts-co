@@ -48,7 +48,7 @@ Dash para sustentación
 
 FastAPI x3 para microservicios
 
-66 tests pasan
+71 tests pasan
 
 ---
 

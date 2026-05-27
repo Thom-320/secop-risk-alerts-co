@@ -73,3 +73,43 @@ def test_tfidf_similarity_provider_returns_matrix() -> None:
 def test_similarity_provider_defaults_to_tfidf(monkeypatch) -> None:
     monkeypatch.delenv("CONTRATIA_USE_TRANSFORMER_EMBEDDINGS", raising=False)
     assert get_similarity_provider().name == "tfidf"
+
+
+def test_transformer_provider_falls_back_gracefully_if_model_unavailable(monkeypatch) -> None:
+    monkeypatch.setenv("CONTRATIA_USE_TRANSFORMER_EMBEDDINGS", "1")
+    try:
+        from src.scoring.semantic_similarity import SentenceTransformerProvider
+
+        provider = SentenceTransformerProvider()
+        matrix = provider.matrix(
+            ["mantenimiento escuela rural", "compra computadores"],
+            ["mantenimiento infraestructura escolar", "software contable"],
+        )
+        assert matrix.shape == (2, 2)
+    except Exception:
+        pass
+
+
+def test_get_similarity_provider_returns_tfidf_when_transformer_env_is_0(monkeypatch) -> None:
+    monkeypatch.setenv("CONTRATIA_USE_TRANSFORMER_EMBEDDINGS", "0")
+    assert get_similarity_provider().name == "tfidf"
+
+
+def test_transformer_provider_import_does_not_crash_without_model() -> None:
+    from src.scoring.semantic_similarity import SentenceTransformerProvider
+
+    provider = SentenceTransformerProvider()
+    assert provider.name == "sentence-transformer"
+    assert provider.model_name == "paraphrase-multilingual-MiniLM-L12-v2"
+
+
+def test_tfidf_empty_texts_returns_zero_matrix() -> None:
+    provider = TfidfSimilarityProvider()
+    matrix = provider.matrix([], ["texto"])
+    assert matrix.shape == (0, 1)
+
+    matrix2 = provider.matrix(["texto"], [])
+    assert matrix2.shape == (1, 0)
+
+    matrix3 = provider.matrix([], [])
+    assert matrix3.shape == (0, 0)

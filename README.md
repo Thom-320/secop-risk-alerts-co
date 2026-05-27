@@ -15,12 +15,12 @@ responsabilidad individual ni conclusiones jurídicas.
 
 | Modo | Comando | UI | API | Storage | Evidencia |
 | --- | --- | --- | --- | --- | --- |
-| **Entrega ID oficial** | `make demo-full && make validate-final` | Dash `dashboard/dash_app.py` | Microservicios FastAPI `services/*` | PostgreSQL + MongoDB | 10k+ registros, modelo relacional, NoSQL, triggers, vistas, SQL avanzado, validación final |
-| Plus offline | `make product-pipeline && make validate-product` | Streamlit `src/app/streamlit_app.py` | FastAPI simple `src/api/main.py` | Parquet/DuckDB | Reproducción rápida, respaldo sin Docker, demo pública ligera |
+| **Demo de concurso (ContratIA Abierta)** | `make product-pipeline && make validate-product` | Dash `dashboard/dash_app.py` | FastAPI lean `src/api/main.py` | Parquet/DuckDB | Ruta liviana, reproducible sin Docker, export CSV+HTML |
+| **Evidencia de ingeniería (Transparencia360)** | `make demo-full && make validate-final` | Dash `dashboard/dash_app.py` | Microservicios FastAPI `services/*` | PostgreSQL + MongoDB | 13.999 procesos, 33 objetos PG, 5 colecciones Mongo, APIs 200 |
 
-La sustentación académica debe partir de la ruta full-stack. El modo
-Streamlit/Parquet se conserva como respaldo reproducible y como superficie de
-producto liviana cuando no se quiere depender de Docker o bases locales.
+La demo de concurso usa la ruta lean de ContratIA Abierta. El stack full-stack
+académico queda como evidencia de ingeniería avanzada. No son equivalentes; el
+jurado debe mirar primero la ruta de concurso.
 
 ## Fuentes de datos
 
@@ -124,9 +124,10 @@ El score combina señales interpretables:
 - razones visibles.
 
 La similitud textual usa NLP clásico con TF-IDF y coseno para matching
-PAA/proceso y comparables. La dependencia `sentence-transformers` queda como
-opción futura, pero esta versión no promete embeddings neuronales en la ruta
-validada. CI y validaciones locales usan TF-IDF para evitar descargas pesadas.
+PAA/proceso y comparables. La dependencia `sentence-transformers` está disponible
+como proveedor opcional (`CONTRATIA_USE_TRANSFORMER_EMBEDDINGS=1`), con fallback
+automático a TF-IDF si el modelo no está disponible. CI y validaciones locales
+usan TF-IDF por defecto para evitar descargas pesadas.
 
 ## Evidencia y límites
 

@@ -786,12 +786,13 @@ def create_app() -> Any:
             ],
         ),
         dcc.Tab(
-            label="Concentración secundaria",
+            label="Concentración",
             className="app-tab app-tab-secondary",
             selected_className="app-tab app-tab--selected",
             children=[
                 html.Div(
-                    "Vista secundaria para contexto, no para acusar proveedores.",
+                    "Contexto secundario: no es ranking de entidades ni acusación a proveedores. "
+                    "Requiere revisión humana para interpretar.",
                     className="inline-disclaimer",
                 ),
                 concentration_table(concentration),

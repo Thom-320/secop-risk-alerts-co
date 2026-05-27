@@ -94,6 +94,8 @@ def test_required_docs_exist() -> None:
         "docs/contest_submission_checklist.md",
         "docs/class_submission_checklist.md",
         "docs/model-card.md",
+        "docs/ethics-note.md",
+        "docs/reproducibility.md",
         "docs/data-cards/secop-ii-procesos.md",
         "docs/data-cards/secop-integrado.md",
         "docs/data-cards/paa-detalle.md",
@@ -206,6 +208,20 @@ def test_route_docs_and_checklists_are_non_empty() -> None:
         assert len(content.strip()) > 250
 
 
+def test_contest_critical_docs_are_non_empty() -> None:
+    for relative in [
+        "docs/demo-casebook.md",
+        "docs/model-card.md",
+        "docs/validation-summary.md",
+        "docs/deployment.md",
+        "docs/fairness_territorial.md",
+        "docs/human_validation_protocol.md",
+        "docs/human_validation_results.md",
+    ]:
+        content = (ROOT / relative).read_text()
+        assert len(content.strip()) > 100, f"{relative} esta vacio o es muy corto"
+
+
 def test_validators_declare_expected_modes() -> None:
     product_validator = (ROOT / "etl" / "validate_product.py").read_text()
     academic_validator = (ROOT / "etl" / "validate_final.py").read_text()
@@ -257,7 +273,7 @@ def test_slide_sources_do_not_keep_stale_39_test_claim() -> None:
         text = (ROOT / relative).read_text()
         for forbidden in forbidden_claims:
             assert forbidden not in text
-    assert "66 tests pasan" in (ROOT / "presentation/slides.md").read_text()
+    assert "71 tests pasan" in (ROOT / "presentation/slides.md").read_text()
 
 
 def test_sample_demo_source_exists_for_clean_clone() -> None:

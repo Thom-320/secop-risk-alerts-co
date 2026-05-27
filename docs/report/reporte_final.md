@@ -31,8 +31,9 @@ producto, pero no reemplaza la sustentación académica.
 
 El scoring combina señales interpretables: anomalía, desviación frente a pares,
 reglas explícitas, similitud textual TF-IDF/coseno y confianza de datos. Los
-embeddings neuronales quedan como mejora opcional con bandera de entorno; no son
-un requisito de la ruta validada.
+embeddings neuronales (`sentence-transformers`) quedan como mejora opcional con
+bandera de entorno (`CONTRATIA_USE_TRANSFORMER_EMBEDDINGS=1`), con fallback
+automático a TF-IDF; no son un requisito de la ruta validada.
 
 # 3. Definición del problema
 
@@ -76,6 +77,19 @@ Objetivos específicos:
 
 El trabajo siguió fases de diseño de Ingeniería de Datos:
 
+| Fase | Fechas aproximadas | Responsable | Entregable | Evidencia |
+| --- | --- | --- | --- | --- |
+| Exploración de fuentes | Semanas 1-2 | Equipo | Inventario de datasets Socrata, evaluación de calidad | `docs/evaluacion_alternativas.md`, `docs/extraction-findings.md` |
+| Diseño de arquitectura | Semanas 2-3 | Equipo | Modelo relacional, modelo NoSQL, diagramas | `sql/001_schema.sql`, `docs/diagrams/er_model.mmd`, `docs/modelo_nosql.md` |
+| Implementación ETL | Semanas 3-5 | Equipo | Pipeline extract → transform → load | `etl/`, `src/extract/`, `src/transform/`, `src/scoring/` |
+| PostgreSQL + MongoDB | Semanas 4-6 | Equipo | Schema aplicado, cargas, validación de integridad | `sql/`, `mongo/`, `etl/load_to_postgres.py`, `etl/load_to_mongo.py` |
+| Microservicios FastAPI | Semanas 5-7 | Equipo | Contracts, risk y analytics services | `services/` |
+| Dashboard Dash | Semanas 6-8 | Equipo | Interfaz full-stack, exportación CSV/HTML | `dashboard/dash_app.py` |
+| Scoring y comparables | Semanas 6-8 | Equipo | Score de prioridad, confianza, TF-IDF, comparables | `src/scoring/`, `services/risk_service/scoring.py` |
+| Pruebas | Semanas 7-9 | Equipo | 71 tests, validación de integración | `tests/`, `validation/final_validation.json` |
+| Documentación | Semanas 8-10 | Equipo | Reporte, slides, model card, data cards, guías | `docs/`, `slides/`, `presentation/` |
+| Validación humana + UX | Semana 10+ | Equipo | Encuesta 5 usuarios, validación manual 40-100 procesos | Pendiente de ejecución real |
+
 - Exploración de fuentes Socrata y requisitos del curso.
 - Evaluación de alternativas: producto lean Parquet/Streamlit, relacional puro y
   arquitectura poliglota PostgreSQL/MongoDB.
@@ -106,6 +120,27 @@ modelado relacional, NoSQL, microservicios, trazabilidad y dashboard operativo.
 
 Por eso se selecciona la arquitectura poliglota full-stack como entrega oficial
 del curso. Streamlit/Parquet queda documentado como modo plus offline.
+
+# 7.1 Mapa de cumplimiento de la guía del proyecto
+
+| Requisito de la guía | Evidencia en este proyecto |
+| --- | --- |
+| 10.000+ registros | 13.999 filas en `procurement_process` (PostgreSQL); 19.625 procesos generados en pipeline lean |
+| 15+ tablas relacionales | 33 objetos públicos en schema PostgreSQL (27 tablas + vistas) |
+| Modelado relacional (PostgreSQL) | `sql/001_schema.sql`: PK, FK, constraints, índices, tipos |
+| NoSQL (MongoDB) | 5 colecciones con documentos: snapshots, logs, eventos, reportes, acciones |
+| Microservicios | FastAPI: contracts (8001), risk (8002), analytics (8003) |
+| SQL avanzado: triggers | `sql/003_triggers.sql`: auditoría, historial, updated_at |
+| SQL avanzado: vistas | `sql/004_views_analytics.sql`: ranking, concentración, outliers, plan-vs-ejecución |
+| SQL avanzado: CTE recursiva | `services/analytics_service/main.py`: `/analytics/hierarchy/{entity_id}` |
+| SQL avanzado: window functions | Vistas de concentración y outliers con `ROW_NUMBER()`, `PERCENT_RANK()` |
+| SQL avanzado: transacciones | `sql/006_transactions_demo.sql`: score + evento atómico |
+| Dashboard | Plotly Dash (`dashboard/dash_app.py`), panorama, ranking, detalle, exportación CSV/HTML |
+| ETL reproducible | `etl/` pipeline: extract → transform → load PostgreSQL + MongoDB |
+| Pruebas | 71 pruebas no integrales pasando (`make test`), más pruebas de integración con servicios |
+| UX / encuesta usabilidad | Pendiente de 5 usuarios reales; tabla y protocolo listos |
+| Documentación | Model card, data cards, CRISP-ML, demo guide, deployment, fairness, ética |
+| Lenguaje ético | Validación automática: sin afirmaciones de corrupción, fraude o responsabilidad |
 
 # 8. Evidencias de gerencia
 
@@ -154,7 +189,7 @@ make demo-full
 make validate-final
 ```
 
-La última evidencia documentada reporta 66 pruebas no integrales pasando y la
+La última evidencia documentada reporta 71 pruebas no integrales pasando y la
 validación final de la ruta académica cuando las bases y servicios están vivos.
 
 # 12. Evidencias de experiencia de usuario e interfaz gráfica

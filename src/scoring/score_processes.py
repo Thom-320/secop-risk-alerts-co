@@ -292,6 +292,8 @@ def build_process_scores() -> dict[str, pd.DataFrame]:
         scored.groupby("department", dropna=False)
         .agg(
             processes_analyzed=("process_key", "count"),
+            entities=("entity_name", "nunique"),
+            providers=("provider_name", "nunique"),
             avg_priority_score=("priority_score", "mean"),
             avg_confidence_score=("confidence_score", "mean"),
             high_priority_share=("priority_score", lambda s: (s >= 70).mean()),

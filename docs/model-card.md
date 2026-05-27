@@ -104,10 +104,13 @@ método de muestreo y responsable de consolidación.
 - Los datos abiertos pueden cambiar de esquema o contener nulos.
 - Los enlaces no se asumen 1:1.
 - El contexto fiscal es agregado y no entra al score del MVP.
-- La ruta validada usa NLP clásico con TF-IDF/coseno; no captura toda equivalencia
-  semántica.
-- La dependencia `sentence-transformers` queda como mejora futura, no como claim
-  validado de esta entrega.
+- La ruta por defecto y CI usa NLP clásico con TF-IDF/coseno; no captura toda
+  equivalencia semántica.
+- La dependencia `sentence-transformers` está disponible como proveedor opcional.
+  Para activarlo: `CONTRATIA_USE_TRANSFORMER_EMBEDDINGS=1`. Si el modelo no está
+  disponible, el sistema vuelve automáticamente a TF-IDF como fallback seguro.
+  Esta ruta neuronal no es obligatoria y no se declara como claim validado si no
+  se ejecuta y mide.
 - El modo demo depende de datos locales o servicios Docker/host disponibles.
 
 ## 16. Uso permitido

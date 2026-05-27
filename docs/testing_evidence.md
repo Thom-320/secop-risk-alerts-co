@@ -16,7 +16,7 @@ make validate-final
 ## Resultado
 
 - `make lint`: pasa con `ruff check .`. All checks passed.
-- `make test`: pasa con 66 pruebas no integrales (0 fallos) y 2 advertencias de
+- `make test`: pasa con 71 pruebas no integrales (0 fallos) y 2 advertencias de
   deprecación de Dash `dash_table.DataTable`.
 - `make product-pipeline`: pasa con `PRODUCT_SOURCE_MODE=sample`, 19.625 procesos
   generados, 420 filas en ranking, 2080 comparables, 34 departamentos en overview.
@@ -43,9 +43,26 @@ make validate-final
   - analytics=200
 - Documentos requeridos presentes: 36/36.
 - Lint: All checks passed.
-- Tests: 66 passed, 0 failed, 2 deprecation warnings (dash_table).
+- Tests: 71 passed, 0 failed, 2 deprecation warnings (dash_table).
 
-## Mejoras acumuladas
+## Nota sobre infraestructura (OrbStack/Docker)
+
+La ruta académica (`make demo-full && make validate-final`) exige PostgreSQL,
+MongoDB y servicios FastAPI vivos. Cuando OrbStack/Docker están activos, la
+validación es `ok=true`. Si OrbStack se detiene (comportamiento normal en macOS
+al inactivar la sesión), `validate-final` reporta `ok=false` con bloqueadores de
+integración exactos. La ruta lean (`make product-pipeline && make validate-product`)
+funciona sin dependencias externas.
+
+Evidencia del 2026-05-27 10:35 (OrbStack activo):
+- `make demo-full`: PostgreSQL 33 objetos, 13,999 processes, Mongo 5/5 colecciones, APIs 200.
+- `make validate-final`: `ok=true`, 36 docs, 0 integration blockers.
+
+Si el jurado ejecuta en una máquina sin Docker, la ruta lean es la alternativa
+documentada, no un fallo del proyecto. Ver `docs/demo-guide.md` para el protocolo
+completo.
+
+## Mejoras acumuladas (esta ronda final)
 
 - `write_sample_product_sources()` prefiere `data/sample/generated/processes.parquet`
   (19.625 filas) sobre fixture CSV de 3 filas. Ranking demo: 420 filas con

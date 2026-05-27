@@ -16,8 +16,8 @@ registro oficial del grupo.
 
 ## Resumen ejecutivo de 500 palabras
 
-ContratIA Abierta es una solución de ingenieria de datos para ordenar grandes volúmenes
-de procesos de contratación pública y ayudar a decidir que revisar primero. El sistema
+ContratIA Abierta es una solución de ingeniería de datos para ordenar grandes volúmenes
+de procesos de contratación pública y ayudar a decidir qué revisar primero. El sistema
 usa fuentes abiertas oficiales de Colombia, incluyendo SECOP II Procesos de
 Contratación, SECOP Integrado, Plan Anual de Adquisiciones y contexto público de control
 fiscal. La unidad de análisis es el proceso contractual, no una persona ni una
@@ -27,29 +27,30 @@ comparables y trazabilidad hacia las fuentes.
 El proyecto implementa un pipeline reproducible en Python. En modo online puede consultar
 Socrata; en modo demo usa artefactos Parquet locales ya verificados para cargar más de
 10.000 procesos sin depender de una descarga pesada. PostgreSQL funciona como base
-relacional principal, con más de veinte tablas, llaves primarias, foráneas, restricciones,
+relacional principal, con 27 tablas y 33 objetos públicos, llaves primarias, foráneas, restricciones,
 índices, triggers, vistas, CTE recursiva, window functions y transacciones. MongoDB se
 usa como soporte NoSQL para snapshots crudos, logs de ingesta, auditorías de joins,
 eventos de uso y reportes generados. Esta separación permite demostrar persistencia
-poliglota con responsabilidades claras.
+políglota con responsabilidades claras.
 
 La integración se expone mediante microservicios FastAPI: contratos, prioridad y
-analítica. El dashboard oficial esta construido en Plotly Dash y presenta panorama,
+analítica. El dashboard oficial está construido en Plotly Dash y presenta panorama,
 ranking, detalle de proceso, comparables, concentración entidad-proveedor, calidad de
 datos, metodología y flujo demo de revisión humana. La interfaz mantiene el lenguaje
 ético del proyecto: priorización de revisión humana, explicación auditable y
 trazabilidad de datos.
 
-El enfoque de scoring es rules-first. Combina componente de anomalía, desviacion frente
+El enfoque de scoring es rules-first. Combina componente de anomalía, desviación frente
 a pares, reglas interpretables y confianza. Esta decisión evita depender de modelos
 opacos o de descargas pesadas para la demo. Los comparables pueden calcularse con
-TF-IDF/coseno por defecto y dejar embeddings como mejora opcional. Las explicaciónes son
+TF-IDF/coseno por defecto y usar embeddings neuronales como mejora opcional
+(`CONTRATIA_USE_TRANSFORMER_EMBEDDINGS=1`), con fallback automático a TF-IDF. Las explicaciones son
 plantillas auditables basadas en features, no juicios.
 
 La validación incluye pruebas unitarias, pruebas estáticas del esquema SQL, pruebas de
 constraints y triggers, endpoints API, import del dashboard y validación final de
 PostgreSQL, MongoDB, APIs, documentación y comandos de reproducción. El proyecto queda
-preparado para repositorio público y sustentacion academica, con la unica tarea humana
+preparado para repositorio público y sustentación académica, con la única tarea humana
 pendiente de aplicar la encuesta UX a cinco personas reales.
 
 ## Definición del problema
@@ -66,19 +67,19 @@ comparables, revisión humana demo, APIs y dashboard.
 No funcionales: reproducibilidad, trazabilidad, lenguaje ético, datos reales, pruebas,
 documentación y ejecución local.
 
-## Objetivo general y objetivos especificos
+## Objetivo general y objetivos específicos
 
 Objetivo general: implementar una plataforma full-stack para priorizar revisión humana de
 procesos contractuales con datos abiertos.
 
-Objetivos especificos: extraer fuentes oficiales, normalizar entidades, diseñar una base
+Objetivos específicos: extraer fuentes oficiales, normalizar entidades, diseñar una base
 relacional, integrar MongoDB, exponer microservicios, construir dashboard, documentar y
 validar.
 
-## Metodologia
+## Metodología
 
-El trabajo sigue fases de diseño de ingenieria: definicion del problema, alternativas,
-seleccion, diseño, implementacion, pruebas y documentación.
+El trabajo sigue fases de diseño de ingeniería: definición del problema, alternativas,
+selección, diseño, implementación, pruebas y documentación.
 
 ## Cronograma tipo Gantt
 

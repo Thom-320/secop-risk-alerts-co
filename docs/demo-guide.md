@@ -81,7 +81,9 @@ bloqueador exacto en `docs/testing_evidence.md` y `docs/validation-summary.md`.
 - No decir que el sistema prueba conductas.
 - No prometer revisión automática suficiente.
 - No presentar métricas humanas si no existen revisores reales.
-- No vender embeddings neuronales: la ruta validada usa TF-IDF/coseno.
+- No vender embeddings neuronales sin medir: la ruta validada por defecto usa
+  TF-IDF/coseno. Si se activa `CONTRATIA_USE_TRANSFORMER_EMBEDDINGS=1`, mencionar
+  que es opcional y con fallback automático a TF-IDF si el modelo no carga.
 - No ocultar baja confianza o falta de comparables.
 
 ## Frase de cierre
