@@ -19,7 +19,7 @@ Un **único artifact HTML** con:
 
 ## PRODUCTO QUE ESTÁS PRESENTANDO
 
-**ContratIA Abierta** — sistema de IA explicable que **prioriza revisión humana** de contratación pública en Colombia. No detecta corrupción. Convierte miles de procesos SECOP en una cola priorizada y auditable. Datos abiertos oficiales del ecosistema Datos Abiertos Colombia. Demo en Meta + Casanare (Orinoquía). Concurso: Datos al Ecosistema 2026.
+**ContratIA Abierta** — sistema de IA explicable que **prioriza revisión humana** de contratación pública en Colombia. No emite juicios de corrupción. Convierte miles de procesos SECOP en una cola priorizada y auditable. Datos abiertos oficiales del ecosistema Datos Abiertos Colombia. Demo en Meta + Casanare (Orinoquía). Concurso: Datos al Ecosistema 2026.
 
 ## AUDIENCIA Y TONO
 
@@ -78,7 +78,7 @@ Un **único artifact HTML** con:
 - Eyebrow: "CONCURSO DATOS AL ECOSISTEMA 2026 · IA PARA COLOMBIA".
 - Titular: **ContratIA Abierta**, 72px, peso 800, blanco.
 - Subtítulo: "IA explicable para priorizar revisión humana de la contratación pública en Colombia."
-- Línea italic sand: "No detectamos corrupción. Ordenamos qué revisar primero, con evidencia trazable."
+- Línea italic sand: "No emitimos juicios de corrupción. Ordenamos qué revisar primero, con evidencia trazable."
 - 4 chips navy con texto blanco: "Datos abiertos SECOP", "Score 0–100 explicable", "Revisión humana trazable", "Orinoquía → Colombia".
 - Pie: "Gobernanza y Transparencia · Meta y Casanare · Universidad del Rosario".
 

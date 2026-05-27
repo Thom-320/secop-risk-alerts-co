@@ -258,7 +258,7 @@ def s01_cover(prs):
              size=20, color=CLOUD)
 
     # tagline
-    add_text(slide, "No detectamos corrupción.  Ordenamos qué revisar primero, con evidencia trazable.",
+    add_text(slide, "No emitimos juicios de corrupción.  Ordenamos qué revisar primero, con evidencia trazable.",
              Inches(0.9), Inches(4.1), Inches(11), Inches(0.5),
              size=14, italic=True, color=SAND)
 
@@ -832,7 +832,7 @@ def s13_close(prs):
              size=18, color=CLOUD)
 
     add_text(slide,
-             "No detectamos corrupción. Ordenamos qué revisar primero, con evidencia trazable.",
+             "No emitimos juicios de corrupción. Ordenamos qué revisar primero, con evidencia trazable.",
              Inches(0.9), Inches(3.05), Inches(11), Inches(0.5),
              size=13, italic=True, color=SAND)
 

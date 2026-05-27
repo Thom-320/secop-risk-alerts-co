@@ -10,7 +10,7 @@ Eres un diseñador senior de producto trabajando en una herramienta cívica seri
 
 ### Contexto del producto
 
-ContratIA Abierta es una herramienta de IA explicable que **prioriza la revisión humana** de procesos de contratación pública en Colombia. **No detecta corrupción.** Ordena miles de procesos de SECOP en una cola priorizada y auditable para que oficinas de control interno, veedurías y periodistas decidan qué revisar primero, con evidencia trazable.
+ContratIA Abierta es una herramienta de IA explicable que **prioriza la revisión humana** de procesos de contratación pública en Colombia. **No emite juicios de corrupción.** Ordena miles de procesos de SECOP en una cola priorizada y auditable para que oficinas de control interno, veedurías y periodistas decidan qué revisar primero, con evidencia trazable.
 
 - Usuario primario: **oficina de control interno / transparencia territorial**.
 - Datos: SECOP II (procesos), SECOP Integrado (contratos), Plan Anual de Adquisiciones, contexto fiscal AGR.

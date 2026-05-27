@@ -8,7 +8,7 @@
 
 ## En una frase
 
-IA explicable que **prioriza revisión humana** de la contratación pública colombiana. Convierte miles de procesos SECOP en una cola priorizada y auditable. **No detecta corrupción**; ordena qué revisar primero, con evidencia trazable.
+IA explicable que **prioriza revisión humana** de la contratación pública colombiana. Convierte miles de procesos SECOP en una cola priorizada y auditable. **No emite juicios de corrupción**; ordena qué revisar primero, con evidencia trazable.
 
 ---
 
