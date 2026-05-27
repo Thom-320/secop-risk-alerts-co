@@ -23,7 +23,7 @@ tmux new-session -d -s "$HERMES_SESSION" \
   "cd '$ROOT' && hermes chat --query '$MESSAGE' --max-turns 500 --worktree --accept-hooks --checkpoints --yolo --source overnight-secop > '$RUN_DIR/hermes.log' 2>&1; echo EXIT:\$? >> '$RUN_DIR/hermes.log'"
 
 tmux new-session -d -s "$OPENCLAW_SESSION" \
-  "cd '$ROOT' && openclaw agent --local --agent ops --timeout 28800 --thinking max --message '$MESSAGE' --json > '$RUN_DIR/openclaw.log' 2>&1; echo EXIT:\$? >> '$RUN_DIR/openclaw.log'"
+  "cd '$ROOT' && openclaw agent --local --agent ops --timeout 28800 --thinking xhigh --message '$MESSAGE' --json > '$RUN_DIR/openclaw.log' 2>&1; echo EXIT:\$? >> '$RUN_DIR/openclaw.log'"
 
 tmux display-message -p -t "$HERMES_SESSION" "#{pane_pid}" > "$RUN_DIR/hermes.pid"
 tmux display-message -p -t "$OPENCLAW_SESSION" "#{pane_pid}" > "$RUN_DIR/openclaw.pid"
