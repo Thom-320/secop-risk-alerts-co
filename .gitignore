@@ -44,3 +44,4 @@ slides/html/export/contact_sheet.png
 data/sample/generated/**
 !validation/
 !validation/README.md
+.worktrees/
