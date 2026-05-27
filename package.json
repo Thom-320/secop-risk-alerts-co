@@ -1,0 +1,15 @@
+{
+  "name": "contratia-abierta-presentation-tools",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "slides:assets": "python slides/scripts/generate_assets.py",
+    "slides:capture": "node slides/scripts/capture_screenshots.mjs",
+    "slides:build": "node slides/scripts/build_deck.mjs",
+    "slides:html": "node slides/html/export_interactive_deck.mjs"
+  },
+  "dependencies": {
+    "playwright": "^1.49.0",
+    "pptxgenjs": "^3.12.0"
+  }
+}

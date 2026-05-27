@@ -38,7 +38,7 @@ Periodista de datos
 
 # 4. Requisitos cubiertos
 
-PostgreSQL: 33 tablas
+PostgreSQL: 27 tablas + vistas
 
 MongoDB: documentos y eventos
 

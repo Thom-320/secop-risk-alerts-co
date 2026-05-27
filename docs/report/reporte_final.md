@@ -2,7 +2,7 @@
 
 **Titulo:** Transparencia360 / ContratIA Abierta: Sistema Poliglota de Priorizacion de Revision Contractual en Colombia.
 
-**Integrantes y roles:** pendiente de completar por el grupo.
+**Integrantes y roles:** equipo académico responsable de ingeniería de datos, backend, documentación, pruebas y presentación. Los nombres finales deben corresponder al registro oficial del curso.
 
 **Director:** docente de Ingenieria de Datos.
 
@@ -61,11 +61,13 @@ Cronograma sugerido: ver bitacora de gerencia y commits del repositorio.
 
 # 6. Referencias y bibliografía consultada
 
-- Datos Abiertos Colombia, datasets SECOP en `datos.gov.co`.
-- Documentacion PostgreSQL 16.
-- Documentacion MongoDB 7.
-- Documentacion FastAPI.
-- Documentacion Plotly Dash.
+- Datos Abiertos Colombia. (2026). *SECOP II - Procesos de Contratación* (`p6dx-8zbt`). Consultado el 27 de mayo de 2026, en https://www.datos.gov.co/
+- Datos Abiertos Colombia. (2026). *SECOP Integrado* (`rpmr-utcd`). Consultado el 27 de mayo de 2026, en https://www.datos.gov.co/
+- Datos Abiertos Colombia. (2026). *SECOP II Plan Anual de Adquisiciones Detalle* (`9sue-ezhx`). Consultado el 27 de mayo de 2026, en https://www.datos.gov.co/
+- PostgreSQL Global Development Group. (2026). *PostgreSQL 16 Documentation*. Consultado el 27 de mayo de 2026, en https://www.postgresql.org/docs/16/
+- MongoDB Inc. (2026). *MongoDB Manual*. Consultado el 27 de mayo de 2026, en https://www.mongodb.com/docs/
+- FastAPI. (2026). *FastAPI Documentation*. Consultado el 27 de mayo de 2026, en https://fastapi.tiangolo.com/
+- Plotly. (2026). *Dash Documentation*. Consultado el 27 de mayo de 2026, en https://dash.plotly.com/
 - Guia del proyecto de clase de Ingenieria de Datos, Universidad del Rosario.
 
 # 7. Evaluación de la solución propuesta

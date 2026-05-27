@@ -18,11 +18,11 @@ La fuente canonica esta en `slides/`. Para regenerar todo, usa:
 make db-up
 make etl-demo
 make mongo-load
-make api
-make dashboard
-uv run --python 3.11 python slides/scripts/generate_assets.py
-/Users/thom/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node slides/scripts/capture_screenshots.mjs
-/Users/thom/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node slides/scripts/build_deck.mjs
+make services-up
+npm install
+npm run slides:assets
+npm run slides:capture
+npm run slides:build
 soffice --headless --convert-to pdf --outdir slides slides/contratia_abierta_deck.pptx
 ```
 
@@ -38,7 +38,7 @@ Para la version HTML interactiva:
 
 ```bash
 open slides/html/contratia_abierta_interactive.html
-/Users/thom/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node slides/html/export_interactive_deck.mjs
+npm run slides:html
 cp slides/html/contratia_abierta_interactive.html presentation/html/contratia_abierta_interactive.html
 cp slides/html/export/contratia_abierta_interactive.pptx presentation/export/slides_interactive.pptx
 cp slides/html/export/contratia_abierta_interactive.pdf presentation/export/slides_interactive.pdf

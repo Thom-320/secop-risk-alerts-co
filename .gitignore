@@ -41,5 +41,6 @@ slides/html/export/contact_sheet.png
 !data/reports/.gitkeep
 !data/sample/
 !data/sample/**
+data/sample/generated/**
 !validation/
 !validation/README.md

@@ -48,6 +48,9 @@ include = ["src*", "etl*", "services*", "dashboard*"]
 [tool.pytest.ini_options]
 pythonpath = ["."]
 testpaths = ["tests"]
+markers = [
+  "integration: tests that require PostgreSQL, MongoDB, Docker services or 10k local data",
+]
 
 [tool.ruff]
 line-length = 100

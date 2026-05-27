@@ -25,7 +25,7 @@ PDF si se quiere una salida directa.
 Tambien hay un exportador reproducible a PPTX y PDF basado en Playwright:
 
 ```bash
-/Users/thom/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node slides/html/export_interactive_deck.mjs
+npm run slides:html
 ```
 
 Salidas:

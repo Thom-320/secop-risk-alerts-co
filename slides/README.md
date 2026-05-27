@@ -34,11 +34,11 @@ Desde la raiz del repositorio:
 make db-up
 make etl-demo
 make mongo-load
-make api
-make dashboard
-uv run --python 3.11 python slides/scripts/generate_assets.py
-/Users/thom/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node slides/scripts/capture_screenshots.mjs
-/Users/thom/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node slides/scripts/build_deck.mjs
+make services-up
+npm install
+npm run slides:assets
+npm run slides:capture
+npm run slides:build
 soffice --headless --convert-to pdf --outdir slides slides/contratia_abierta_deck.pptx
 ```
 
@@ -60,7 +60,7 @@ Version HTML interactiva:
 
 ```bash
 open slides/html/contratia_abierta_interactive.html
-/Users/thom/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node slides/html/export_interactive_deck.mjs
+npm run slides:html
 ```
 
 Luego sincroniza la copia historica:
@@ -85,7 +85,7 @@ Las metricas salen de:
 
 Metricas usadas en el deck:
 
-- 33 tablas PostgreSQL.
+- 27 tablas relacionales y 33 objetos publicos.
 - 17.229 procesos en `procurement_process`.
 - MongoDB con documentos en las colecciones requeridas.
 - Health checks de contratos, prioridad y analitica en HTTP 200.

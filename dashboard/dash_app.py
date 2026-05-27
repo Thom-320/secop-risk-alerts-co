@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 from typing import Any
 
+import httpx
 import pandas as pd
 import plotly.express as px
 
@@ -15,7 +16,41 @@ except ImportError:  # Allows smoke imports before optional dependency install.
     Input = Output = dcc = html = dash_table = None  # type: ignore[assignment]
 
 
+CONTRACTS_SERVICE_URL = os.getenv("CONTRACTS_SERVICE_URL", "http://localhost:8001").rstrip("/")
+RISK_SERVICE_URL = os.getenv("RISK_SERVICE_URL", "http://localhost:8002").rstrip("/")
+ANALYTICS_SERVICE_URL = os.getenv("ANALYTICS_SERVICE_URL", "http://localhost:8003").rstrip("/")
+DASH_ALLOW_DB_FALLBACK = os.getenv("DASH_ALLOW_DB_FALLBACK", "0").lower() in {"1", "true", "yes"}
+
+
+def service_json(base_url: str, path: str, params: dict[str, Any] | None = None) -> Any:
+    with httpx.Client(timeout=4.0) as client:
+        response = client.get(f"{base_url}{path}", params=params)
+        response.raise_for_status()
+        return response.json()
+
+
+def frame_from_service(
+    base_url: str,
+    path: str,
+    params: dict[str, Any] | None = None,
+) -> pd.DataFrame:
+    try:
+        payload = service_json(base_url, path, params)
+        return pd.DataFrame(payload if isinstance(payload, list) else [payload])
+    except Exception:
+        return pd.DataFrame()
+
+
+def coerce_numeric(frame: pd.DataFrame, columns: list[str]) -> pd.DataFrame:
+    for column in columns:
+        if column in frame:
+            frame[column] = pd.to_numeric(frame[column], errors="coerce")
+    return frame
+
+
 def db_frame(sql: str) -> pd.DataFrame:
+    if not DASH_ALLOW_DB_FALLBACK:
+        return pd.DataFrame()
     try:
         return pd.DataFrame(fetch_all(sql))
     except Exception:
@@ -23,6 +58,12 @@ def db_frame(sql: str) -> pd.DataFrame:
 
 
 def load_overview() -> pd.DataFrame:
+    frame = frame_from_service(ANALYTICS_SERVICE_URL, "/analytics/overview")
+    if not frame.empty:
+        for column in ["entities", "providers"]:
+            if column not in frame:
+                frame[column] = 0
+        return frame
     return db_frame(
         """
         SELECT d.name AS department,
@@ -42,6 +83,12 @@ def load_overview() -> pd.DataFrame:
 
 
 def load_ranking() -> pd.DataFrame:
+    frame = frame_from_service(RISK_SERVICE_URL, "/risk/ranking", {"limit": 500})
+    if not frame.empty:
+        for column in ["department", "modality", "base_price"]:
+            if column not in frame:
+                frame[column] = ""
+        return frame
     return db_frame(
         """
         SELECT process_id, process_key, entity_name, department, modality,
@@ -57,6 +104,13 @@ def load_ranking() -> pd.DataFrame:
 
 
 def load_plan_vs_execution() -> pd.DataFrame:
+    frame = frame_from_service(
+        ANALYTICS_SERVICE_URL,
+        "/analytics/plan-vs-execution",
+        {"limit": 500},
+    )
+    if not frame.empty:
+        return frame
     return db_frame(
         """
         SELECT item_key, paa_description, planned_value::float AS planned_value,
@@ -70,6 +124,12 @@ def load_plan_vs_execution() -> pd.DataFrame:
 
 
 def load_comparables(process_id: int) -> pd.DataFrame:
+    frame = frame_from_service(
+        RISK_SERVICE_URL,
+        f"/risk/process/{int(process_id)}/comparables",
+    )
+    if not frame.empty:
+        return frame
     return db_frame(
         f"""
         SELECT sc.rank, sc.similarity::float AS similarity,
@@ -84,6 +144,19 @@ def load_comparables(process_id: int) -> pd.DataFrame:
 
 
 def load_data_quality() -> pd.DataFrame:
+    if not DASH_ALLOW_DB_FALLBACK:
+        statuses = []
+        for name, base_url in [
+            ("contracts_service", CONTRACTS_SERVICE_URL),
+            ("risk_service", RISK_SERVICE_URL),
+            ("analytics_service", ANALYTICS_SERVICE_URL),
+        ]:
+            try:
+                payload = service_json(base_url, "/health")
+                statuses.append({"metric": name, "value": payload.get("status", "unknown")})
+            except Exception as exc:
+                statuses.append({"metric": name, "value": f"unavailable: {exc}"})
+        return pd.DataFrame(statuses)
     return db_frame(
         """
         SELECT 'processes' AS metric, count(*)::text AS value FROM procurement_process
@@ -117,14 +190,24 @@ def create_app() -> Any:
         return None
 
     app = Dash(__name__, title="Transparencia360")
-    overview = load_overview()
-    ranking = load_ranking()
-    plan_matches = load_plan_vs_execution()
-    concentration = db_frame(
-        "SELECT entity_name, provider_name, awarded_value::float AS awarded_value "
-        "FROM v_entity_provider_concentration "
-        "ORDER BY awarded_value DESC LIMIT 30"
+    overview = coerce_numeric(
+        load_overview(),
+        ["processes", "entities", "providers", "avg_priority_score", "avg_confidence_score"],
     )
+    ranking = coerce_numeric(load_ranking(), ["priority_score", "confidence_score"])
+    plan_matches = coerce_numeric(load_plan_vs_execution(), ["confidence"])
+    concentration = frame_from_service(
+        ANALYTICS_SERVICE_URL,
+        "/analytics/entity-concentration",
+        {"limit": 30},
+    )
+    if concentration.empty:
+        concentration = db_frame(
+            "SELECT entity_name, provider_name, awarded_value::float AS awarded_value "
+            "FROM v_entity_provider_concentration "
+            "ORDER BY awarded_value DESC LIMIT 30"
+        )
+    concentration = coerce_numeric(concentration, ["awarded_value"])
 
     total_processes = int(overview["processes"].sum()) if not overview.empty else 0
     total_entities = int(overview["entities"].sum()) if "entities" in overview else 0
@@ -356,17 +439,22 @@ def create_app() -> Any:
         if row.empty:
             return [html.P("Proceso no encontrado.")]
         detail = row.iloc[0]
+        service_detail = frame_from_service(CONTRACTS_SERVICE_URL, f"/processes/{int(process_id)}")
+        if not service_detail.empty:
+            detail = {**detail.to_dict(), **service_detail.iloc[0].to_dict()}
+        else:
+            detail = detail.to_dict()
         comparables = load_comparables(int(process_id))
         return [
             html.H2(str(detail["process_key"])),
             html.P(str(detail["explanation"])),
             html.Ul(
                 [
-                    html.Li(f"Entidad: {detail['entity_name']}"),
-                    html.Li(f"Departamento: {detail['department']}"),
-                    html.Li(f"Modalidad: {detail['modality']}"),
-                    html.Li(f"Score: {detail['priority_score']}"),
-                    html.Li(f"Confianza: {detail['confidence_score']}"),
+                    html.Li(f"Entidad: {detail.get('entity_name', '')}"),
+                    html.Li(f"Departamento: {detail.get('department', '')}"),
+                    html.Li(f"Modalidad: {detail.get('modality', '')}"),
+                    html.Li(f"Score: {detail.get('priority_score', '')}"),
+                    html.Li(f"Confianza: {detail.get('confidence_score', '')}"),
                 ]
             ),
             html.H3("Comparables"),

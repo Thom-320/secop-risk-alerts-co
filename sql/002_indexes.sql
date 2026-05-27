@@ -12,6 +12,9 @@ CREATE INDEX IF NOT EXISTS idx_risk_assessment_priority ON risk_assessment(prior
 CREATE INDEX IF NOT EXISTS idx_semantic_comparable_process ON semantic_comparable(process_id, rank);
 CREATE INDEX IF NOT EXISTS idx_audit_log_table_time ON audit_log(table_name, changed_at DESC);
 CREATE INDEX IF NOT EXISTS idx_public_entity_department ON public_entity(department_id);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_public_entity_null_code_identity
+ON public_entity(lower(name), COALESCE(department_id, 0), COALESCE(municipality_id, 0))
+WHERE entity_code IS NULL;
 CREATE INDEX IF NOT EXISTS idx_provider_name ON provider(name);
 CREATE INDEX IF NOT EXISTS idx_human_review_process ON human_review(process_id, review_status);
 CREATE UNIQUE INDEX IF NOT EXISTS idx_administrative_hierarchy_unique

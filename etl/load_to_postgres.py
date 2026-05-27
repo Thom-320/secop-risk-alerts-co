@@ -16,6 +16,7 @@ from etl.common import (
     only_digits,
     read_local_demo_sources,
     require_psycopg,
+    stable_missing_identifier,
     to_date,
     to_decimal,
     to_int,
@@ -137,6 +138,35 @@ def upsert_entity(
     entity_code = only_digits(row.get("codigo_entidad"))
     nit = only_digits(row.get("nit_entidad"))
     name = clean_text(row.get("entidad") or row.get("nombre_entidad"), "Entidad sin nombre")
+    entity_order = clean_text(row.get("ordenentidad"), "")
+    if not entity_code:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                SELECT entity_id
+                FROM public_entity
+                WHERE entity_code IS NULL
+                  AND lower(name) = lower(%s)
+                  AND department_id IS NOT DISTINCT FROM %s
+                  AND municipality_id IS NOT DISTINCT FROM %s
+                LIMIT 1
+                """,
+                (name, department_id, municipality_id),
+            )
+            existing = cur.fetchone()
+            if existing:
+                cur.execute(
+                    """
+                    UPDATE public_entity
+                    SET nit = COALESCE(%s, nit),
+                        entity_order = %s,
+                        updated_at = now()
+                    WHERE entity_id = %s
+                    RETURNING entity_id
+                    """,
+                    (nit, entity_order, existing[0]),
+                )
+                return int(cur.fetchone()[0])
     return int(
         one(
             conn,
@@ -159,7 +189,7 @@ def upsert_entity(
                 name,
                 department_id,
                 municipality_id,
-                clean_text(row.get("ordenentidad"), ""),
+                entity_order,
             ),
         )
     )
@@ -179,7 +209,7 @@ def upsert_provider(
     if not name:
         name = f"Proveedor {nit}"
     if not nit:
-        nit = f"sin-nit-{abs(hash(name))}"
+        nit = stable_missing_identifier("sin-nit", name)
     return int(
         one(
             conn,
@@ -482,7 +512,7 @@ def load_fiscal_context(conn: Any) -> None:
 
             INSERT INTO fiscal_finding(fiscal_subject_id, year, finding_type, amount, description)
             SELECT fiscal_subject_id, 2025, 'contexto_visible', 0,
-                   'Contexto fiscal visible; no etiqueta de corrupcion.'
+                   'Contexto fiscal visible; no etiqueta de conducta indebida.'
             FROM fiscal_control_subject
             WHERE NOT EXISTS (
                 SELECT 1 FROM fiscal_finding
@@ -517,7 +547,7 @@ def load_risk_outputs(conn: Any) -> None:
                 CASE WHEN p.base_price > threshold.p75 THEN 75 ELSE 35 END,
                 CASE WHEN p.response_count <= 1 THEN 70 ELSE 30 END,
                 CASE WHEN lower(COALESCE(m.name, '')) LIKE '%directa%' THEN 70 ELSE 35 END,
-                'Priorizacion explicable para revision humana; no detecta corrupcion ni fraude.'
+                'Priorizacion explicable para revision humana; no prueba conductas indebidas.'
             FROM procurement_process p
             CROSS JOIN threshold
             LEFT JOIN modality m ON m.modality_id = p.modality_id
@@ -533,27 +563,59 @@ def load_risk_outputs(conn: Any) -> None:
             WHERE rr.active
             ON CONFLICT DO NOTHING;
 
-            WITH ranked AS (
-                SELECT
-                    p1.process_id,
-                    p2.process_id AS comparable_process_id,
-                    row_number() OVER (
-                        PARTITION BY p1.process_id
-                        ORDER BY abs(p1.base_price - p2.base_price), p2.process_id
-                    ) AS rank
-                FROM procurement_process p1
-                JOIN procurement_process p2
-                    ON p1.process_id <> p2.process_id
-                   AND p1.modality_id IS NOT DISTINCT FROM p2.modality_id
-                WHERE p1.process_id <= (SELECT min(process_id) + 500 FROM procurement_process)
-            )
-            INSERT INTO semantic_comparable(process_id, comparable_process_id, similarity, rank)
-            SELECT process_id, comparable_process_id, 0.75, rank
-            FROM ranked
-            WHERE rank <= 3
-            ON CONFLICT DO NOTHING;
             """
         )
+    conn.commit()
+
+
+def load_semantic_comparables(conn: Any, max_processes: int = 500) -> None:
+    from sklearn.feature_extraction.text import TfidfVectorizer
+    from sklearn.metrics.pairwise import cosine_similarity
+
+    with conn.cursor() as cur:
+        cur.execute(
+            """
+            SELECT p.process_id,
+                   COALESCE(p.title, ''),
+                   COALESCE(p.description, ''),
+                   COALESCE(m.name, '')
+            FROM procurement_process p
+            LEFT JOIN modality m ON m.modality_id = p.modality_id
+            ORDER BY p.process_id
+            LIMIT %s
+            """,
+            (max_processes,),
+        )
+        rows = cur.fetchall()
+    if len(rows) < 2:
+        return
+
+    process_ids = [int(row[0]) for row in rows]
+    texts = [f"{row[1]} {row[2]} {row[3]}" for row in rows]
+    matrix = TfidfVectorizer(max_features=4000, ngram_range=(1, 2)).fit_transform(texts)
+    similarities = cosine_similarity(matrix)
+
+    with conn.cursor() as cur:
+        for idx, process_id in enumerate(process_ids):
+            candidates = [
+                (process_ids[j], float(score))
+                for j, score in enumerate(similarities[idx])
+                if j != idx and score > 0
+            ]
+            candidates.sort(key=lambda item: item[1], reverse=True)
+            for rank, (comparable_process_id, similarity) in enumerate(candidates[:3], start=1):
+                cur.execute(
+                    """
+                    INSERT INTO semantic_comparable(
+                        process_id, comparable_process_id, similarity, rank
+                    )
+                    VALUES (%s, %s, %s, %s)
+                    ON CONFLICT (process_id, comparable_process_id) DO UPDATE
+                    SET similarity = EXCLUDED.similarity,
+                        rank = EXCLUDED.rank
+                    """,
+                    (process_id, comparable_process_id, round(similarity, 4), rank),
+                )
     conn.commit()
 
 
@@ -609,6 +671,7 @@ def main() -> None:
         paa_loaded = load_paa(conn, sources["paa"], process_ids)
         load_fiscal_context(conn)
         load_risk_outputs(conn)
+        load_semantic_comparables(conn)
         counts = write_counts(conn)
     print(
         json.dumps(

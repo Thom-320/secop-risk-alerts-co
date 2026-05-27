@@ -15,4 +15,4 @@ jobs:
       - name: Lint
         run: uv run --python 3.11 ruff check .
       - name: Test
-        run: uv run --python 3.11 pytest -q
+        run: uv run --python 3.11 pytest -q -m "not integration"

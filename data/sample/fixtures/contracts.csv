@@ -1,0 +1,3 @@
+proceso_de_compra,id_contrato,proveedor_adjudicado,documento_proveedor,estado_contrato,fecha_de_firma,fecha_de_inicio_del_contrato,fecha_de_fin_del_contrato,valor_del_contrato,valor_pagado,urlproceso
+sample-proc-001,contract-sample-001,Proveedor Demo Uno,,Activo,2025-02-25,2025-03-01,2025-05-30,148500000,40000000,https://www.contratos.gov.co/sample-001
+sample-proc-002,contract-sample-002,Proveedor Demo Dos,901111111,Activo,2025-03-28,2025-04-01,2025-05-30,85000000,25000000,https://www.contratos.gov.co/sample-002

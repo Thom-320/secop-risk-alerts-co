@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import os
 import re
+import subprocess
+import sys
 from datetime import date
 from decimal import Decimal, InvalidOperation
 from pathlib import Path
@@ -83,24 +85,84 @@ def modality_family(value: Any) -> str:
     return "otros"
 
 
+def stable_missing_identifier(prefix: str, value: str) -> str:
+    import hashlib
+
+    normalized = clean_text(value, "sin_nombre").lower()
+    digest = hashlib.sha256(normalized.encode("utf-8")).hexdigest()[:16]
+    return f"{prefix}-{digest}"
+
+
+def _read_sample_sources(limit: int | None = None) -> dict[str, pd.DataFrame] | None:
+    sample_dir = ROOT / "data" / "sample" / "fixtures"
+    processes_csv = sample_dir / "processes.csv"
+    contracts_csv = sample_dir / "contracts.csv"
+    paa_csv = sample_dir / "paa.csv"
+    if not processes_csv.exists():
+        return None
+    processes = pd.read_csv(processes_csv)
+    contracts = pd.read_csv(contracts_csv) if contracts_csv.exists() else pd.DataFrame()
+    paa = pd.read_csv(paa_csv) if paa_csv.exists() else pd.DataFrame()
+    if limit:
+        processes = processes.head(limit)
+    return {"processes": processes, "contracts": contracts, "paa": paa}
+
+
+def _read_generated_sources(limit: int | None = None) -> dict[str, pd.DataFrame] | None:
+    generated_dir = ROOT / "data" / "sample" / "generated"
+    processes_path = generated_dir / "processes.parquet"
+    if not processes_path.exists():
+        return None
+    processes = pd.read_parquet(processes_path)
+    contracts_path = generated_dir / "contracts.parquet"
+    paa_path = generated_dir / "paa.parquet"
+    contracts = pd.read_parquet(contracts_path) if contracts_path.exists() else pd.DataFrame()
+    paa = pd.read_parquet(paa_path) if paa_path.exists() else pd.DataFrame()
+    if limit:
+        processes = processes.head(limit)
+    return {"processes": processes, "contracts": contracts, "paa": paa}
+
+
+def _download_demo_sources_if_requested(limit: int | None) -> dict[str, pd.DataFrame] | None:
+    if os.getenv("DEMO_SOURCE_MODE", "").lower() != "download" and os.getenv(
+        "EXTRACT_SCOPE", ""
+    ).lower() != "demo":
+        return None
+    command = [sys.executable, "-m", "etl.download_demo_sources"]
+    if limit:
+        command.extend(["--limit", str(limit)])
+    subprocess.run(command, cwd=ROOT, check=True)
+    return _read_generated_sources(limit=limit)
+
+
 def read_local_demo_sources(limit: int | None = None) -> dict[str, pd.DataFrame]:
     processes_path = ROOT / "data" / "legacy_raw" / "processes.parquet"
     contracts_path = ROOT / "data" / "legacy_raw" / "contracts.parquet"
     paa_dir = ROOT / "data" / "raw" / "paa_detail"
-    missing = [str(path) for path in (processes_path, contracts_path) if not path.exists()]
-    if missing:
-        raise FileNotFoundError(f"Faltan fuentes locales demo: {', '.join(missing)}")
-    processes = pd.read_parquet(processes_path)
-    contracts = pd.read_parquet(contracts_path)
-    paa_parts = sorted(paa_dir.glob("*.parquet")) if paa_dir.exists() else []
-    paa = (
-        pd.concat([pd.read_parquet(path) for path in paa_parts], ignore_index=True)
-        if paa_parts
-        else pd.DataFrame()
+    if processes_path.exists() and contracts_path.exists():
+        processes = pd.read_parquet(processes_path)
+        contracts = pd.read_parquet(contracts_path)
+        paa_parts = sorted(paa_dir.glob("*.parquet")) if paa_dir.exists() else []
+        paa = (
+            pd.concat([pd.read_parquet(path) for path in paa_parts], ignore_index=True)
+            if paa_parts
+            else pd.DataFrame()
+        )
+        if limit:
+            processes = processes.head(limit)
+        return {"processes": processes, "contracts": contracts, "paa": paa}
+
+    readers = (_read_generated_sources, _read_sample_sources, _download_demo_sources_if_requested)
+    for reader in readers:
+        sources = reader(limit)
+        if sources is not None:
+            return sources
+
+    raise FileNotFoundError(
+        "No se encontraron fuentes demo. Agrega Parquet locales en data/legacy_raw, "
+        "usa fixtures en data/sample/fixtures o ejecuta "
+        "`DEMO_SOURCE_MODE=download python -m etl.download_demo_sources --limit 10000`."
     )
-    if limit:
-        processes = processes.head(limit)
-    return {"processes": processes, "contracts": contracts, "paa": paa}
 
 
 def require_psycopg():

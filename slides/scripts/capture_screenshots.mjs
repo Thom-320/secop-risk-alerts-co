@@ -4,11 +4,7 @@ import { createRequire } from "node:module";
 import { fileURLToPath } from "node:url";
 
 const require = createRequire(import.meta.url);
-const { chromium } = require(
-  require.resolve("playwright", {
-    paths: ["/Users/thom/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules"],
-  }),
-);
+const { chromium } = require("playwright");
 
 const root = path.resolve(fileURLToPath(new URL("../..", import.meta.url)));
 const assets = path.join(root, "slides", "assets");

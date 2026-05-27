@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 from urllib.error import URLError
 from urllib.request import urlopen
@@ -89,9 +90,11 @@ def check_mongo(blockers: list[str], evidence: dict[str, object]) -> None:
 
 def check_api_health(blockers: list[str], evidence: dict[str, object]) -> None:
     endpoints = {
-        "contracts": "http://localhost:8001/health",
-        "risk": "http://localhost:8002/health",
-        "analytics": "http://localhost:8003/health",
+        "contracts": os.getenv("CONTRACTS_SERVICE_URL", "http://localhost:8001").rstrip("/")
+        + "/health",
+        "risk": os.getenv("RISK_SERVICE_URL", "http://localhost:8002").rstrip("/") + "/health",
+        "analytics": os.getenv("ANALYTICS_SERVICE_URL", "http://localhost:8003").rstrip("/")
+        + "/health",
     }
     statuses: dict[str, str] = {}
     for name, url in endpoints.items():
@@ -127,8 +130,21 @@ def main() -> None:
     blockers: list[str] = []
     evidence: dict[str, object] = {}
     for command_name, command in {
-        "lint": ["uv", "run", "--python", "3.11", "ruff", "check", "."],
-        "test": ["uv", "run", "--python", "3.11", "pytest"],
+        "lint": ["uv", "run", "--python", "3.11", "--extra", "dev", "ruff", "check", "."],
+        "test": [
+            "uv",
+            "run",
+            "--python",
+            "3.11",
+            "--extra",
+            "dev",
+            "python",
+            "-m",
+            "pytest",
+            "-q",
+            "-m",
+            "not integration",
+        ],
     }.items():
         ok, output = run_command(command)
         evidence[command_name] = {"ok": ok, "output_tail": output}

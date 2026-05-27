@@ -89,7 +89,7 @@ def architecture() -> None:
         ("Socrata API\nSECOP/PAA", 70, 170),
         ("Parquet local\nfallback demo", 70, 360),
         ("ETL Python\nnormalizacion", 330, 265),
-        ("PostgreSQL\n33 tablas", 590, 170),
+        ("PostgreSQL\n27 tablas + vistas", 590, 170),
         ("MongoDB\nlogs/eventos", 590, 360),
         ("FastAPI\n3 servicios", 850, 265),
         ("Dash\nrevision humana", 1080, 265),
@@ -138,7 +138,7 @@ def pipeline() -> None:
     label(
         d,
         (125, 536),
-        "Salida validada: 17.229 procesos, 33 tablas, 5 colecciones Mongo.",
+        "Salida validada: 17.229 procesos, 27 tablas y 33 objetos, 5 colecciones Mongo.",
         28,
         INK,
     )

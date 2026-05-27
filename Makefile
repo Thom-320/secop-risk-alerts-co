@@ -1,6 +1,6 @@
-.PHONY: setup db-up db-reset db-migrate etl-demo extract-demo build score mongo-load api api-docker dashboard demo test lint report validate-final
+.PHONY: setup db-up db-schema db-reset db-migrate etl-demo extract-demo build score mongo-load services-up api api-docker dashboard demo demo-full test test-integration lint report validate-final
 
-PYTHON := uv run --python 3.11
+PYTHON := uv run --python 3.11 --extra dev
 
 setup:
 	uv sync --python 3.11 --extra dev
@@ -8,11 +8,13 @@ setup:
 db-up:
 	docker compose up -d postgres mongo
 
-db-reset:
-	$(PYTHON) python -m etl.load_to_postgres --reset --limit 20000
+db-schema:
+	$(PYTHON) python -m etl.apply_schema
 
-db-migrate:
-	$(PYTHON) python -m etl.load_to_postgres --limit 1
+db-reset:
+	$(PYTHON) python -m etl.apply_schema --reset
+
+db-migrate: db-schema
 
 etl-demo:
 	$(PYTHON) python -m etl.validate_sources
@@ -31,6 +33,9 @@ score:
 mongo-load:
 	$(PYTHON) python -m etl.load_to_mongo
 
+services-up:
+	docker compose up -d contracts_service risk_service analytics_service dash_dashboard
+
 api:
 	$(PYTHON) uvicorn services.contracts_service.main:app --host 0.0.0.0 --port 8001 & \
 	$(PYTHON) uvicorn services.risk_service.main:app --host 0.0.0.0 --port 8002 & \
@@ -45,8 +50,13 @@ dashboard:
 
 demo: etl-demo mongo-load
 
+demo-full: db-up db-reset etl-demo mongo-load services-up
+
 test:
-	$(PYTHON) pytest -q
+	$(PYTHON) pytest -q -m "not integration"
+
+test-integration:
+	$(PYTHON) pytest -q -m integration
 
 lint:
 	$(PYTHON) ruff check .

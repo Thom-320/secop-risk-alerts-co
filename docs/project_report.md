@@ -10,6 +10,10 @@ Programa: Ingenieria de Datos, Universidad del Rosario.
 Cliente objetivo: veedurias ciudadanas, periodistas de datos y oficinas de control
 interno con requerimientos reales de priorizacion.
 
+Roles tecnicos del equipo: ingenieria de datos, backend/API, documentacion academica,
+pruebas, UX y presentacion. Los nombres finales deben coincidir con el registro oficial
+del grupo.
+
 ## Resumen ejecutivo de 500 palabras
 
 ContratIA Abierta es una solucion de ingenieria de datos para ordenar grandes volumenes
@@ -82,11 +86,13 @@ Ver `docs/metodologia_gantt.md`.
 
 ## Referencias
 
-- Datos abiertos Colombia, datasets SECOP/PAA/contexto fiscal.
-- Documentacion PostgreSQL.
-- Documentacion MongoDB.
-- Documentacion FastAPI.
-- Documentacion Plotly Dash.
+- Datos Abiertos Colombia. (2026). *SECOP II - Procesos de Contratacion* (`p6dx-8zbt`). Consultado el 27 de mayo de 2026, en https://www.datos.gov.co/
+- Datos Abiertos Colombia. (2026). *SECOP Integrado* (`rpmr-utcd`). Consultado el 27 de mayo de 2026, en https://www.datos.gov.co/
+- Datos Abiertos Colombia. (2026). *SECOP II Plan Anual de Adquisiciones Detalle* (`9sue-ezhx`). Consultado el 27 de mayo de 2026, en https://www.datos.gov.co/
+- PostgreSQL Global Development Group. (2026). *PostgreSQL 16 Documentation*. Consultado el 27 de mayo de 2026, en https://www.postgresql.org/docs/16/
+- MongoDB Inc. (2026). *MongoDB Manual*. Consultado el 27 de mayo de 2026, en https://www.mongodb.com/docs/
+- FastAPI. (2026). *FastAPI Documentation*. Consultado el 27 de mayo de 2026, en https://fastapi.tiangolo.com/
+- Plotly. (2026). *Dash Documentation*. Consultado el 27 de mayo de 2026, en https://dash.plotly.com/
 
 ## Evaluacion de alternativas
 

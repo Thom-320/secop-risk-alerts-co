@@ -98,8 +98,9 @@ def test_usability_results_are_not_fabricated() -> None:
     assert "No se incluyen resultados fabricados" in content
 
 
-def test_local_demo_source_has_required_volume() -> None:
-    import pandas as pd
+def test_sample_demo_source_exists_for_clean_clone() -> None:
+    from etl.common import read_local_demo_sources
 
-    processes = pd.read_parquet(ROOT / "data" / "legacy_raw" / "processes.parquet")
-    assert len(processes) >= 10000
+    sources = read_local_demo_sources(limit=2)
+    assert not sources["processes"].empty
+    assert "id_del_proceso" in sources["processes"].columns

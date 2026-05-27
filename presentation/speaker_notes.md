@@ -16,7 +16,7 @@ El stakeholder esta definido como una organizacion con requerimientos reales: ve
 
 ## Slide 4 - Requisitos cubiertos (90s)
 
-La guia de clase pedia una solucion de ingenieria de datos, no solo un dashboard. Por eso el proyecto se cerro con PostgreSQL como base relacional principal, MongoDB como soporte documental y de eventos, tres microservicios FastAPI, una interfaz oficial en Dash, ETL reproducible y SQL avanzado. La validacion final reporta 33 tablas publicas, 17.229 procesos en la carga demo, colecciones Mongo con documentos, health checks en 200 y 39 pruebas automatizadas pasando.
+La guia de clase pedia una solucion de ingenieria de datos, no solo un dashboard. Por eso el proyecto se cerro con PostgreSQL como base relacional principal, MongoDB como soporte documental y de eventos, tres microservicios FastAPI, una interfaz oficial en Dash, ETL reproducible y SQL avanzado. La validacion final reporta 27 tablas relacionales y 33 objetos publicos, 17.229 procesos en la carga demo, colecciones Mongo con documentos, health checks en 200 y 39 pruebas automatizadas pasando.
 
 ## Slide 5 - Fuentes y volumen (90s)
 
@@ -28,7 +28,7 @@ La arquitectura separa ingestion, persistencia, servicios y presentacion. Socrat
 
 ## Slide 7 - Modelo relacional (90s)
 
-El modelo relacional supera el minimo de 15 tablas y llega a 33 tablas en la validacion local. Agrupa ingesta, geografia, entidades, proveedores, procesos, PAA, contexto fiscal, score, razones, comparables, auditoria y revision humana. La parte importante no es solo contar tablas: hay llaves primarias, foraneas, restricciones de score y confianza, indices utiles y vistas analiticas. PostgreSQL se usa para garantizar integridad, no solo como deposito.
+El modelo relacional supera el minimo de 15 tablas y llega a 27 tablas relacionales y 33 objetos publicos en la validacion local. Agrupa ingesta, geografia, entidades, proveedores, procesos, PAA, contexto fiscal, score, razones, comparables, auditoria y revision humana. La parte importante no es solo contar tablas: hay llaves primarias, foraneas, restricciones de score y confianza, indices utiles y vistas analiticas. PostgreSQL se usa para garantizar integridad, no solo como deposito.
 
 ## Slide 8 - NoSQL y auditoria (75s)
 

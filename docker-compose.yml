@@ -29,7 +29,28 @@ services:
       - .:/app
     environment:
       DATABASE_URL: postgresql://contratia:contratia@postgres:5432/contratia
-    command: uv run --python 3.11 uvicorn services.contracts_service.main:app --host 0.0.0.0 --port 8001
+      UV_PROJECT_ENVIRONMENT: /tmp/contratia-contracts-venv
+      UV_CACHE_DIR: /tmp/contratia-uv-cache
+    command:
+      - uv
+      - run
+      - --python
+      - "3.11"
+      - --no-project
+      - --with
+      - fastapi
+      - --with
+      - uvicorn
+      - --with
+      - psycopg[binary]
+      - --with
+      - pydantic
+      - uvicorn
+      - services.contracts_service.main:app
+      - --host
+      - 0.0.0.0
+      - --port
+      - "8001"
     ports:
       - "8001:8001"
     depends_on:
@@ -43,7 +64,28 @@ services:
       - .:/app
     environment:
       DATABASE_URL: postgresql://contratia:contratia@postgres:5432/contratia
-    command: uv run --python 3.11 uvicorn services.risk_service.main:app --host 0.0.0.0 --port 8002
+      UV_PROJECT_ENVIRONMENT: /tmp/contratia-risk-venv
+      UV_CACHE_DIR: /tmp/contratia-uv-cache
+    command:
+      - uv
+      - run
+      - --python
+      - "3.11"
+      - --no-project
+      - --with
+      - fastapi
+      - --with
+      - uvicorn
+      - --with
+      - psycopg[binary]
+      - --with
+      - pydantic
+      - uvicorn
+      - services.risk_service.main:app
+      - --host
+      - 0.0.0.0
+      - --port
+      - "8002"
     ports:
       - "8002:8002"
     depends_on:
@@ -57,7 +99,28 @@ services:
       - .:/app
     environment:
       DATABASE_URL: postgresql://contratia:contratia@postgres:5432/contratia
-    command: uv run --python 3.11 uvicorn services.analytics_service.main:app --host 0.0.0.0 --port 8003
+      UV_PROJECT_ENVIRONMENT: /tmp/contratia-analytics-venv
+      UV_CACHE_DIR: /tmp/contratia-uv-cache
+    command:
+      - uv
+      - run
+      - --python
+      - "3.11"
+      - --no-project
+      - --with
+      - fastapi
+      - --with
+      - uvicorn
+      - --with
+      - psycopg[binary]
+      - --with
+      - pydantic
+      - uvicorn
+      - services.analytics_service.main:app
+      - --host
+      - 0.0.0.0
+      - --port
+      - "8003"
     ports:
       - "8003:8003"
     depends_on:
@@ -71,13 +134,41 @@ services:
       - .:/app
     environment:
       DATABASE_URL: postgresql://contratia:contratia@postgres:5432/contratia
+      CONTRACTS_SERVICE_URL: http://contracts_service:8001
+      RISK_SERVICE_URL: http://risk_service:8002
+      ANALYTICS_SERVICE_URL: http://analytics_service:8003
+      DASH_ALLOW_DB_FALLBACK: "0"
       DASH_PORT: 8050
-    command: uv run --python 3.11 python -m dashboard.dash_app
+      UV_PROJECT_ENVIRONMENT: /tmp/contratia-dash-venv
+      UV_CACHE_DIR: /tmp/contratia-uv-cache
+    command:
+      - uv
+      - run
+      - --python
+      - "3.11"
+      - --no-project
+      - --with
+      - dash
+      - --with
+      - plotly
+      - --with
+      - pandas
+      - --with
+      - httpx
+      - --with
+      - psycopg[binary]
+      - python
+      - -m
+      - dashboard.dash_app
     ports:
       - "8050:8050"
     depends_on:
-      postgres:
-        condition: service_healthy
+      contracts_service:
+        condition: service_started
+      risk_service:
+        condition: service_started
+      analytics_service:
+        condition: service_started
 
 volumes:
   postgres_data:

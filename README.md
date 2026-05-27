@@ -40,16 +40,21 @@ PostgreSQL es la fuente relacional principal. MongoDB guarda snapshots, logs y e
 ```bash
 uv sync --python 3.11 --extra dev
 cp .env.example .env
-make db-up
-make db-migrate
-make etl-demo
-make mongo-load
+make demo-full
 make validate-final
 ```
+
+`make demo-full` levanta PostgreSQL/MongoDB, reinicia el esquema, carga la demo,
+carga MongoDB y arranca los microservicios junto con Dash. `make validate-final`
+requiere que las bases y los servicios esten vivos.
 
 Por defecto Docker publica PostgreSQL en `localhost:55432` y MongoDB en
 `localhost:27018` para no chocar con instalaciones locales. Los contenedores siguen
 hablando internamente por `postgres:5432` y `mongo:27017`.
+
+Si un entorno local tiene puertos ocupados, `make validate-final` acepta URLs
+explicitas mediante `DATABASE_URL`, `MONGO_URL`, `CONTRACTS_SERVICE_URL`,
+`RISK_SERVICE_URL` y `ANALYTICS_SERVICE_URL`.
 
 Servicios:
 
@@ -70,6 +75,7 @@ Endpoints locales:
 ```bash
 make setup
 make db-up
+make db-schema
 make db-migrate
 make db-reset
 make extract-demo
@@ -78,16 +84,20 @@ make score
 make etl-demo
 make mongo-load
 make api
+make services-up
 make dashboard
 make demo
+make demo-full
 make test
+make test-integration
 make lint
 make validate-final
 ```
 
 ## Evidencia academica
 
-- 20+ tablas relacionales en `sql/001_schema.sql`.
+- 27 tablas relacionales en `sql/001_schema.sql`.
+- 33 objetos publicos entre tablas y vistas en la validacion local.
 - Constraints, FK, indices, triggers y vistas analiticas.
 - Triggers de auditoria, historial de estado, validacion de score y `updated_at`.
 - Window functions y CTE recursiva en `sql/004_views_analytics.sql`.
@@ -113,6 +123,8 @@ La salida es una alerta de prioridad, no una acusacion.
 - Los enlaces SECOP/PAA no se asumen perfectos.
 - El contexto fiscal es visible y no se usa como etiqueta acusatoria.
 - La encuesta de usabilidad debe completarse con 5 usuarios reales antes de la entrega final.
+- La ruta oficial de sustentacion es Dash + PostgreSQL + microservicios; Streamlit/Parquet
+  queda como modo legado u offline.
 
 ## Licencia
 

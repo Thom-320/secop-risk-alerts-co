@@ -59,14 +59,32 @@ def outliers(limit: int = Query(default=100, ge=1, le=500)) -> list[dict]:
 def hierarchy(entity_id: int) -> list[dict]:
     return fetch_all(
         """
-        SELECT *
-        FROM v_administrative_hierarchy_tree
-        WHERE entity_id = %s OR path IN (
-            SELECT regexp_split_to_table(path, ' > ')
-            FROM v_administrative_hierarchy_tree
+        WITH RECURSIVE upward AS (
+            SELECT node_id, parent_node_id, node_type, label, entity_id, 0 AS reverse_depth
+            FROM administrative_hierarchy
             WHERE entity_id = %s
+            UNION ALL
+            SELECT parent.node_id,
+                   parent.parent_node_id,
+                   parent.node_type,
+                   parent.label,
+                   parent.entity_id,
+                   upward.reverse_depth + 1
+            FROM administrative_hierarchy parent
+            JOIN upward ON upward.parent_node_id = parent.node_id
         )
-        ORDER BY depth, path
+        SELECT node_id,
+               parent_node_id,
+               node_type,
+               label,
+               entity_id,
+               row_number() OVER (ORDER BY reverse_depth DESC) - 1 AS depth,
+               string_agg(label, ' > ') OVER (
+                   ORDER BY reverse_depth DESC
+                   ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
+               ) AS path
+        FROM upward
+        ORDER BY reverse_depth DESC
         """,
-        (entity_id, entity_id),
+        (entity_id,),
     )
