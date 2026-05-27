@@ -9,6 +9,8 @@ Esta carpeta contiene el deck final de 12 diapositivas para la sustentacion de
 - `contratia_abierta_speaker_notes.md`: notas de exposicion en espanol.
 - `contratia_abierta_deck.pptx`: deck editable.
 - `contratia_abierta_deck.pdf`: exportacion PDF.
+- `contratia_abierta_beamer.pdf`: version LaTeX/Beamer optimizada para presentar.
+- `latex/contratia_abierta_beamer.tex`: fuente LaTeX de la version Beamer.
 - `assets/`: capturas reales del dashboard y diagramas generados desde el repo.
 
 La carpeta `presentation/` mantiene una copia compatible:
@@ -32,6 +34,20 @@ uv run --python 3.11 python slides/scripts/generate_assets.py
 /Users/thom/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node slides/scripts/capture_screenshots.mjs
 /Users/thom/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node slides/scripts/build_deck.mjs
 soffice --headless --convert-to pdf --outdir slides slides/contratia_abierta_deck.pptx
+```
+
+Version LaTeX/Beamer:
+
+```bash
+latexmk -xelatex -interaction=nonstopmode -halt-on-error -outdir=slides/latex/build slides/latex/contratia_abierta_beamer.tex
+cp slides/latex/build/contratia_abierta_beamer.pdf slides/contratia_abierta_beamer.pdf
+cp slides/contratia_abierta_beamer.pdf presentation/export/slides_latex.pdf
+```
+
+Verificacion visual:
+
+```bash
+pdftoppm -png -r 110 slides/contratia_abierta_beamer.pdf slides/latex/build/rendered/slide
 ```
 
 Luego sincroniza la copia historica:

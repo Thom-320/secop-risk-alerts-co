@@ -7,6 +7,7 @@ Esta carpeta conserva la copia compatible del deck final generado en `slides/`.
 - `assets/`: capturas reales y diagramas usados en el deck.
 - `export/slides.pptx`: PowerPoint editable.
 - `export/slides.pdf`: PDF listo para revisar o presentar.
+- `export/slides_latex.pdf`: version LaTeX/Beamer para presentacion sobria.
 
 La fuente canonica esta en `slides/`. Para regenerar todo, usa:
 
@@ -20,4 +21,12 @@ uv run --python 3.11 python slides/scripts/generate_assets.py
 /Users/thom/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node slides/scripts/capture_screenshots.mjs
 /Users/thom/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node slides/scripts/build_deck.mjs
 soffice --headless --convert-to pdf --outdir slides slides/contratia_abierta_deck.pptx
+```
+
+Para la version LaTeX:
+
+```bash
+latexmk -xelatex -interaction=nonstopmode -halt-on-error -outdir=slides/latex/build slides/latex/contratia_abierta_beamer.tex
+cp slides/latex/build/contratia_abierta_beamer.pdf slides/contratia_abierta_beamer.pdf
+cp slides/contratia_abierta_beamer.pdf presentation/export/slides_latex.pdf
 ```

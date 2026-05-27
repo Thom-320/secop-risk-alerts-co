@@ -1,0 +1,365 @@
+\documentclass[aspectratio=169,10pt]{beamer}
+
+\usepackage[spanish]{babel}
+\usepackage{fontspec}
+\usepackage{graphicx}
+\usepackage{tikz}
+\usepackage{tabularx}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{ragged2e}
+\usepackage{microtype}
+
+\IfFontExistsTF{Arial}{\setsansfont{Arial}}{\setsansfont{TeX Gyre Heros}}
+
+\setbeamertemplate{navigation symbols}{}
+\setbeamertemplate{headline}{}
+\setbeamertemplate{footline}{}
+\setbeamersize{text margin left=0pt,text margin right=0pt}
+
+\definecolor{Canvas}{HTML}{F8FAFC}
+\definecolor{Ink}{HTML}{263241}
+\definecolor{Muted}{HTML}{667085}
+\definecolor{Rule}{HTML}{D9DEE8}
+\definecolor{Accent}{HTML}{275DA8}
+\definecolor{AccentDark}{HTML}{153E75}
+\definecolor{AccentSoft}{HTML}{EAF1FB}
+\definecolor{Green}{HTML}{2F8F64}
+\definecolor{Amber}{HTML}{B7791F}
+\definecolor{Paper}{HTML}{FCFDFF}
+
+\setbeamercolor{background canvas}{bg=Canvas}
+\setbeamercolor{normal text}{fg=Ink}
+
+\graphicspath{{../assets/}{slides/assets/}{../../slides/assets/}}
+
+\newcommand{\slidebar}{%
+  \begin{tikzpicture}[remember picture,overlay]
+    \fill[Accent] (current page.north west) rectangle ([yshift=-0.10cm]current page.north east);
+  \end{tikzpicture}%
+}
+
+\newcommand{\footer}{%
+  \begin{tikzpicture}[remember picture,overlay]
+    \node[anchor=south west, text=Muted, font=\fontsize{6.8}{8}\selectfont]
+      at ([xshift=0.70cm,yshift=0.28cm]current page.south west)
+      {Priorizacion de revision humana; no prueba conductas indebidas.};
+  \end{tikzpicture}%
+}
+
+\newcommand{\slidenumber}[1]{%
+  \begin{tikzpicture}[remember picture,overlay]
+    \node[anchor=north west, text=Accent, font=\fontsize{7}{8}\bfseries]
+      at ([xshift=0.72cm,yshift=-0.42cm]current page.north west) {#1};
+    \node[anchor=north west, text=Muted, font=\fontsize{7}{8}\bfseries]
+      at ([xshift=1.20cm,yshift=-0.42cm]current page.north west) {TRANSPARENCIA360};
+  \end{tikzpicture}%
+}
+
+\newcommand{\frametitlecustom}[2]{%
+  \slidebar
+  \slidenumber{#1}
+  \begin{tikzpicture}[remember picture,overlay]
+    \node[anchor=north west, align=left, text=Ink, font=\fontsize{20}{23}\bfseries]
+      at ([xshift=0.70cm,yshift=-0.78cm]current page.north west) {#2};
+    \draw[Rule, line width=0.5pt]
+      ([xshift=0.70cm,yshift=-1.42cm]current page.north west) --
+      ([xshift=-0.70cm,yshift=-1.42cm]current page.north east);
+  \end{tikzpicture}
+  \footer
+}
+
+\newcommand{\chip}[1]{%
+  \tikz[baseline=(x.base)]\node[
+    rounded corners=4pt,
+    fill=AccentSoft,
+    text=AccentDark,
+    inner xsep=10pt,
+    inner ysep=5pt,
+    font=\fontsize{8}{9}\bfseries
+  ] (x) {#1};%
+}
+
+\newcommand{\metric}[3]{%
+  \begin{tikzpicture}
+    \node[
+      rounded corners=5pt,
+      fill=Paper,
+      draw=Rule,
+      line width=0.4pt,
+      minimum width=2.30cm,
+      minimum height=1.08cm,
+      align=left,
+      inner sep=8pt
+    ] {
+      {\color{#3}\fontsize{18}{20}\bfseries #2}\\[-1pt]
+      {\color{Muted}\fontsize{6.8}{8}\selectfont #1}
+    };
+  \end{tikzpicture}%
+}
+
+\newcommand{\card}[2]{%
+  \begin{tikzpicture}
+    \node[
+      rounded corners=5pt,
+      fill=Paper,
+      draw=Rule,
+      line width=0.4pt,
+      text width=3.15cm,
+      minimum height=1.25cm,
+      align=left,
+      inner sep=9pt
+    ] {
+      {\color{AccentDark}\fontsize{10}{12}\bfseries #1}\\[4pt]
+      {\color{Muted}\fontsize{7.5}{9}\selectfont #2}
+    };
+  \end{tikzpicture}%
+}
+
+\newcommand{\compactcard}[2]{%
+  \begin{tikzpicture}
+    \node[
+      rounded corners=5pt,
+      fill=Paper,
+      draw=Rule,
+      line width=0.4pt,
+      text width=1.75cm,
+      minimum height=1.15cm,
+      align=left,
+      inner sep=7pt
+    ] {
+      {\color{AccentDark}\fontsize{8.5}{10}\bfseries #1}\\[3pt]
+      {\color{Muted}\fontsize{6.3}{7.5}\selectfont #2}
+    };
+  \end{tikzpicture}%
+}
+
+\newcommand{\smallcapslabel}[1]{%
+  {\color{Muted}\fontsize{6.5}{8}\bfseries\MakeUppercase{#1}}
+}
+
+\begin{document}
+
+\begin{frame}[plain]
+  \slidebar
+  \footer
+  \begin{tikzpicture}[remember picture,overlay]
+    \node[anchor=north west, text=Ink, font=\fontsize{23}{26}\bfseries, align=left]
+      at ([xshift=0.82cm,yshift=-0.92cm]current page.north west)
+      {Transparencia360};
+    \node[anchor=north west, text=Ink, font=\fontsize{23}{26}\bfseries, align=left]
+      at ([xshift=0.82cm,yshift=-1.48cm]current page.north west)
+      {ContratIA Abierta};
+    \node[anchor=north west, text=Muted, font=\fontsize{10.5}{13}\selectfont, align=left]
+      at ([xshift=0.86cm,yshift=-2.32cm]current page.north west)
+      {Sistema poliglota de priorizacion\\de revision contractual en Colombia};
+    \node[anchor=north west, text=AccentDark, font=\fontsize{13.5}{16}\bfseries, align=left]
+      at ([xshift=0.86cm,yshift=-3.58cm]current page.north west)
+      {Ordenar miles de procesos SECOP\\para decidir que revisar primero.};
+    \node[anchor=north west] at ([xshift=0.86cm,yshift=-4.72cm]current page.north west)
+      {\chip{Revision humana}\hspace{0.18cm}\chip{Datos abiertos}\hspace{0.18cm}\chip{Trazabilidad}};
+    \node[anchor=south west, text=Muted, font=\fontsize{8.5}{10}\selectfont]
+      at ([xshift=0.86cm,yshift=0.78cm]current page.south west)
+      {Ingenieria de Datos, Universidad del Rosario};
+    \node[anchor=north east] at ([xshift=-0.75cm,yshift=-2.42cm]current page.north east)
+      {\includegraphics[width=4.95cm]{architecture.png}};
+  \end{tikzpicture}
+\end{frame}
+
+\begin{frame}[plain]
+  \frametitlecustom{02}{Problema: volumen sin atencion suficiente}
+  \begin{tikzpicture}[remember picture,overlay]
+    \node[anchor=north west, text=Ink, font=\fontsize{17}{20}\bfseries]
+      at ([xshift=0.85cm,yshift=-2.05cm]current page.north west)
+      {No faltan datos de contratacion.};
+    \node[anchor=north west, text=Muted, font=\fontsize{11}{14}\selectfont, text width=4.6cm, align=left]
+      at ([xshift=0.85cm,yshift=-2.65cm]current page.north west)
+      {Falta capacidad humana para revisarlos con prioridad, evidencia y trazabilidad.};
+    \node[anchor=north west] at ([xshift=6.12cm,yshift=-2.34cm]current page.north west)
+      {\card{Miles de procesos}{SECOP, PAA, contexto}};
+    \node[anchor=north west] at ([xshift=8.74cm,yshift=-2.34cm]current page.north west)
+      {\card{Ranking explicable}{score, confianza, razones}};
+    \node[anchor=north west] at ([xshift=11.36cm,yshift=-2.34cm]current page.north west)
+      {\card{Revision humana}{decision documentada}};
+  \end{tikzpicture}
+\end{frame}
+
+\begin{frame}[plain]
+  \frametitlecustom{03}{Stakeholder y decision}
+  \begin{tikzpicture}[remember picture,overlay]
+    \node[anchor=north west] at ([xshift=0.90cm,yshift=-2.15cm]current page.north west)
+      {\card{Veeduria ciudadana}{seguimiento al gasto publico}};
+    \node[anchor=north west] at ([xshift=5.00cm,yshift=-2.15cm]current page.north west)
+      {\card{Control interno}{focalizar revision institucional}};
+    \node[anchor=north west] at ([xshift=9.10cm,yshift=-2.15cm]current page.north west)
+      {\card{Periodista de datos}{priorizar investigacion verificable}};
+    \node[anchor=north west, text=Ink, font=\fontsize{11}{13}\bfseries]
+      at ([xshift=0.94cm,yshift=-4.38cm]current page.north west) {Decision semanal};
+    \node[anchor=north west, text=AccentDark, font=\fontsize{15}{18}\bfseries, text width=10.8cm]
+      at ([xshift=0.94cm,yshift=-4.82cm]current page.north west)
+      {Que procesos revisar primero, con que razones y con que confianza.};
+  \end{tikzpicture}
+\end{frame}
+
+\begin{frame}[plain]
+  \frametitlecustom{04}{Mapa de requisitos del curso}
+  \begin{tikzpicture}[remember picture,overlay]
+    \node[anchor=north west] at ([xshift=0.85cm,yshift=-1.92cm]current page.north west)
+      {\card{PostgreSQL}{33 tablas publicas}};
+    \node[anchor=north west] at ([xshift=4.00cm,yshift=-1.92cm]current page.north west)
+      {\card{MongoDB}{5 colecciones con documentos}};
+    \node[anchor=north west] at ([xshift=7.15cm,yshift=-1.92cm]current page.north west)
+      {\card{FastAPI}{3 servicios health 200}};
+    \node[anchor=north west] at ([xshift=10.30cm,yshift=-1.92cm]current page.north west)
+      {\card{Dash}{interfaz oficial}};
+    \node[anchor=north west] at ([xshift=0.85cm,yshift=-3.75cm]current page.north west)
+      {\card{ETL}{17.229 procesos demo}};
+    \node[anchor=north west] at ([xshift=4.00cm,yshift=-3.75cm]current page.north west)
+      {\card{SQL avanzado}{triggers, CTE, windows}};
+    \node[anchor=north west] at ([xshift=7.15cm,yshift=-3.75cm]current page.north west)
+      {\card{Pruebas}{39 pytest pasan}};
+    \node[anchor=north west] at ([xshift=10.30cm,yshift=-3.75cm]current page.north west)
+      {\card{Docs}{21 archivos requeridos}};
+  \end{tikzpicture}
+\end{frame}
+
+\begin{frame}[plain]
+  \frametitlecustom{05}{Datos oficiales y volumen de demo}
+  \begin{tikzpicture}[remember picture,overlay]
+    \node[anchor=north west] at ([xshift=0.88cm,yshift=-1.82cm]current page.north west) {%
+      \begin{tabularx}{7.25cm}{>{\color{Accent}\bfseries\fontsize{7.5}{9}\selectfont}p{1.15cm} >{\fontsize{8.5}{10}\selectfont\bfseries}X >{\color{Muted}\fontsize{7.5}{9}\selectfont}p{2.05cm}}
+        p6dx & SECOP II Procesos & unidad analitica\\[8pt]
+        rpmr & SECOP Integrado & contexto ejecucion\\[8pt]
+        9sue & PAA Detalle & planeacion\\[8pt]
+        wasc & Control fiscal & contexto visible\\
+      \end{tabularx}
+    };
+    \node[anchor=north west] at ([xshift=8.35cm,yshift=-1.72cm]current page.north west)
+      {\metric{procesos}{17.229}{Accent}};
+    \node[anchor=north west] at ([xshift=10.85cm,yshift=-1.72cm]current page.north west)
+      {\metric{razones}{68.916}{Green}};
+    \node[anchor=north west] at ([xshift=8.35cm,yshift=-3.10cm]current page.north west)
+      {\metric{PAA items}{4.494}{Amber}};
+    \node[anchor=north west] at ([xshift=10.85cm,yshift=-3.10cm]current page.north west)
+      {\metric{auditoria}{41.996}{AccentDark}};
+  \end{tikzpicture}
+\end{frame}
+
+\begin{frame}[plain]
+  \frametitlecustom{06}{Arquitectura de extremo a extremo}
+  \begin{tikzpicture}[remember picture,overlay]
+    \node[anchor=north west] at ([xshift=0.92cm,yshift=-1.72cm]current page.north west)
+      {\includegraphics[width=11.55cm]{architecture.png}};
+    \node[anchor=north west, text=Muted, font=\fontsize{7.8}{9}\selectfont]
+      at ([xshift=0.96cm,yshift=-6.85cm]current page.north west)
+      {Socrata -> ETL -> PostgreSQL + MongoDB -> FastAPI -> Dash.};
+  \end{tikzpicture}
+\end{frame}
+
+\begin{frame}[plain]
+  \frametitlecustom{07}{Modelo relacional como fuente de verdad}
+  \begin{tikzpicture}[remember picture,overlay]
+    \node[anchor=north west] at ([xshift=0.92cm,yshift=-1.72cm]current page.north west)
+      {\includegraphics[width=11.55cm]{er_model.png}};
+    \node[anchor=north west, text=Muted, font=\fontsize{7.8}{9}\selectfont]
+      at ([xshift=0.96cm,yshift=-6.85cm]current page.north west)
+      {33 tablas con PK/FK, constraints, indices, vistas y triggers.};
+  \end{tikzpicture}
+\end{frame}
+
+\begin{frame}[plain]
+  \frametitlecustom{08}{NoSQL y auditoria documental}
+  \begin{tikzpicture}[remember picture,overlay]
+    \node[anchor=north west] at ([xshift=0.88cm,yshift=-1.78cm]current page.north west) {%
+      \begin{tabularx}{6.0cm}{>{\color{AccentDark}\bfseries\fontsize{8.5}{10}\selectfont}X >{\color{Muted}\fontsize{7.5}{9}\selectfont}r}
+        raw\_process\_snapshots & 100 docs\\[8pt]
+        etl\_run\_logs & 1 doc\\[8pt]
+        risk\_event\_logs & 1 doc\\[8pt]
+        report\_snapshots & 1 doc\\[8pt]
+        user\_action\_logs & 1 doc\\
+      \end{tabularx}
+    };
+    \node[anchor=north west, text=AccentDark, font=\fontsize{12.5}{15}\bfseries, text width=4.3cm, align=left]
+      at ([xshift=7.30cm,yshift=-2.20cm]current page.north west)
+      {MongoDB guarda evidencia flexible sin deformar el modelo relacional.};
+    \node[anchor=north west, text=Muted, font=\fontsize{8.5}{10.5}\selectfont, text width=4.6cm, align=left]
+      at ([xshift=7.34cm,yshift=-4.28cm]current page.north west)
+      {Snapshots, logs, reportes y acciones se consultan como documentos trazables.};
+  \end{tikzpicture}
+\end{frame}
+
+\begin{frame}[plain]
+  \frametitlecustom{09}{SQL engineering visible}
+  \begin{tikzpicture}[remember picture,overlay]
+    \node[anchor=north west] at ([xshift=0.92cm,yshift=-2.00cm]current page.north west)
+      {\card{Triggers}{audit\_log, historial, updated\_at}};
+    \node[anchor=north west] at ([xshift=7.20cm,yshift=-2.00cm]current page.north west)
+      {\card{Window functions}{concentracion y outliers}};
+    \node[anchor=north west] at ([xshift=0.92cm,yshift=-3.75cm]current page.north west)
+      {\card{CTE recursiva}{jerarquia territorial}};
+    \node[anchor=north west] at ([xshift=7.20cm,yshift=-3.75cm]current page.north west)
+      {\card{Transacciones}{score + evento atomico}};
+    \node[anchor=north west, text=Ink, font=\fontsize{14}{17}\bfseries, text width=11.0cm]
+      at ([xshift=0.96cm,yshift=-5.78cm]current page.north west)
+      {No es solo almacenamiento: hay integridad, trazabilidad y consultas analiticas reproducibles.};
+  \end{tikzpicture}
+\end{frame}
+
+\begin{frame}[plain]
+  \frametitlecustom{10}{Score explicable, no veredicto}
+  \begin{tikzpicture}[remember picture,overlay]
+    \node[anchor=north west] at ([xshift=0.82cm,yshift=-2.18cm]current page.north west)
+      {\compactcard{Reglas}{senales auditables}};
+    \node[anchor=north west] at ([xshift=3.05cm,yshift=-2.18cm]current page.north west)
+      {\compactcard{Pares}{desviacion contextual}};
+    \node[anchor=north west] at ([xshift=5.28cm,yshift=-2.18cm]current page.north west)
+      {\compactcard{Anomalia}{apoyo interpretable}};
+    \node[anchor=north west] at ([xshift=7.51cm,yshift=-2.18cm]current page.north west)
+      {\compactcard{Confianza}{calidad y cobertura}};
+    \node[anchor=north west] at ([xshift=9.74cm,yshift=-2.18cm]current page.north west)
+      {\compactcard{Razones}{texto trazable}};
+    \node[anchor=north west, text=Ink, font=\fontsize{14}{17}\bfseries, text width=11.6cm]
+      at ([xshift=0.96cm,yshift=-5.10cm]current page.north west)
+      {Salida: score de prioridad + confianza + razones + comparables.};
+  \end{tikzpicture}
+\end{frame}
+
+\begin{frame}[plain]
+  \frametitlecustom{11}{Demo: flujo de revision}
+  \begin{tikzpicture}[remember picture,overlay]
+    \node[anchor=north west] at ([xshift=0.75cm,yshift=-1.78cm]current page.north west)
+      {\includegraphics[width=3.92cm]{screenshot_dashboard_home.png}};
+    \node[anchor=north west] at ([xshift=4.72cm,yshift=-1.78cm]current page.north west)
+      {\includegraphics[width=3.92cm]{screenshot_ranking.png}};
+    \node[anchor=north west] at ([xshift=8.69cm,yshift=-1.78cm]current page.north west)
+      {\includegraphics[width=3.92cm]{screenshot_process_detail.png}};
+    \node[anchor=north west, text=AccentDark, font=\fontsize{8}{10}\bfseries]
+      at ([xshift=0.78cm,yshift=-4.66cm]current page.north west) {1 Panorama};
+    \node[anchor=north west, text=AccentDark, font=\fontsize{8}{10}\bfseries]
+      at ([xshift=4.75cm,yshift=-4.66cm]current page.north west) {2 Ranking};
+    \node[anchor=north west, text=AccentDark, font=\fontsize{8}{10}\bfseries]
+      at ([xshift=8.72cm,yshift=-4.66cm]current page.north west) {3 Detalle y comparables};
+    \node[anchor=north west, text=Ink, font=\fontsize{13}{16}\bfseries, text width=10.7cm]
+      at ([xshift=0.90cm,yshift=-5.82cm]current page.north west)
+      {El usuario entiende el universo, filtra candidatos y revisa evidencia trazable.};
+  \end{tikzpicture}
+\end{frame}
+
+\begin{frame}[plain]
+  \frametitlecustom{12}{Validacion, limites y siguiente paso}
+  \begin{tikzpicture}[remember picture,overlay]
+    \node[anchor=north west] at ([xshift=0.86cm,yshift=-1.80cm]current page.north west)
+      {\includegraphics[width=5.92cm]{validation_summary.png}};
+    \node[anchor=north west, text=Green, font=\fontsize{15}{18}\bfseries]
+      at ([xshift=7.35cm,yshift=-2.00cm]current page.north west)
+      {Validacion final: ok};
+    \node[anchor=north west, text=Muted, font=\fontsize{10}{13}\selectfont, text width=4.4cm, align=left]
+      at ([xshift=7.38cm,yshift=-2.78cm]current page.north west)
+      {Limites: datos ruidosos, joins imperfectos, requiere revision humana.};
+    \node[anchor=north west, text=AccentDark, font=\fontsize{11.5}{14}\bfseries, text width=4.4cm, align=left]
+      at ([xshift=7.38cm,yshift=-4.10cm]current page.north west)
+      {Siguiente: encuesta real con 5 usuarios y piloto controlado.};
+  \end{tikzpicture}
+\end{frame}
+
+\end{document}
