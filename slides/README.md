@@ -11,6 +11,9 @@ Esta carpeta contiene el deck final de 12 diapositivas para la sustentacion de
 - `contratia_abierta_deck.pdf`: exportacion PDF.
 - `contratia_abierta_beamer.pdf`: version LaTeX/Beamer optimizada para presentar.
 - `latex/contratia_abierta_beamer.tex`: fuente LaTeX de la version Beamer.
+- `html/contratia_abierta_interactive.html`: version HTML interactiva con navegacion, pantalla completa y notas.
+- `html/export/contratia_abierta_interactive.pptx`: exportacion editable desde el HTML.
+- `html/export/contratia_abierta_interactive.pdf`: exportacion PDF desde el HTML.
 - `assets/`: capturas reales del dashboard y diagramas generados desde el repo.
 
 La carpeta `presentation/` mantiene una copia compatible:
@@ -19,6 +22,9 @@ La carpeta `presentation/` mantiene una copia compatible:
 - `presentation/speaker_notes.md`
 - `presentation/export/slides.pptx`
 - `presentation/export/slides.pdf`
+- `presentation/export/slides_interactive.pptx`
+- `presentation/export/slides_interactive.pdf`
+- `presentation/html/contratia_abierta_interactive.html`
 
 ## Regeneracion
 
@@ -50,6 +56,13 @@ Verificacion visual:
 pdftoppm -png -r 110 slides/contratia_abierta_beamer.pdf slides/latex/build/rendered/slide
 ```
 
+Version HTML interactiva:
+
+```bash
+open slides/html/contratia_abierta_interactive.html
+/Users/thom/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node slides/html/export_interactive_deck.mjs
+```
+
 Luego sincroniza la copia historica:
 
 ```bash
@@ -58,6 +71,9 @@ cp slides/contratia_abierta_speaker_notes.md presentation/speaker_notes.md
 cp slides/contratia_abierta_deck.pptx presentation/export/slides.pptx
 cp slides/contratia_abierta_deck.pdf presentation/export/slides.pdf
 cp slides/assets/*.png presentation/assets/
+cp slides/html/contratia_abierta_interactive.html presentation/html/contratia_abierta_interactive.html
+cp slides/html/export/contratia_abierta_interactive.pptx presentation/export/slides_interactive.pptx
+cp slides/html/export/contratia_abierta_interactive.pdf presentation/export/slides_interactive.pdf
 ```
 
 ## Evidencia usada

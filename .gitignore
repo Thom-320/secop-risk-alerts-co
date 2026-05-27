@@ -29,6 +29,8 @@ docs/contratia_profesor_*.tex
 node_modules/
 tmp/
 *.tmp
+slides/html/export/frames/
+slides/html/export/contact_sheet.png
 !data/raw/
 !data/raw/.gitkeep
 !data/interim/
