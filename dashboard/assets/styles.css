@@ -1,0 +1,51 @@
+body {
+  margin: 0;
+  font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  color: #17202a;
+  background: #f7f9fb;
+}
+
+.app-header {
+  padding: 28px 40px 18px;
+  background: #ffffff;
+  border-bottom: 1px solid #dfe6ee;
+}
+
+.app-header h1 {
+  margin: 0 0 6px;
+  font-size: 30px;
+  letter-spacing: 0;
+}
+
+.app-header p {
+  margin: 0;
+  color: #52616f;
+}
+
+.metric-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(140px, 1fr));
+  gap: 12px;
+  padding: 22px 28px;
+}
+
+.metric-grid div {
+  background: #ffffff;
+  border: 1px solid #dfe6ee;
+  border-radius: 8px;
+  padding: 16px;
+}
+
+.metric-grid strong {
+  display: block;
+  font-size: 24px;
+}
+
+.metric-grid span {
+  color: #52616f;
+}
+
+.filter-row,
+.methodology {
+  padding: 22px 28px;
+}

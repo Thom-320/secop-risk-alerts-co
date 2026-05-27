@@ -1,0 +1,9 @@
+flowchart TD
+  Client["Dash dashboard"] --> Contracts["contracts_service: processes, entities, providers"]
+  Client --> Risk["risk_service: ranking, reasons, comparables"]
+  Client --> Analytics["analytics_service: overview, concentration, outliers"]
+  Contracts --> PG[("PostgreSQL")]
+  Risk --> PG
+  Analytics --> PG
+  ETL["ETL Python"] --> PG
+  ETL --> Mongo[("MongoDB")]

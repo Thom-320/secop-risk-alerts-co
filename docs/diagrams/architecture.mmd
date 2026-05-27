@@ -1,0 +1,12 @@
+flowchart LR
+  Socrata["Socrata datos.gov.co"] --> ETL["ETL Python"]
+  Local["Parquet fallback local"] --> ETL
+  ETL --> PG[("PostgreSQL 16")]
+  ETL --> Mongo[("MongoDB 7")]
+  PG --> Contracts["contracts_service"]
+  PG --> Risk["risk_service"]
+  PG --> Analytics["analytics_service"]
+  Contracts --> Dash["Dash dashboard"]
+  Risk --> Dash
+  Analytics --> Dash
+  Mongo --> Evidence["logs, snapshots, events"]

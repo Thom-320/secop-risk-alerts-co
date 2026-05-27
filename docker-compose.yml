@@ -1,0 +1,84 @@
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: contratia
+      POSTGRES_PASSWORD: contratia
+      POSTGRES_DB: contratia
+    ports:
+      - "55432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U contratia -d contratia"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  mongo:
+    image: mongo:7
+    ports:
+      - "27018:27017"
+    volumes:
+      - mongo_data:/data/db
+
+  contracts_service:
+    image: ghcr.io/astral-sh/uv:python3.11-bookworm
+    working_dir: /app
+    volumes:
+      - .:/app
+    environment:
+      DATABASE_URL: postgresql://contratia:contratia@postgres:5432/contratia
+    command: uv run --python 3.11 uvicorn services.contracts_service.main:app --host 0.0.0.0 --port 8001
+    ports:
+      - "8001:8001"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  risk_service:
+    image: ghcr.io/astral-sh/uv:python3.11-bookworm
+    working_dir: /app
+    volumes:
+      - .:/app
+    environment:
+      DATABASE_URL: postgresql://contratia:contratia@postgres:5432/contratia
+    command: uv run --python 3.11 uvicorn services.risk_service.main:app --host 0.0.0.0 --port 8002
+    ports:
+      - "8002:8002"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  analytics_service:
+    image: ghcr.io/astral-sh/uv:python3.11-bookworm
+    working_dir: /app
+    volumes:
+      - .:/app
+    environment:
+      DATABASE_URL: postgresql://contratia:contratia@postgres:5432/contratia
+    command: uv run --python 3.11 uvicorn services.analytics_service.main:app --host 0.0.0.0 --port 8003
+    ports:
+      - "8003:8003"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  dash_dashboard:
+    image: ghcr.io/astral-sh/uv:python3.11-bookworm
+    working_dir: /app
+    volumes:
+      - .:/app
+    environment:
+      DATABASE_URL: postgresql://contratia:contratia@postgres:5432/contratia
+      DASH_PORT: 8050
+    command: uv run --python 3.11 python -m dashboard.dash_app
+    ports:
+      - "8050:8050"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
+  mongo_data:

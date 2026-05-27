@@ -1,49 +1,36 @@
-# Arquitectura
+# Arquitectura ContratIA Abierta
 
 ## Flujo
 
-1. `src/extract/secop_api.py`
-   - Consulta Socrata
-   - Guarda snapshots crudos en Parquet
-2. `src/transform/build_base_contracts.py`
-   - Arma tabla base canónica por contrato
-3. `src/features/risk_features.py`
-   - Calcula features analíticas
-4. `src/scoring/score_contracts.py`
-   - Calcula score, explicaciones y agregado de proveedores
-5. `src/app/streamlit_app.py`
-   - Presenta rankings y fichas de detalle
+1. Extracción desde Socrata hacia `data/raw/`
+   - `p6dx` y `rpmr` como parquets únicos
+   - `PAA` como directorio chunked con manifest y resume
+2. Normalización y construcción de `process_master` en `data/interim/`
+3. Auditoría de joins y artefactos de validación en `docs/` y `validation/`
+4. Scoring provisional en `data/marts/`
+5. Consumo por FastAPI y Streamlit
 
-## Contratos de datos
+## Decisiones clave
 
-- `data/raw/contracts.parquet`
-- `data/raw/processes.parquet`
-- `data/raw/additions.parquet`
-- `data/raw/locations.parquet`
-- `data/raw/pida_context.parquet`
-- `data/raw/secop_integrado_qc.parquet`
-- `data/interim/base_contracts.parquet`
-- `data/interim/contracts_features.parquet`
-- `data/marts/contracts_scored.parquet`
-- `data/marts/providers_scored.parquet`
+- `p6dx-8zbt` es la fuente canónica del proceso.
+- `rpmr-utcd` solo enriquece con enlace de alta confianza.
+- `9sue-ezhx` siempre es visible y entra al score solo si pasa compuerta.
+- `wasc-xi4h` solo aporta contexto visible.
+- `confidence_score` es una salida de primer nivel del MVP.
+- La fuente PAA activa debe estar completa según manifest antes de construir `process_master`.
 
-## Joins principales
+## Marts
 
-- Contratos -> Procesos:
-  - `proceso_de_compra = id_del_portafolio`
-- Contratos -> Adiciones:
-  - `id_contrato = id_contrato`
-- Contratos -> Ubicaciones:
-  - `id_contrato = id_contrato`
+- `overview.parquet`
+- `ranking.parquet`
+- `process_detail.parquet`
+- `comparables.parquet`
 
-## DuckDB
+## Endpoints
 
-DuckDB se usa como columna vertebral para leer Parquet, hacer joins reproducibles y materializar tablas intermedias sin depender de base de datos externa.
-
-## Limitaciones
-
-- Match parcial con procesos
-- Ubicaciones múltiples por contrato
-- `cb9c-h8sn` sin monto estructurado
-- `rpmr-utcd` solo para QA, no como verdad principal
-
+- `/health`
+- `/overview`
+- `/ranking`
+- `/process/{process_key}`
+- `/process/{process_key}/comparables`
+- `/process/{process_key}/report`

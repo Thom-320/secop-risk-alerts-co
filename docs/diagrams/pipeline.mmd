@@ -1,0 +1,12 @@
+flowchart LR
+    A["Socrata datos.gov.co"] --> B["Extractor Python"]
+    B --> C["Parquet cache demo/full"]
+    C --> D["Transformacion process_master"]
+    D --> E["PostgreSQL relacional"]
+    D --> F["MongoDB documentos/eventos"]
+    E --> G["FastAPI microservicios"]
+    F --> G
+    G --> H["Dash dashboard"]
+    E --> I["Validacion final"]
+    F --> I
+    G --> I

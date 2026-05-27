@@ -2,75 +2,51 @@ from __future__ import annotations
 
 import pandas as pd
 
-from src.scoring.score_contracts import aggregate_providers, score_contracts
+from src.features.process_features import confidence_band, priority_band, rule_score_from_row
+from src.utils.reporting import build_process_report_html
 
 
-def sample_contracts() -> pd.DataFrame:
-    rows = []
-    for idx in range(40):
-        rows.append(
+def test_rule_score_respects_paa_modes() -> None:
+    row = pd.Series(
+        {
+            "value_deviation_ratio": 2.7,
+            "duration_deviation_ratio": 1.9,
+            "response_gap": 3,
+            "paa_match_status": "none",
+        }
+    )
+    full = rule_score_from_row(row, "full")
+    secondary = rule_score_from_row(row, "secondary")
+    visible_only = rule_score_from_row(row, "visible_only")
+    assert full >= secondary >= visible_only
+
+
+def test_priority_and_confidence_bands() -> None:
+    assert priority_band(90) == "alerta prioritaria"
+    assert priority_band(50) == "observacion"
+    assert confidence_band(80) == "alta"
+    assert confidence_band(40) == "baja"
+
+
+def test_html_report_contains_process_and_disclaimer() -> None:
+    html = build_process_report_html(
+        {
+            "process_key": "P1",
+            "process_reference": "REF-001",
+            "entity_name": "Entidad Demo",
+            "priority_score": 82,
+            "confidence_score": 71,
+            "reasons": "monto atipico frente a pares",
+            "base_price": 1500000,
+            "paa_match_status": "strong",
+        },
+        [
             {
-                "id_contrato": f"C{idx}",
-                "nombre_entidad": "Entidad A",
-                "codigo_entidad": 1,
-                "nit_entidad": "1",
-                "sector": "Salud",
-                "proceso_de_compra": f"P{idx}",
-                "referencia_del_contrato": f"REF-{idx}",
-                "estado_contrato": "Cerrado",
-                "tipo_de_contrato": "Prestación de servicios",
-                "modalidad_de_contratacion": "Contratación directa",
-                "codigo_categoria_principal": "V1.1",
-                "fecha_de_firma": "2025-01-01",
-                "fecha_inicio_contrato": "2025-01-01",
-                "fecha_fin_contrato": "2025-02-01",
-                "documento_proveedor": "123" if idx < 10 else f"{idx}",
-                "codigo_proveedor": f"K{idx}",
-                "proveedor_adjudicado": "Proveedor 1" if idx < 10 else f"Proveedor {idx}",
-                "valor_del_contrato": 1000 if idx < 39 else 100000,
-                "dias_adicionados": 5 if idx < 10 else 0,
-                "url_proceso": "https://example.com",
-                "objeto_del_contrato": "Objeto",
-                "id_del_proceso": f"REQ{idx}",
-                "id_del_portafolio": f"P{idx}",
-                "precio_base": 1000,
-                "valor_total_adjudicacion": 1000,
-                "duracion_proceso": 1,
-                "unidad_duracion_proceso": "Mes(es)",
-                "estado_del_procedimiento": "Seleccionado",
-                "adjudicado": "Si",
-                "modalidad_proceso": "Contratación directa",
-                "proveedores_unicos_con_respuesta": 1,
-                "fecha_publicacion_proceso": "2025-01-01",
-                "fecha_ultima_publicacion_proceso": "2025-01-05",
-                "n_modificaciones": 1 if idx < 10 else 0,
-                "n_adiciones": 1 if idx < 10 else 0,
-                "tipos_modificacion": "ADICION EN EL VALOR" if idx < 10 else None,
-                "descripcion_modificacion_ejemplo": (
-                    "Adición por valor de $33.935.616,00" if idx < 10 else None
-                ),
-                "fecha_ultima_modificacion": "2025-01-15",
-                "n_ubicaciones": 1,
-                "n_ubicaciones_validas": 1,
-                "ubicacion_ejecucion": "Bogotá",
-                "flag_match_proceso": True,
-                "flag_multiple_ubicaciones": False,
-                "supplier_key": "123" if idx < 10 else f"{idx}",
+                "comparable_label": "REF-002 | Entidad Demo",
+                "comparable_value": 1200000,
+                "similarity": 0.81,
             }
-        )
-    return pd.DataFrame(rows)
-
-
-def test_score_contracts_bounds_and_explanations() -> None:
-    scored = score_contracts(sample_contracts())
-    assert scored["score_final"].between(0, 100).all()
-    top = scored.sort_values("score_final", ascending=False).iloc[0]
-    assert top["score_explanation"]
-    assert top["risk_level"] in {"bajo", "medio", "alto", "crítico"}
-
-
-def test_provider_aggregation() -> None:
-    scored = score_contracts(sample_contracts())
-    providers = aggregate_providers(scored)
-    assert not providers.empty
-    assert providers["score_final"].between(0, 100).all()
+        ],
+    )
+    assert "REF-001" in html
+    assert "prioriza revision humana" in html.lower()

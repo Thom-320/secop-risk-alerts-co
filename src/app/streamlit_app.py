@@ -7,258 +7,247 @@ import plotly.express as px
 import streamlit as st
 
 from src.utils.config import get_settings
+from src.utils.reporting import build_process_report_html
 
-st.set_page_config(page_title="Alertas Priorizadas SECOP II", layout="wide")
+st.set_page_config(page_title="ContratIA Abierta", layout="wide")
 
 
 @st.cache_data
-def load_data() -> tuple[pd.DataFrame, pd.DataFrame]:
+def load_assets() -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     settings = get_settings()
-    contracts_path = settings.marts_dir / "contracts_scored.parquet"
-    providers_path = settings.marts_dir / "providers_scored.parquet"
-    return pd.read_parquet(contracts_path), pd.read_parquet(providers_path)
+    return (
+        pd.read_parquet(settings.marts_dir / "overview.parquet"),
+        pd.read_parquet(settings.marts_dir / "ranking.parquet"),
+        pd.read_parquet(settings.marts_dir / "process_detail.parquet"),
+        pd.read_parquet(settings.marts_dir / "comparables.parquet"),
+    )
 
 
 def show_missing_data(paths: list[Path]) -> None:
-    st.error("Faltan artefactos del pipeline.")
+    st.error("Faltan artefactos del MVP.")
     for path in paths:
         st.write(f"- {path}")
     st.code(
         "uv run --python 3.11 python -m src.extract.secop_api\n"
-        "uv run --python 3.11 python -m src.transform.build_base_contracts\n"
-        "uv run --python 3.11 python -m src.scoring.score_contracts"
+        "uv run --python 3.11 python -m src.transform.build_process_master\n"
+        "uv run --python 3.11 python -m src.scoring.score_processes"
     )
 
 
-def home_page(contracts: pd.DataFrame, providers: pd.DataFrame) -> None:
-    st.title("Sistema de Alertas Priorizadas de Riesgo Contractual")
-    st.caption("Demo MVP para priorizar revisión humana de contratación pública.")
-    c1, c2, c3, c4 = st.columns(4)
-    c1.metric("Contratos evaluados", f"{len(contracts):,}".replace(",", "."))
-    c2.metric("Proveedores evaluados", f"{len(providers):,}".replace(",", "."))
-    c3.metric("Score promedio", round(float(contracts['score_final'].mean()), 1))
-    c4.metric("Contratos alto/crítico", int((contracts["score_final"] >= 50).sum()))
+def format_currency(value: float | int | None) -> str:
+    if value is None or pd.isna(value):
+        return "No disponible"
+    return "$" + f"{float(value):,.0f}".replace(",", ".")
 
-    top_contracts = contracts.nlargest(10, "score_final")[
-        ["id_contrato", "nombre_entidad", "proveedor_adjudicado", "score_final", "risk_level"]
-    ]
-    top_providers = providers.nlargest(10, "score_final")[
-        ["proveedor_adjudicado", "nombre_entidad", "score_final", "risk_level"]
-    ]
 
-    chart = px.histogram(
-        contracts,
-        x="score_final",
-        nbins=20,
-        title="Distribución del score final de contratos",
+def filter_ranking(frame: pd.DataFrame) -> pd.DataFrame:
+    periods = sorted([int(year) for year in frame["process_year"].dropna().unique().tolist()])
+    departments = sorted(frame["department"].dropna().unique().tolist())
+    entities = sorted(frame["entity_name"].dropna().unique().tolist())
+    modalities = sorted(frame["modality"].dropna().unique().tolist())
+    bands = sorted(frame["priority_band"].dropna().unique().tolist())
+
+    selected_years = st.sidebar.multiselect("Periodo", options=periods, default=periods)
+    selected_departments = st.sidebar.multiselect(
+        "Departamento",
+        options=departments,
+        default=[d for d in departments if d in get_settings().scope_departments] or departments,
     )
-    chart.update_layout(height=320)
-    st.plotly_chart(chart, use_container_width=True)
-
-    left, right = st.columns(2)
-    left.subheader("Top contratos priorizados")
-    left.dataframe(top_contracts, use_container_width=True, hide_index=True)
-    right.subheader("Top proveedores priorizados")
-    right.dataframe(top_providers, use_container_width=True, hide_index=True)
-
-    st.warning(
-        "La app muestra alertas de riesgo para priorización de revisión. "
-        "No constituye prueba de corrupción ni reemplaza auditoría."
+    selected_entities = st.sidebar.multiselect("Entidad", options=entities, default=entities)
+    selected_modalities = st.sidebar.multiselect(
+        "Modalidad",
+        options=modalities,
+        default=modalities,
     )
+    selected_bands = st.sidebar.multiselect("Banda", options=bands, default=bands)
+    min_confidence = st.sidebar.slider("Confianza mínima", min_value=0, max_value=100, value=40)
 
-
-def contracts_page(contracts: pd.DataFrame) -> None:
-    st.title("Contratos")
-    entity_options = sorted(contracts["nombre_entidad"].dropna().unique().tolist())
-    supplier_query = st.text_input("Filtrar proveedor", value="")
-    selected_entities = st.multiselect(
-        "Entidad",
-        options=entity_options,
-        default=entity_options,
-    )
-    min_score, max_score = st.slider("Rango de score", 0, 100, (0, 100))
-
-    filtered = contracts[
-        contracts["nombre_entidad"].isin(selected_entities)
-        & contracts["score_final"].between(min_score, max_score)
+    filtered = frame[
+        frame["process_year"].isin(selected_years)
+        & frame["department"].isin(selected_departments)
+        & frame["entity_name"].isin(selected_entities)
+        & frame["modality"].isin(selected_modalities)
+        & frame["priority_band"].isin(selected_bands)
+        & frame["confidence_score"].fillna(0).ge(min_confidence)
     ].copy()
-    if supplier_query:
-        filtered = filtered[
-            filtered["proveedor_adjudicado"].fillna("").str.contains(supplier_query, case=False)
-        ]
+    return filtered.sort_values(["priority_score", "confidence_score"], ascending=[False, False])
 
-    bar = px.bar(
-        filtered.nlargest(15, "score_final"),
-        x="score_final",
-        y="id_contrato",
-        color="nombre_entidad",
-        orientation="h",
-        title="Top 15 contratos por score",
+
+def panorama_page(overview: pd.DataFrame, ranking: pd.DataFrame) -> None:
+    st.title("ContratIA Abierta")
+    st.caption("Alertas explicables para priorizar revisión contractual.")
+    c1, c2, c3, c4 = st.columns(4)
+    c1.metric("Procesos analizados", f"{len(ranking):,}".replace(",", "."))
+    c2.metric("% alta prioridad", f"{(ranking['priority_score'] >= 70).mean():.1%}")
+    c3.metric("Entidades con alertas", f"{ranking['entity_name'].nunique():,}".replace(",", "."))
+    c4.metric("% match PAA fuerte", f"{(ranking['paa_match_confidence'] >= 0.75).mean():.1%}")
+
+    left, right = st.columns([1.2, 1])
+    department_chart = px.bar(
+        overview,
+        x="department",
+        y="avg_priority_score",
+        color="high_priority_share",
+        hover_data=["processes_analyzed", "paa_match_share"],
+        title="Panorama agregado por departamento",
     )
-    bar.update_layout(height=500, yaxis={"categoryorder": "total ascending"})
-    st.plotly_chart(bar, use_container_width=True)
+    left.plotly_chart(department_chart, use_container_width=True)
 
-    st.dataframe(
-        filtered[
-            [
-                "id_contrato",
-                "nombre_entidad",
-                "proveedor_adjudicado",
-                "valor_del_contrato",
-                "score_final",
-                "risk_level",
-            ]
-        ].sort_values("score_final", ascending=False),
-        use_container_width=True,
-        hide_index=True,
+    hist = px.histogram(
+        ranking,
+        x="priority_score",
+        nbins=20,
+        color="priority_band",
+        title="Distribución del score de prioridad",
+    )
+    right.plotly_chart(hist, use_container_width=True)
+
+    top_entities = (
+        ranking.groupby("entity_name", dropna=False)
+        .agg(
+            avg_priority_score=("priority_score", "mean"),
+            alerts=("process_key", "count"),
+        )
+        .reset_index()
+        .sort_values(["avg_priority_score", "alerts"], ascending=[False, False])
+        .head(10)
+    )
+    st.subheader("Top 10 entidades con mayor prioridad promedio")
+    st.dataframe(top_entities, use_container_width=True, hide_index=True)
+    st.warning(
+        "La plataforma prioriza revisión humana. No prueba corrupción ni reemplaza auditoría."
     )
 
-    if filtered.empty:
-        st.info("No hay contratos en el filtro actual.")
-        return
 
-    detail_id = st.selectbox(
-        "Ficha de detalle",
-        options=filtered.sort_values("score_final", ascending=False)["id_contrato"].tolist(),
-    )
-    row = filtered.set_index("id_contrato").loc[detail_id]
-    c1, c2, c3 = st.columns(3)
-    c1.metric("Score final", int(row["score_final"]))
-    c2.metric("Nivel", row["risk_level"])
-    c3.metric("Valor", f"${row['valor_del_contrato']:,.0f}".replace(",", "."))
+def detail_block(detail: pd.Series, comparables: pd.DataFrame) -> None:
+    c1, c2, c3, c4 = st.columns(4)
+    c1.metric("Score", int(detail["priority_score"]))
+    c2.metric("Banda", detail["priority_band"])
+    c3.metric("Confianza", f"{int(detail['confidence_score'])} ({detail['confidence_band']})")
+    c4.metric("Valor base", format_currency(detail["base_price"]))
 
-    st.markdown(f"**Entidad:** {row['nombre_entidad']}")
-    st.markdown(f"**Proveedor:** {row['proveedor_adjudicado']}")
-    st.markdown(f"**Objeto:** {row['objeto_del_contrato']}")
-    st.markdown(f"**Explicación:** {row['score_explanation']}")
+    st.markdown(f"**Entidad:** {detail['entity_name']}")
+    st.markdown(f"**Referencia:** {detail['process_reference']}")
+    st.markdown(f"**Modalidad:** {detail['modality']}")
+    st.markdown(f"**Razones:** {detail['reasons']}")
     st.markdown(
-        f"**Señales:** adiciones={row['score_adiciones']}, "
-        f"concentración={row['score_concentracion']}, "
-        f"recurrencia={row['score_recurrencia']}, valor/plazo={row['score_valor_plazo']}"
+        f"**Plan vs ejecución:** "
+        f"{detail['paa_match_status']} ({detail['paa_match_method']})"
     )
-    if row.get("url_proceso"):
-        st.markdown(f"[Abrir contrato en SECOP]({row['url_proceso']})")
+    if pd.notna(detail.get("paa_text")) and detail.get("paa_text"):
+        st.markdown(f"**Mejor match PAA:** {detail['paa_text']}")
+    st.markdown(f"**Badge contextual:** {detail['control_badge']}")
+    if detail.get("process_url"):
+        st.markdown(f"[Abrir proceso en SECOP]({detail['process_url']})")
 
+    st.subheader("Comparables semánticos")
+    if comparables.empty:
+        st.info("Sin comparables disponibles para este proceso.")
+    else:
+        st.dataframe(comparables, use_container_width=True, hide_index=True)
 
-def providers_page(providers: pd.DataFrame, contracts: pd.DataFrame) -> None:
-    st.title("Proveedores")
-    provider_query = st.text_input("Buscar proveedor", value="", key="provider_query")
-    min_score, max_score = st.slider(
-        "Rango de score proveedor",
-        0,
-        100,
-        (0, 100),
-        key="provider_score",
+    report_html = build_process_report_html(
+        {**detail.to_dict(), "reasons_text": detail.get("reasons", "")},
+        comparables.to_dict(orient="records"),
     )
-    filtered = providers[providers["score_final"].between(min_score, max_score)].copy()
-    if provider_query:
-        filtered = filtered[
-            filtered["proveedor_adjudicado"].fillna("").str.contains(provider_query, case=False)
-        ]
-
-    chart = px.bar(
-        filtered.nlargest(15, "score_final"),
-        x="score_final",
-        y="proveedor_adjudicado",
-        color="nombre_entidad",
-        orientation="h",
-        title="Top 15 proveedores por score",
+    st.download_button(
+        "Descargar reporte HTML",
+        data=report_html,
+        file_name=f"contratia-{detail['process_key']}.html",
+        mime="text/html",
     )
-    chart.update_layout(height=500, yaxis={"categoryorder": "total ascending"})
-    st.plotly_chart(chart, use_container_width=True)
 
+
+def ranking_page(
+    ranking: pd.DataFrame,
+    detail_frame: pd.DataFrame,
+    comparables: pd.DataFrame,
+) -> None:
+    st.title("Ranking de alertas")
+    filtered = filter_ranking(ranking)
     st.dataframe(
         filtered[
             [
-                "proveedor_adjudicado",
-                "nombre_entidad",
-                "total_contratos",
-                "max_share_proveedor_en_entidad",
-                "score_final",
-                "risk_level",
-            ]
-        ].sort_values("score_final", ascending=False),
-        use_container_width=True,
-        hide_index=True,
-    )
-    if filtered.empty:
-        st.info("No hay proveedores en el filtro actual.")
-        return
-
-    supplier_key = st.selectbox(
-        "Detalle proveedor",
-        options=filtered.sort_values("score_final", ascending=False)["supplier_key"].tolist(),
-        format_func=lambda key: filtered.set_index("supplier_key").loc[key, "proveedor_adjudicado"],
-    )
-    provider = filtered.set_index("supplier_key").loc[supplier_key]
-    related_contracts = contracts[contracts["supplier_key"] == supplier_key].sort_values(
-        "score_final",
-        ascending=False,
-    )
-    c1, c2, c3 = st.columns(3)
-    c1.metric("Score proveedor", int(provider["score_final"]))
-    c2.metric("Contratos", int(provider["total_contratos"]))
-    c3.metric("Entidades", int(provider["entidades_distintas"]))
-    st.markdown(f"**Explicación:** {provider['score_explanation']}")
-    st.dataframe(
-        related_contracts[
-            [
-                "id_contrato",
-                "nombre_entidad",
-                "valor_del_contrato",
-                "score_final",
-                "score_explanation",
+                "process_key",
+                "process_reference",
+                "entity_name",
+                "department",
+                "modality",
+                "base_price",
+                "priority_score",
+                "priority_band",
+                "confidence_score",
+                "confidence_band",
+                "paa_match_status",
+                "reasons",
             ]
         ],
         use_container_width=True,
         hide_index=True,
     )
+    if filtered.empty:
+        st.info("No hay procesos en el filtro actual.")
+        return
+
+    process_key = st.selectbox(
+        "Abrir detalle",
+        options=filtered["process_key"].tolist(),
+        format_func=lambda key: filtered.set_index("process_key").loc[key, "process_reference"],
+    )
+    detail = detail_frame.set_index("process_key").loc[process_key]
+    process_comparables = comparables[comparables["process_key"] == process_key].copy()
+    detail_block(detail, process_comparables)
+
+
+def detalle_page(detail_frame: pd.DataFrame, comparables: pd.DataFrame) -> None:
+    st.title("Detalle de proceso")
+    process_key = st.selectbox(
+        "Proceso",
+        options=detail_frame.sort_values("priority_score", ascending=False)["process_key"].tolist(),
+        format_func=lambda key: detail_frame.set_index("process_key").loc[key, "process_reference"],
+    )
+    detail = detail_frame.set_index("process_key").loc[process_key]
+    process_comparables = comparables[comparables["process_key"] == process_key].copy()
+    detail_block(detail, process_comparables)
 
 
 def methodology_page() -> None:
-    st.title("Metodología")
+    st.title("Metodología del MVP")
     st.markdown(
         """
-        ### Alcance
-        - Contratos 2025-2026
-        - Tres subredes de salud en Bogotá
-        - Priorización de revisión humana
-
-        ### Datasets
-        - SECOP II contratos electrónicos (`jbjy-vk9h`)
-        - SECOP II procesos (`p6dx-8zbt`)
-        - SECOP II adiciones (`cb9c-h8sn`)
-        - SECOP II ubicaciones (`gra4-pcp2`)
-
-        ### Score
-        - Reglas explícitas para adiciones, concentración, recurrencia y valor/plazo
-        - IsolationForest como señal complementaria de anomalía
-        - Score final de 0 a 100
-
-        ### Limitaciones
-        - `cb9c-h8sn` no trae monto estructurado de adición
-        - Los joins SECOP II no son perfectos
-        - El score no demuestra irregularidad
+        - **Tabla canónica:** SECOP II (`p6dx-8zbt`)
+        - **Enriquecimiento opcional:** SECOP Integrado (`rpmr-utcd`)
+          solo con enlace de alta confianza
+        - **Plan vs ejecución:** PAA (`9sue-ezhx`) visible siempre
+          y sujeto a compuerta para entrar al score
+        - **Contexto visible:** `wasc-xi4h`
+        - **Score provisional:** anomalía estructurada,
+          desviación frente a pares y reglas explícitas
+        - **Confianza:** visible en ranking y detalle
         """
     )
 
 
 def main() -> None:
     settings = get_settings()
-    contracts_path = settings.marts_dir / "contracts_scored.parquet"
-    providers_path = settings.marts_dir / "providers_scored.parquet"
-    if not contracts_path.exists() or not providers_path.exists():
-        show_missing_data([contracts_path, providers_path])
+    required = [
+        settings.marts_dir / "overview.parquet",
+        settings.marts_dir / "ranking.parquet",
+        settings.marts_dir / "process_detail.parquet",
+        settings.marts_dir / "comparables.parquet",
+    ]
+    if any(not path.exists() for path in required):
+        show_missing_data(required)
         return
 
-    contracts, providers = load_data()
-    page = st.sidebar.radio("Sección", ["Home", "Contratos", "Proveedores", "Metodología"])
-    if page == "Home":
-        home_page(contracts, providers)
-    elif page == "Contratos":
-        contracts_page(contracts)
-    elif page == "Proveedores":
-        providers_page(providers, contracts)
+    overview, ranking, detail_frame, comparables = load_assets()
+    page = st.sidebar.radio("Sección", ["Panorama", "Ranking", "Detalle", "Metodología"])
+    if page == "Panorama":
+        panorama_page(overview, ranking)
+    elif page == "Ranking":
+        ranking_page(ranking, detail_frame, comparables)
+    elif page == "Detalle":
+        detalle_page(detail_frame, comparables)
     else:
         methodology_page()
 

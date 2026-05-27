@@ -5,19 +5,27 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "secop-risk-alerts-co"
 version = "0.1.0"
-description = "MVP de alertas priorizadas de riesgo contractual sobre SECOP II para el concurso Datos al Ecosistema 2026."
+description = "ContratIA Abierta MVP de priorizacion de revision contractual sobre SECOP II, SECOP Integrado y PAA."
 readme = "README.md"
 requires-python = ">=3.11,<3.13"
 dependencies = [
   "duckdb>=1.2.2",
+  "fastapi>=0.115.12",
   "httpx>=0.28.1",
+  "jinja2>=3.1.6",
   "loguru>=0.7.3",
   "pandas>=2.2.3",
   "plotly>=6.0.1",
+  "dash>=2.18.2",
+  "polars>=1.28.1",
+  "psycopg[binary]>=3.2.3",
+  "pymongo>=4.10.1",
   "pyarrow>=20.0.0",
   "pydantic>=2.11.3",
   "scikit-learn>=1.6.1",
+  "sentence-transformers>=4.1.0",
   "streamlit>=1.44.1",
+  "uvicorn>=0.34.2",
 ]
 
 [project.optional-dependencies]
@@ -27,12 +35,15 @@ dev = [
 ]
 
 [project.scripts]
+extract-contratia = "src.extract.secop_api:main"
+build-process-master = "src.transform.build_process_master:main"
+score-processes = "src.scoring.score_processes:main"
 extract-secop = "src.extract.secop_api:main"
 build-base-contracts = "src.transform.build_base_contracts:main"
 score-contracts = "src.scoring.score_contracts:main"
 
 [tool.setuptools.packages.find]
-include = ["src*"]
+include = ["src*", "etl*", "services*", "dashboard*"]
 
 [tool.pytest.ini_options]
 pythonpath = ["."]
@@ -44,4 +55,3 @@ target-version = "py311"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "N", "UP", "B", "SIM"]
-

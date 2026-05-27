@@ -1,60 +1,37 @@
-# CRISP-ML(Q)
+# CRISP-ML
 
-## Objetivo analítico
+## 1. Comprensión del problema
 
-Construir un sistema mínimo de priorización que ordene contratos y proveedores por alerta de riesgo explicable para revisión humana.
+Priorizar revisión humana de procesos contractuales abiertos, sin emitir juicios automáticos.
 
-## Éxito del MVP
+## 2. Comprensión de datos
 
-- Pipeline ejecutable con datos reales del API oficial
-- Score 0-100 interpretable
-- Explicación legible por contrato y proveedor
-- Demo navegable en Streamlit
+- SECOP II para universo de procesos
+- SECOP Integrado para enriquecimiento opcional
+- PAA para plan vs ejecución
+- Control fiscal como contexto visible
 
-## Datos
+## 3. Preparación
 
-- Fuente principal: SECOP II contratos electrónicos
-- Fuentes auxiliares: procesos, adiciones, ubicaciones, PIDA y SECOP Integrado
-- Alcance: 2025-2026, tres subredes de salud en Bogotá
+- Normalización de entidad, NIT y referencia de proceso
+- Derivación de llaves y familias de modalidad
+- Auditoría explícita de joins
 
-## Preparación de datos
+## 4. Modelado
 
-- Extracción paginada por Socrata
-- Snapshots crudos en Parquet
-- Normalización de tipos y fechas
-- Consolidación por contrato
-- Documentación de inconsistencias de llaves
+- `anomaly_score`
+- `peer_deviation_score`
+- `rule_score`
+- `confidence_score`
 
-## Features
+## 5. Evaluación
 
-- `ratio_adiciones`
-- `n_adiciones`
-- `share_proveedor_en_entidad`
-- `recurrencia_entidad_proveedor`
-- `metrica_valor_plazo`
-- `data_quality_flags`
+- validación manual de matches y comparables
+- compuertas para decidir el rol del PAA
+- score visible y explicable
 
-## Modelado
+## 6. Despliegue
 
-- Reglas explícitas con pesos fijos
-- IsolationForest como complemento no supervisado
-- LOF solo para benchmark opcional
-
-## Evaluación
-
-- Tests unitarios sobre features y scoring
-- Smoke test de unicidad de `id_contrato`
-- Revisión manual de top alertas en la app
-
-## Riesgos operativos
-
-- Límites del API o throttling
-- Cambios en esquema del portal de datos
-- Matches incompletos entre contratos, procesos y adiciones
-
-## Consideraciones éticas
-
-- No inferir culpabilidad
-- No usar el score como verdad única
-- Mantener trazabilidad de las alertas y explicar límites de calidad de datos
-
+- FastAPI
+- Streamlit
+- artefactos reproducibles en Parquet

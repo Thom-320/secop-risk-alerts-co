@@ -1,79 +1,119 @@
-# secop-risk-alerts-co
+# Transparencia360 / ContratIA Abierta
 
-MVP inicial del proyecto **Sistema de Alertas Priorizadas de Riesgo Contractual** para el concurso **Datos al Ecosistema 2026: IA para Colombia**.
+Sistema poliglota de priorizacion de revision contractual en Colombia para veedurias, oficinas de transparencia y periodistas de datos.
 
-## Objetivo
+El sistema **no prueba conductas indebidas ni responsabilidad individual**. Ordena procesos de contratacion publica para decidir que revisar primero con evidencia, trazabilidad y explicaciones.
 
-Responder de forma práctica y explicable a la pregunta:
+## Problema
 
-**¿Qué contratos y qué proveedores debería revisar primero esta semana una veeduría ciudadana u oficina de control interno, y por qué?**
+Las organizaciones de control social no pueden revisar manualmente miles de procesos SECOP. Transparencia360 convierte datos abiertos oficiales en un ranking explicable de revision humana.
 
-El sistema **no detecta corrupción** ni hace afirmaciones judiciales. Produce **alertas de riesgo** para priorizar revisión humana.
+## Datos
 
-## Usuario principal
+- `p6dx-8zbt`: SECOP II Procesos de Contratacion.
+- `rpmr-utcd`: SECOP Integrado.
+- `9sue-ezhx`: SECOP II Plan Anual de Adquisiciones Detalle.
+- `wasc-xi4h`: ejecucion del plan de vigilancia/control fiscal.
 
-- Veedurías ciudadanas
-- Oficinas de control interno
-- Periodistas de datos
+La demo usa 10.000+ registros. Si la API Socrata no esta disponible, la carga usa Parquet local existente y falla claramente si tampoco existe.
 
-## Alcance congelado del MVP
+## Arquitectura
 
-- Ventana temporal: **2025-2026**
-- Cobertura: **3 entidades del sector salud en Bogotá**
-  - SUBRED INTEGRADA DE SERVICIOS DE SALUD NORTE E.S.E. (OFICIAL)
-  - SUBRED INTEGRADA DE SERVICIOS DE SALUD SUR E.S.E.**
-  - SUBRED INTEGRADA DE SERVICIOS DE SALUD SUR OCCIDENTE ESE.
+```mermaid
+flowchart LR
+  Socrata[Socrata datos.gov.co] --> ETL[ETL Python]
+  Parquet[Fallback Parquet local] --> ETL
+  ETL --> PG[(PostgreSQL 16)]
+  ETL --> Mongo[(MongoDB 7)]
+  PG --> Contracts[contracts_service]
+  PG --> Risk[risk_service]
+  PG --> Analytics[analytics_service]
+  Contracts --> Dash[Dash dashboard]
+  Risk --> Dash
+  Analytics --> Dash
+```
 
-## Datasets usados
+PostgreSQL es la fuente relacional principal. MongoDB guarda snapshots, logs y eventos. FastAPI expone microservicios y Dash es la interfaz oficial.
 
-- `jbjy-vk9h`: SECOP II - Contratos Electrónicos
-- `p6dx-8zbt`: SECOP II - Procesos de Contratación
-- `cb9c-h8sn`: SECOP II - Adiciones
-- `gra4-pcp2`: SECOP II - Ubicaciones ejecución contratos
-- `wmwy-ixwz`: Vista Diagnóstico PIDA anticorrupción
-- `rpmr-utcd`: SECOP Integrado, solo para QA y benchmark auxiliar
-
-## Arquitectura simple
-
-1. Extracción oficial desde Socrata con `httpx`
-2. Snapshots crudos en Parquet dentro de `data/raw/`
-3. Tabla base canónica a nivel contrato en `data/interim/base_contracts.parquet`
-4. Features y score interpretable + anomalía en `data/marts/`
-5. Visualización Streamlit en `src/app/streamlit_app.py`
-
-## Instalación
+## Quickstart
 
 ```bash
 uv sync --python 3.11 --extra dev
 cp .env.example .env
+make db-up
+make db-migrate
+make etl-demo
+make mongo-load
+make validate-final
 ```
 
-`APP_TOKEN_SOCRATA` es opcional, pero recomendado para mayor estabilidad del API.
+Por defecto Docker publica PostgreSQL en `localhost:55432` y MongoDB en
+`localhost:27018` para no chocar con instalaciones locales. Los contenedores siguen
+hablando internamente por `postgres:5432` y `mongo:27017`.
 
-## Cómo correr el pipeline
+Servicios:
 
 ```bash
-uv run --python 3.11 python -m src.extract.secop_api
-uv run --python 3.11 python -m src.transform.build_base_contracts
-uv run --python 3.11 python -m src.scoring.score_contracts
+make api
+make dashboard
 ```
 
-## Cómo correr la app
+Endpoints locales:
+
+- Contracts: `http://localhost:8001/health`
+- Risk: `http://localhost:8002/health`
+- Analytics: `http://localhost:8003/health`
+- Dashboard: `http://localhost:8050`
+
+## Comandos
 
 ```bash
-uv run --python 3.11 streamlit run src/app/streamlit_app.py
+make setup
+make db-up
+make db-migrate
+make db-reset
+make extract-demo
+make build
+make score
+make etl-demo
+make mongo-load
+make api
+make dashboard
+make demo
+make test
+make lint
+make validate-final
 ```
 
-## Cómo correr tests y lint
+## Evidencia academica
 
-```bash
-uv run --python 3.11 pytest
-uv run --python 3.11 ruff check .
-```
+- 20+ tablas relacionales en `sql/001_schema.sql`.
+- Constraints, FK, indices, triggers y vistas analiticas.
+- Triggers de auditoria, historial de estado, validacion de score y `updated_at`.
+- Window functions y CTE recursiva en `sql/004_views_analytics.sql`.
+- Transaccion demo en `sql/006_transactions_demo.sql`.
+- Reporte final en `docs/report/reporte_final.md`.
+- Manual, plan de pruebas, data dictionary y disclosure de IA en `docs/`.
 
-## Limitaciones clave
+## Scoring
 
-- `cb9c-h8sn` no publica monto de adición en columna estructurada; el MVP usa como señal principal el **ratio temporal** de adiciones y solo hace parseo monetario auxiliar cuando el texto lo permite.
-- Los joins entre SECOP II no son perfectos. Para este MVP, el enriquecimiento de procesos usa la relación observada `jbjy.proceso_de_compra -> p6dx.id_del_portafolio`.
-- El score es de **priorización de revisión**, no de confirmación de irregularidad.
+El scoring mantiene una filosofia interpretable:
 
+- componente de anomalia,
+- desviacion frente a pares,
+- reglas explicitas,
+- score de confianza,
+- razones visibles.
+
+La salida es una alerta de prioridad, no una acusacion.
+
+## Limitaciones
+
+- Los datos abiertos pueden tener campos incompletos o cambios de esquema.
+- Los enlaces SECOP/PAA no se asumen perfectos.
+- El contexto fiscal es visible y no se usa como etiqueta acusatoria.
+- La encuesta de usabilidad debe completarse con 5 usuarios reales antes de la entrega final.
+
+## Licencia
+
+Codigo bajo MIT. Los datos provienen de fuentes abiertas oficiales de Colombia y conservan sus condiciones de uso originales.
