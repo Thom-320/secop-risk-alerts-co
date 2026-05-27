@@ -1,0 +1,798 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ContratIA Abierta / Transparencia360</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --canvas: oklch(0.978 0.005 252);
+        --paper: oklch(0.995 0.003 252);
+        --ink: oklch(0.22 0.015 252);
+        --ink-soft: oklch(0.32 0.015 252);
+        --muted: oklch(0.48 0.016 252);
+        --faint: oklch(0.90 0.008 252);
+        --rule: oklch(0.87 0.010 252);
+        --accent: oklch(0.44 0.120 245);
+        --accent-deep: oklch(0.34 0.110 245);
+        --accent-soft: oklch(0.945 0.028 245);
+        --accent-wash: oklch(0.975 0.012 245);
+        --green: oklch(0.52 0.130 155);
+        --green-soft: oklch(0.94 0.030 155);
+        --amber: oklch(0.63 0.125 78);
+        --amber-soft: oklch(0.95 0.030 78);
+        --rose: oklch(0.56 0.125 18);
+        --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+        --ease-smooth: cubic-bezier(0.25, 0.1, 0.25, 1);
+        font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+      }
+
+      *, *::before, *::after { box-sizing: border-box; margin: 0; }
+
+      body {
+        min-height: 100vh;
+        overflow: hidden;
+        background: var(--canvas);
+        color: var(--ink);
+        -webkit-font-smoothing: antialiased;
+      }
+
+      .deck {
+        height: 100vh;
+        display: grid;
+        place-items: center;
+        padding: clamp(16px, 3vh, 32px);
+      }
+
+      .viewport {
+        position: relative;
+        width: min(96vw, calc(96vh * 16 / 9));
+        aspect-ratio: 16 / 9;
+        border-radius: 18px;
+        overflow: hidden;
+        background: var(--paper);
+        box-shadow:
+          0 1px 2px oklch(0.22 0.015 252 / 0.04),
+          0 8px 32px oklch(0.22 0.015 252 / 0.06),
+          0 24px 64px oklch(0.34 0.110 245 / 0.05);
+      }
+
+      .slide {
+        position: absolute;
+        inset: 0;
+        opacity: 0;
+        visibility: hidden;
+        transition: opacity 350ms var(--ease-out), visibility 0s linear 350ms;
+        overflow: hidden;
+      }
+
+      .slide.active {
+        opacity: 1;
+        visibility: visible;
+        transition: opacity 350ms var(--ease-out), visibility 0s;
+      }
+
+      .slide.active .slide-inner > * {
+        animation: content-in 420ms var(--ease-out) both;
+      }
+
+      @keyframes content-in {
+        from { opacity: 0; transform: translateY(6px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+
+      .slide-inner {
+        height: 100%;
+        padding: 5vh 5.5vw 4.5vh;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .accent-bar {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: var(--accent);
+        z-index: 5;
+      }
+
+      .slide-number {
+        position: absolute;
+        top: 16px;
+        left: 24px;
+        font-size: 11px;
+        font-weight: 800;
+        color: var(--accent);
+        letter-spacing: 0.04em;
+        z-index: 4;
+      }
+
+      .slide-label {
+        position: absolute;
+        top: 16px;
+        left: 52px;
+        font-size: 11px;
+        font-weight: 700;
+        color: var(--muted);
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        z-index: 4;
+      }
+
+      .footer-line {
+        position: absolute;
+        bottom: 12px;
+        left: 24px;
+        font-size: 9.5px;
+        color: var(--muted);
+        letter-spacing: 0.01em;
+        z-index: 4;
+      }
+
+      h1 {
+        font-size: clamp(36px, 5.2vw, 58px);
+        font-weight: 850;
+        line-height: 0.94;
+        letter-spacing: -0.02em;
+        color: var(--ink);
+      }
+
+      h2 {
+        font-size: clamp(26px, 3.6vw, 40px);
+        font-weight: 820;
+        line-height: 1.0;
+        letter-spacing: -0.015em;
+        color: var(--ink);
+      }
+
+      .kicker {
+        display: inline-block;
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--accent);
+        margin-bottom: 12px;
+      }
+
+      .lead {
+        font-size: clamp(16px, 1.8vw, 21px);
+        line-height: 1.30;
+        color: var(--muted);
+        max-width: 680px;
+      }
+
+      .thesis {
+        color: var(--accent-deep);
+        font-weight: 800;
+      }
+
+      .tag-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 20px;
+      }
+
+      .tag {
+        display: inline-flex;
+        align-items: center;
+        height: 30px;
+        padding: 0 14px;
+        border-radius: 6px;
+        background: var(--accent-soft);
+        color: var(--accent-deep);
+        font-size: 12px;
+        font-weight: 780;
+      }
+
+      .card {
+        padding: 16px 18px;
+        border-radius: 10px;
+        background: var(--paper);
+        border: 1px solid var(--faint);
+      }
+
+      .card-title {
+        font-size: clamp(13px, 1.4vw, 17px);
+        font-weight: 800;
+        color: var(--accent-deep);
+        line-height: 1.1;
+      }
+
+      .card-desc {
+        font-size: clamp(11px, 1.1vw, 13px);
+        color: var(--muted);
+        line-height: 1.3;
+        margin-top: 6px;
+      }
+
+      .metric-box {
+        padding: 14px 16px;
+        border-radius: 10px;
+        background: var(--paper);
+        border: 1px solid var(--faint);
+      }
+
+      .metric-value {
+        font-size: clamp(28px, 3.2vw, 40px);
+        font-weight: 850;
+        line-height: 0.95;
+        color: var(--accent);
+      }
+
+      .metric-label {
+        font-size: 11px;
+        font-weight: 750;
+        color: var(--muted);
+        margin-top: 6px;
+      }
+
+      .proof-img {
+        width: 100%;
+        border-radius: 10px;
+        border: 1px solid var(--faint);
+        background: oklch(0.99 0.003 252);
+      }
+
+      .proof-img.clean {
+        border: none;
+        background: transparent;
+      }
+
+      .caption {
+        font-size: 11px;
+        color: var(--muted);
+        margin-top: 8px;
+        line-height: 1.3;
+      }
+
+      .data-tbl {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: clamp(12px, 1.2vw, 14px);
+      }
+
+      .data-tbl td {
+        padding: 10px 0;
+        border-bottom: 1px solid var(--faint);
+        vertical-align: top;
+      }
+
+      .data-tbl td:first-child {
+        width: 60px;
+        font-weight: 800;
+        color: var(--accent);
+      }
+
+      .data-tbl td:nth-child(2) {
+        font-weight: 780;
+        color: var(--ink);
+      }
+
+      .data-tbl td:last-child {
+        text-align: right;
+        color: var(--muted);
+      }
+
+      .flow-arrow {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--accent);
+        font-size: 22px;
+        font-weight: 300;
+        padding-top: 18px;
+      }
+
+      .hero-title {
+        font-size: clamp(42px, 5.8vw, 64px);
+        font-weight: 860;
+        line-height: 0.92;
+        letter-spacing: -0.025em;
+      }
+
+      .hero-sub {
+        font-size: clamp(14px, 1.5vw, 18px);
+        font-weight: 700;
+        color: var(--muted);
+        margin-top: 6px;
+      }
+
+      .number-badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 28px;
+        height: 28px;
+        border-radius: 8px;
+        background: var(--accent-soft);
+        color: var(--accent-deep);
+        font-size: 13px;
+        font-weight: 850;
+        margin-right: 8px;
+        flex-shrink: 0;
+      }
+
+      .demo-label {
+        display: flex;
+        align-items: center;
+        font-size: 12px;
+        font-weight: 800;
+        color: var(--accent-deep);
+        margin-top: 10px;
+      }
+
+      .controls {
+        position: fixed;
+        left: 50%;
+        bottom: 14px;
+        z-index: 20;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 10px;
+        border-radius: 999px;
+        background: oklch(0.995 0.003 252 / 0.88);
+        border: 1px solid var(--faint);
+        box-shadow: 0 8px 28px oklch(0.22 0.015 252 / 0.08);
+        backdrop-filter: blur(14px);
+        transform: translateX(-50%);
+      }
+
+      .controls button {
+        width: 36px;
+        height: 30px;
+        border: 0;
+        border-radius: 99px;
+        background: transparent;
+        color: var(--ink);
+        cursor: pointer;
+        font-size: 16px;
+        font-weight: 800;
+        font-family: inherit;
+      }
+
+      .controls button:hover { background: var(--accent-soft); color: var(--accent-deep); }
+
+      .slide-ctr {
+        min-width: 60px;
+        text-align: center;
+        font-size: 12px;
+        font-weight: 800;
+        color: var(--muted);
+      }
+
+      .progress-track {
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        height: 3px;
+        z-index: 21;
+        background: var(--faint);
+      }
+
+      .progress-fill {
+        height: 100%;
+        width: 0;
+        background: var(--accent);
+        transition: width 280ms var(--ease-out);
+      }
+
+      .notes-drawer {
+        position: fixed;
+        right: 18px;
+        bottom: 64px;
+        z-index: 22;
+        width: min(400px, calc(100vw - 36px));
+        max-height: 38vh;
+        overflow: auto;
+        padding: 16px 18px;
+        border-radius: 14px;
+        background: oklch(0.995 0.003 252 / 0.95);
+        border: 1px solid var(--faint);
+        box-shadow: 0 12px 40px oklch(0.22 0.015 252 / 0.10);
+        backdrop-filter: blur(14px);
+        opacity: 0;
+        pointer-events: none;
+        transform: translateY(8px);
+        transition: opacity 200ms var(--ease-out), transform 200ms var(--ease-out);
+      }
+
+      .notes-drawer.open {
+        opacity: 1;
+        pointer-events: auto;
+        transform: translateY(0);
+      }
+
+      .notes-drawer h4 {
+        font-size: 12px;
+        font-weight: 800;
+        color: var(--ink);
+        margin-bottom: 6px;
+      }
+
+      .notes-drawer p {
+        font-size: 12px;
+        line-height: 1.5;
+        color: var(--muted);
+      }
+
+      .help-hint {
+        position: fixed;
+        top: 14px;
+        right: 16px;
+        z-index: 20;
+        font-size: 10.5px;
+        font-weight: 750;
+        color: var(--muted);
+      }
+
+      .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+      .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+      .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+      .grid-5 { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; }
+      .grid-2x4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+
+      .split-55-45 { display: grid; grid-template-columns: 55fr 45fr; gap: 28px; align-items: center; }
+      .split-45-55 { display: grid; grid-template-columns: 45fr 55fr; gap: 28px; align-items: center; }
+      .split-60-40 { display: grid; grid-template-columns: 60fr 40fr; gap: 28px; align-items: center; }
+
+      .flex-grow { flex: 1; }
+      .mt-auto { margin-top: auto; }
+      .mt-8 { margin-top: 8px; }
+      .mt-12 { margin-top: 12px; }
+      .mt-16 { margin-top: 16px; }
+      .mt-20 { margin-top: 20px; }
+      .mt-24 { margin-top: 24px; }
+      .mt-28 { margin-top: 28px; }
+      .mt-32 { margin-top: 32px; }
+
+      @media (prefers-reduced-motion: reduce) {
+        .slide, .progress-fill, .notes-drawer { transition: none; }
+      }
+
+      @media print {
+        body { background: var(--paper); overflow: visible; }
+        .deck { display: block; height: auto; padding: 0; }
+        .viewport { width: 100vw; aspect-ratio: auto; border-radius: 0; box-shadow: none; overflow: visible; }
+        .slide { position: relative; visibility: visible; opacity: 1; width: 100vw; height: 56.25vw; page-break-after: always; }
+        .controls, .progress-track, .notes-drawer, .help-hint { display: none; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="accent-bar" style="position:fixed;top:0;left:0;right:0;z-index:30;"></div>
+
+    <main class="deck">
+      <div class="viewport" id="viewport">
+
+        <section class="slide active" data-notes="Presentamos Transparencia360 / ContratIA Abierta. La tesis: los datos abiertos de contratación ya existen, pero la capacidad humana para revisarlos es limitada. El sistema ordena procesos para decidir qué revisar primero, con evidencia trazable. No prueba conductas indebidas.">
+          <div class="slide-inner" style="justify-content:center;">
+            <div class="split-55-45" style="height:100%;align-items:center;">
+              <div>
+                <div class="kicker">Proyecto final &middot; Ingeniería de Datos</div>
+                <h1 class="hero-title">Transparencia360</h1>
+                <p class="hero-sub">ContratIA Abierta</p>
+                <p class="lead thesis mt-20">Ordenar miles de procesos SECOP para decidir qué revisar primero.</p>
+                <div class="tag-row">
+                  <span class="tag">Revisión humana</span>
+                  <span class="tag">Datos abiertos</span>
+                  <span class="tag">Trazabilidad</span>
+                </div>
+                <p class="mt-24" style="font-size:12px;color:var(--muted);font-weight:700;">Universidad del Rosario &middot; 2026</p>
+              </div>
+              <div style="display:flex;align-items:center;justify-content:center;">
+                <img class="proof-img clean" src="../assets/architecture.png" alt="Arquitectura del sistema" style="max-height:360px;width:auto;opacity:0.92;" />
+              </div>
+            </div>
+          </div>
+          <span class="slide-number">01</span>
+          <span class="slide-label">ContratIA Abierta</span>
+        </section>
+
+        <section class="slide" data-notes="El problema no es la ausencia de datos. Colombia tiene fuentes abiertas de contratación. El problema práctico es que veedurías, control interno y periodistas no pueden revisar miles de procesos con el mismo detalle. La decisión es semanal: en qué invertir tiempo humano primero.">
+          <div class="slide-inner">
+            <div class="kicker">Problema</div>
+            <h2>No faltan datos de contratación.<br/>Falta atención humana bien dirigida.</h2>
+            <p class="lead mt-16">La decisión práctica no es emitir veredictos. Es escoger qué procesos revisar primero, con evidencia trazable.</p>
+            <div class="grid-3 mt-32" style="grid-template-columns: 1fr auto 1fr auto 1fr; align-items: stretch;">
+              <div class="card">
+                <div class="card-title">Miles de procesos</div>
+                <div class="card-desc">SECOP, PAA y contexto fiscal abierto.</div>
+              </div>
+              <div class="flow-arrow">&rarr;</div>
+              <div class="card">
+                <div class="card-title">Ranking explicable</div>
+                <div class="card-desc">Score, confianza, razones y comparables.</div>
+              </div>
+              <div class="flow-arrow">&rarr;</div>
+              <div class="card">
+                <div class="card-title">Revisión humana</div>
+                <div class="card-desc">Decisión documentada, no automatizada.</div>
+              </div>
+            </div>
+          </div>
+          <span class="slide-number">02</span>
+          <span class="slide-label">Problema</span>
+          <span class="footer-line">Priorización de revisión humana; no prueba conductas indebidas.</span>
+        </section>
+
+        <section class="slide" data-notes="Los usuarios son veedurías ciudadanas, oficinas de control interno y periodistas de datos. Comparten una restricción: tiempo limitado y necesidad de justificar por qué revisan un proceso antes que otro. La salida es un ranking con razones, no una acusación.">
+          <div class="slide-inner">
+            <div class="kicker">Stakeholder</div>
+            <h2>Una decisión semanal: qué revisar primero y por qué.</h2>
+            <div class="grid-3 mt-28">
+              <div class="card">
+                <div class="card-title">Veeduría ciudadana</div>
+                <div class="card-desc">Seguimiento al gasto público con capacidad limitada.</div>
+              </div>
+              <div class="card">
+                <div class="card-title">Control interno</div>
+                <div class="card-desc">Focalización de revisión institucional con trazabilidad.</div>
+              </div>
+              <div class="card">
+                <div class="card-title">Periodismo de datos</div>
+                <div class="card-desc">Priorización de hallazgos verificables para publicación.</div>
+              </div>
+            </div>
+            <p class="lead mt-auto" style="margin-top:auto;padding-top:24px;"><span class="thesis">El sistema produce una cola de revisión, no una acusación.</span></p>
+          </div>
+          <span class="slide-number">03</span>
+          <span class="slide-label">Stakeholder</span>
+          <span class="footer-line">Priorización de revisión humana; no prueba conductas indebidas.</span>
+        </section>
+
+        <section class="slide" data-notes="La guía de clase pedía arquitectura de ingeniería de datos completa: base relacional, NoSQL, microservicios, ETL, pruebas y documentación. La validación final confirma cada punto con evidencia verificable.">
+          <div class="slide-inner">
+            <div class="kicker">Cumplimiento</div>
+            <h2>Requisitos de Ingeniería de Datos cubiertos con evidencia.</h2>
+            <div class="grid-2x4 mt-24">
+              <div class="card"><div class="card-title">PostgreSQL</div><div class="card-desc">27 tablas relacionales y 33 objetos públicos.</div></div>
+              <div class="card"><div class="card-title">MongoDB</div><div class="card-desc">5 colecciones con documentos trazables.</div></div>
+              <div class="card"><div class="card-title">FastAPI</div><div class="card-desc">3 servicios, health checks en 200.</div></div>
+              <div class="card"><div class="card-title">Dash</div><div class="card-desc">Interfaz oficial del dashboard.</div></div>
+              <div class="card"><div class="card-title">ETL</div><div class="card-desc">17.229 procesos en la carga demo.</div></div>
+              <div class="card"><div class="card-title">SQL avanzado</div><div class="card-desc">Triggers, CTE recursiva, window functions.</div></div>
+              <div class="card"><div class="card-title">Pruebas</div><div class="card-desc">66 pytest pasan correctamente.</div></div>
+              <div class="card"><div class="card-title">Documentación</div><div class="card-desc">21 archivos requeridos por la guía.</div></div>
+            </div>
+          </div>
+          <span class="slide-number">04</span>
+          <span class="slide-label">Cumplimiento</span>
+          <span class="footer-line">Priorización de revisión humana; no prueba conductas indebidas.</span>
+        </section>
+
+        <section class="slide" data-notes="Las fuentes son datasets oficiales abiertos de Colombia. SECOP II aporta la unidad analítica principal. PAA y SECOP Integrado dan contexto de planeación y ejecución. El contexto fiscal es visible pero no entra al score. La demo valida 17.229 procesos con métricas verificables.">
+          <div class="slide-inner split-55-45">
+            <div>
+              <div class="kicker">Datos oficiales</div>
+              <h2>Fuentes reales, volumen verificable.</h2>
+              <table class="data-tbl mt-20">
+                <tr><td>p6dx</td><td>SECOP II Procesos</td><td>unidad analítica</td></tr>
+                <tr><td>rpmr</td><td>SECOP Integrado</td><td>contexto ejecución</td></tr>
+                <tr><td>9sue</td><td>PAA Detalle</td><td>planeación</td></tr>
+                <tr><td>wasc</td><td>Control fiscal</td><td>contexto visible</td></tr>
+              </table>
+            </div>
+            <div class="grid-2" style="gap:12px;">
+              <div class="metric-box"><div class="metric-value">17.229</div><div class="metric-label">procesos</div></div>
+              <div class="metric-box"><div class="metric-value" style="color:var(--green);">68.916</div><div class="metric-label">razones</div></div>
+              <div class="metric-box"><div class="metric-value" style="color:var(--amber);">4.494</div><div class="metric-label">PAA items</div></div>
+              <div class="metric-box"><div class="metric-value">41.996</div><div class="metric-label">eventos auditoría</div></div>
+            </div>
+          </div>
+          <span class="slide-number">05</span>
+          <span class="slide-label">Datos oficiales</span>
+          <span class="footer-line">Priorización de revisión humana; no prueba conductas indebidas.</span>
+        </section>
+
+        <section class="slide" data-notes="La arquitectura separa ingestión, persistencia, servicios y presentación. Socrata alimenta el ETL. PostgreSQL es la fuente de verdad relacional. MongoDB conserva evidencia documental. FastAPI expone servicios separados. Dash presenta el flujo de demo.">
+          <div class="slide-inner">
+            <div class="kicker">Arquitectura</div>
+            <h2>Separación clara entre ETL, persistencia, servicios y dashboard.</h2>
+            <div class="flex-grow" style="display:flex;align-items:center;justify-content:center;margin-top:16px;">
+              <img class="proof-img clean" src="../assets/architecture.png" alt="Diagrama de arquitectura" style="max-height:340px;width:auto;" />
+            </div>
+            <p class="caption">Socrata &rarr; ETL &rarr; PostgreSQL + MongoDB &rarr; FastAPI &rarr; Dash</p>
+          </div>
+          <span class="slide-number">06</span>
+          <span class="slide-label">Arquitectura</span>
+          <span class="footer-line">Priorización de revisión humana; no prueba conductas indebidas.</span>
+        </section>
+
+        <section class="slide" data-notes="El modelo relacional supera el mínimo de la materia con 27 tablas y 33 objetos públicos. Lo importante no es el conteo: hay llaves primarias, foráneas, restricciones, índices, vistas analíticas y triggers de auditoría. PostgreSQL garantiza integridad.">
+          <div class="slide-inner">
+            <div class="kicker">Modelo relacional</div>
+            <h2>PostgreSQL es la fuente de verdad.</h2>
+            <div class="flex-grow" style="display:flex;align-items:center;justify-content:center;margin-top:12px;">
+              <img class="proof-img clean" src="../assets/er_model.png" alt="Modelo entidad-relación" style="max-height:320px;width:auto;" />
+            </div>
+            <p class="caption">27 tablas relacionales con PK/FK, constraints e índices; 33 objetos públicos incluyendo vistas y triggers.</p>
+          </div>
+          <span class="slide-number">07</span>
+          <span class="slide-label">Modelo relacional</span>
+          <span class="footer-line">Priorización de revisión humana; no prueba conductas indebidas.</span>
+        </section>
+
+        <section class="slide" data-notes="MongoDB no reemplaza el modelo relacional. Se usa para datos con forma documental natural: snapshots crudos, logs de ETL, eventos de prioridad, reportes generados y acciones de usuario. Un auditor puede reconstruir el origen de cualquier reporte.">
+          <div class="slide-inner split-45-55">
+            <div>
+              <div class="kicker">NoSQL</div>
+              <h2>MongoDB guarda evidencia flexible sin deformar el modelo relacional.</h2>
+              <p class="lead mt-16">Snapshots, logs, reportes y acciones se consultan como documentos trazables.</p>
+            </div>
+            <div>
+              <table class="data-tbl">
+                <tr><td style="width:auto;color:var(--accent-deep);font-weight:800;">raw_process_snapshots</td><td style="text-align:right;">100 docs</td></tr>
+                <tr><td style="width:auto;color:var(--accent-deep);font-weight:800;">etl_run_logs</td><td style="text-align:right;">1 doc</td></tr>
+                <tr><td style="width:auto;color:var(--accent-deep);font-weight:800;">risk_event_logs</td><td style="text-align:right;">1 doc</td></tr>
+                <tr><td style="width:auto;color:var(--accent-deep);font-weight:800;">report_snapshots</td><td style="text-align:right;">1 doc</td></tr>
+                <tr><td style="width:auto;color:var(--accent-deep);font-weight:800;">user_action_logs</td><td style="text-align:right;">1 doc</td></tr>
+              </table>
+            </div>
+          </div>
+          <span class="slide-number">08</span>
+          <span class="slide-label">NoSQL</span>
+          <span class="footer-line">Priorización de revisión humana; no prueba conductas indebidas.</span>
+        </section>
+
+        <section class="slide" data-notes="La solución muestra SQL avanzado concreto del temario: triggers de auditoría e historial, window functions para ranking y outliers, CTE recursiva para jerarquía territorial, y transacciones para consistencia atómica entre score y evento.">
+          <div class="slide-inner">
+            <div class="kicker">SQL engineering</div>
+            <h2>No es solo almacenamiento. Hay integridad y trazabilidad.</h2>
+            <div class="grid-2 mt-28" style="gap:14px;">
+              <div class="card"><div class="card-title">Triggers</div><div class="card-desc">audit_log, historial de estado, updated_at automático.</div></div>
+              <div class="card"><div class="card-title">Window functions</div><div class="card-desc">Concentración proveedor-entidad y outliers por grupo par.</div></div>
+              <div class="card"><div class="card-title">CTE recursiva</div><div class="card-desc">Jerarquía territorial departamento-municipio.</div></div>
+              <div class="card"><div class="card-title">Transacciones</div><div class="card-desc">Score + evento asociado de forma atómica.</div></div>
+            </div>
+            <p class="lead mt-auto" style="margin-top:auto;padding-top:20px;">Consultas analíticas reproducibles, no solo depósito de datos.</p>
+          </div>
+          <span class="slide-number">09</span>
+          <span class="slide-label">SQL engineering</span>
+          <span class="footer-line">Priorización de revisión humana; no prueba conductas indebidas.</span>
+        </section>
+
+        <section class="slide" data-notes="El score sigue una filosofía rules-first. Combina reglas explícitas, desviación frente a pares, anomalía como apoyo interpretable, confianza de datos y razones auditables. La salida ordena revisión humana; no determina responsabilidad ni sanciona.">
+          <div class="slide-inner">
+            <div class="kicker">Explicabilidad</div>
+            <h2>Score explicable, no veredicto.</h2>
+            <div class="grid-5 mt-28">
+              <div class="card"><div class="card-title">Reglas</div><div class="card-desc">Señales auditables y explícitas.</div></div>
+              <div class="card"><div class="card-title">Pares</div><div class="card-desc">Desviación contextual frente a comparables.</div></div>
+              <div class="card"><div class="card-title">Anomalía</div><div class="card-desc">Apoyo interpretable, no determinante.</div></div>
+              <div class="card"><div class="card-title">Confianza</div><div class="card-desc">Calidad y cobertura de los datos.</div></div>
+              <div class="card"><div class="card-title">Razones</div><div class="card-desc">Texto trazable hacia las fuentes.</div></div>
+            </div>
+            <p class="lead thesis mt-auto" style="margin-top:auto;padding-top:24px;font-size:clamp(16px,1.8vw,20px);">Salida: score de prioridad + confianza + razones + comparables.</p>
+          </div>
+          <span class="slide-number">10</span>
+          <span class="slide-label">Explicabilidad</span>
+          <span class="footer-line">Priorización de revisión humana; no prueba conductas indebidas.</span>
+        </section>
+
+        <section class="slide" data-notes="El flujo de demo: Panorama muestra conteos y cobertura. Ranking filtra por score y prioriza candidatos. Detalle presenta evidencia trazable con comparables. El usuario entiende el universo, escoge un candidato, revisa evidencia y decide si abre revisión humana.">
+          <div class="slide-inner">
+            <div class="kicker">Demo</div>
+            <h2>Panorama, ranking, detalle y comparables.</h2>
+            <div class="grid-3 mt-24" style="gap:18px;">
+              <div>
+                <img class="proof-img" src="../assets/screenshot_dashboard_home.png" alt="Panorama del dashboard" style="aspect-ratio:16/10;object-fit:cover;object-position:top left;" />
+                <div class="demo-label"><span class="number-badge">1</span>Panorama</div>
+              </div>
+              <div>
+                <img class="proof-img" src="../assets/screenshot_ranking.png" alt="Ranking de procesos" style="aspect-ratio:16/10;object-fit:cover;object-position:top left;" />
+                <div class="demo-label"><span class="number-badge">2</span>Ranking</div>
+              </div>
+              <div>
+                <img class="proof-img" src="../assets/screenshot_process_detail.png" alt="Detalle de proceso" style="aspect-ratio:16/10;object-fit:cover;object-position:top left;" />
+                <div class="demo-label"><span class="number-badge">3</span>Detalle y comparables</div>
+              </div>
+            </div>
+          </div>
+          <span class="slide-number">11</span>
+          <span class="slide-label">Demo</span>
+          <span class="footer-line">Priorización de revisión humana; no prueba conductas indebidas.</span>
+        </section>
+
+        <section class="slide" data-notes="La validación final cruza todos los criterios académicos. Los límites son honestos: datos ruidosos, joins imperfectos, requiere revisión humana. El siguiente paso es aplicar la encuesta real con 5 usuarios y ejecutar un piloto controlado. El aporte: convertir datos masivos en una cola trazable de revisión.">
+          <div class="slide-inner split-55-45">
+            <div style="display:flex;flex-direction:column;justify-content:center;">
+              <div class="kicker">Cierre</div>
+              <h2>Validación final: proyecto reproducible y defendible.</h2>
+              <div class="mt-24" style="display:flex;flex-direction:column;gap:12px;">
+                <div class="card" style="background:var(--green-soft);border-color:oklch(0.88 0.030 155);">
+                  <div class="card-title" style="color:var(--green);">Validación: ok</div>
+                  <div class="card-desc">Tablas, filas, Mongo, APIs, tests, docs y README verificados.</div>
+                </div>
+                <div class="card">
+                  <div class="card-title">Límites honestos</div>
+                  <div class="card-desc">Datos ruidosos, joins imperfectos, requiere revisión humana.</div>
+                </div>
+                <div class="card" style="background:var(--accent-wash);border-color:oklch(0.88 0.025 245);">
+                  <div class="card-title">Siguiente paso</div>
+                  <div class="card-desc">Encuesta real con 5 usuarios y piloto controlado.</div>
+                </div>
+              </div>
+            </div>
+            <div style="display:flex;align-items:center;justify-content:center;">
+              <img class="proof-img clean" src="../assets/validation_summary.png" alt="Resumen de validación" style="max-height:340px;width:auto;" />
+            </div>
+          </div>
+          <span class="slide-number">12</span>
+          <span class="slide-label">Cierre</span>
+          <span class="footer-line">Priorización de revisión humana; no prueba conductas indebidas.</span>
+        </section>
+
+      </div>
+    </main>
+
+    <span class="help-hint">&larr; &rarr; navegar &middot; N notas &middot; F pantalla completa</span>
+    <nav class="controls" aria-label="Controles">
+      <button type="button" id="prevBtn" aria-label="Anterior">&lsaquo;</button>
+      <span class="slide-ctr" id="slideCtr">1 / 12</span>
+      <button type="button" id="nextBtn" aria-label="Siguiente">&rsaquo;</button>
+    </nav>
+    <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+    <aside class="notes-drawer" id="notesDrawer" aria-live="polite">
+      <h4>Notas del expositor</h4>
+      <p id="notesContent"></p>
+    </aside>
+
+    <script>
+      const slides = Array.from(document.querySelectorAll(".slide"));
+      const progressFill = document.getElementById("progressFill");
+      const slideCtr = document.getElementById("slideCtr");
+      const notesDrawer = document.getElementById("notesDrawer");
+      const notesContent = document.getElementById("notesContent");
+      let idx = Number(new URLSearchParams(location.search).get("slide") || 1) - 1;
+
+      function clamp(i) { return Math.max(0, Math.min(slides.length - 1, i)); }
+
+      function show(i, push = true) {
+        idx = clamp(i);
+        slides.forEach((s, n) => s.classList.toggle("active", n === idx));
+        slideCtr.textContent = `${idx + 1} / ${slides.length}`;
+        progressFill.style.width = `${((idx + 1) / slides.length) * 100}%`;
+        notesContent.textContent = slides[idx].dataset.notes || "";
+        if (push) {
+          const url = new URL(location.href);
+          url.searchParams.set("slide", String(idx + 1));
+          history.replaceState(null, "", url);
+        }
+      }
+
+      function next() { show(idx + 1); }
+      function prev() { show(idx - 1); }
+
+      document.getElementById("nextBtn").addEventListener("click", next);
+      document.getElementById("prevBtn").addEventListener("click", prev);
+
+      window.addEventListener("keydown", (e) => {
+        if (["ArrowRight", "PageDown", " "].includes(e.key)) { e.preventDefault(); next(); }
+        if (["ArrowLeft", "PageUp", "Backspace"].includes(e.key)) { e.preventDefault(); prev(); }
+        if (e.key === "Home") { e.preventDefault(); show(0); }
+        if (e.key === "End") { e.preventDefault(); show(slides.length - 1); }
+        if (e.key.toLowerCase() === "n") { notesDrawer.classList.toggle("open"); }
+        if (e.key.toLowerCase() === "f") {
+          if (!document.fullscreenElement) document.documentElement.requestFullscreen?.();
+          else document.exitFullscreen?.();
+        }
+      });
+
+      let touchStartX = 0;
+      document.addEventListener("touchstart", (e) => { touchStartX = e.changedTouches[0].screenX; });
+      document.addEventListener("touchend", (e) => {
+        const dx = e.changedTouches[0].screenX - touchStartX;
+        if (Math.abs(dx) > 50) { dx < 0 ? next() : prev(); }
+      });
+
+      show(idx, false);
+    </script>
+  </body>
+</html>

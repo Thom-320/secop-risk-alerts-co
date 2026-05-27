@@ -1,129 +1,107 @@
 # Demo Casebook — ContratIA Abierta
 
-## Casos reales para demo (modo sample)
+## Casos reales para demo
 
-Los siguientes casos provienen de los datos generados en modo sample
-(`PRODUCT_SOURCE_MODE=sample`). Los scores en modo sample son bajos porque los
-fixtures no contienen la variabilidad real de contratos SECOP.
+Los siguientes casos provienen de datos abiertos reales de SECOP II (scope: Meta
+y Casanare). Los scores de prioridad son calculados sobre datos reales, no
+generados.
 
-Para generar casos con datos abiertos reales:
+Para regenerar con datos actuales:
 
 ```bash
 make product-pipeline PRODUCT_SOURCE_MODE=download
 make validate-product
 ```
 
-Luego ejecutar el script de generación:
+Luego ejecutar para ver casos frescos:
 
 ```bash
 uv run --python 3.11 python - <<'PY'
-import pandas as pd
-from pathlib import Path
-
-marts = Path("data/marts") if Path("data/marts").exists() else Path("data/sample/product_marts")
-ranking = pd.read_parquet(marts / "ranking.parquet")
-comparables = pd.read_parquet(marts / "comparables.parquet")
-
-cols = ["process_key","entity_name","department","modality","base_price",
-        "priority_score","confidence_score","paa_match_status",
-        "semantic_comparable_count","reasons"]
-
-print("=== Top 5 by priority_score ===")
-top5 = ranking.nlargest(5, "priority_score")
+import pandas as pd; from pathlib import Path
+r = pd.read_parquet(Path("data/marts") / "ranking.parquet")
+top5 = r.nlargest(5, "priority_score")
 for _, row in top5.iterrows():
-    print(f"\n{row['process_key']} | {row['entity_name']} | {row['department']}")
-    print(f"  Score: {row['priority_score']} | Conf: {row['confidence_score']}")
-    print(f"  Modality: {row['modality']} | PAA: {row['paa_match_status']} | Comps: {row['semantic_comparable_count']}")
-    print(f"  Reasons: {row['reasons']}")
-
-print("\n=== PAA strong matches (if any) ===")
-paa = ranking[ranking["paa_match_status"] == "strong"].nlargest(3, "paa_match_confidence")
-for _, row in paa.iterrows():
-    print(f"\n{row['process_key']} | PAA conf: {row['paa_match_confidence']}")
-
-print("\n=== Score distribution ===")
-print(ranking["priority_score"].describe())
-print(f"High priority (>=70): {len(ranking[ranking['priority_score'] >= 70])}")
-print(f"With comparables: {len(ranking[ranking['semantic_comparable_count'] > 0])}")
+    print(f"{row['process_key']} | {row['entity_name']} | Score: {row['priority_score']}")
 PY
 ```
 
 ---
 
-## CASE-001 — Top score con comparables (sample)
+## CASE-001 — Top score con señales múltiples (REAL)
 
-- `sample_flag`: SAMPLE (datos generados, no SECOP real).
-- Proceso: `CO1.REQ.10348855`.
-- Entidad: Gobernación del Casanare.
-- Departamento: Casanare.
-- Score: 41 | Confianza: 70 | Comparables: 5.
-- Señales a mostrar: score de prioridad relativo más alto, 5 comparables, duración atípica.
-- Acción humana sugerida: abrir fuente SECOP, revisar objeto, cuantía y soporte documental.
-- Frase para jurado: "Este caso ilustra cómo la herramienta ordena capacidad humana limitada con evidencia trazable".
-- Nota de demo: los scores en sample mode son bajos porque los fixtures no contienen variabilidad real de contratos. Con `PRODUCT_SOURCE_MODE=download` los scores reflejan datos abiertos reales.
+- `process_key`: `CO1.REQ.9381735`
+- `entidad`: Red Salud Casanare E.S.E.
+- `departamento`: Casanare
+- `score`: 53 | `confianza`: 85
+- `razones principales`: monto atípico (427x mediana), duración atípica (6.86x mediana), señal débil de alineación plan vs ejecución
+- `comparables`: 5 disponibles
+- `PAA`: sin match directo
+- **Qué mostrar en pantalla**: score con múltiples señales simultáneas, confianza alta, 5 comparables.
+- **Qué acción humana sigue**: contrastar objeto contractual, cuantía y modalidad contra fuente SECOP. Verificar si el monto atípico se explica por naturaleza del contrato.
+- **Frase para jurado**: "Tres señales simultáneas suben la prioridad, pero siempre requieren contraste humano con la fuente primaria".
+- **⚠️ Recuerda**: esto es priorización de revisión, no prueba conducta indebida.
 
-## CASE-002 — ICBF con confianza alta (sample)
+## CASE-002 — Monto extremadamente atípico (REAL)
 
-- `sample_flag`: SAMPLE.
-- Proceso: `CO1.REQ.10351469`.
-- Entidad: ICBF Regional Meta.
-- Departamento: Meta.
-- Score: 37 | Confianza: 85 | Comparables: 5.
-- Señales a mostrar: confianza alta (85) con score moderado, 5 comparables.
-- Acción humana sugerida: revisar si el score refleja adecuadamente la prioridad operativa de este tipo de entidad.
-- Frase para jurado: "Confianza alta con score moderado indica buen soporte de datos; el revisor decide si escala".
-- Nota de demo: ICBF es una entidad nacional con presencia regional; útil para mostrar variedad institucional.
+- `process_key`: `CO1.REQ.8496410`
+- `entidad`: Empresa de Servicios Públicos de Granada E.S.P.
+- `departamento`: Meta
+- `score`: 53 | `confianza`: 70
+- `razones principales`: monto atípico (9230x mediana), duración atípica (7.00x), señal débil de alineación plan vs ejecución
+- `comparables`: 5 disponibles
+- `PAA`: sin match directo
+- **Qué mostrar en pantalla**: monto extremadamente atípico con confianza media, 5 comparables.
+- **Qué acción humana sigue**: revisar si el monto extremo es por tipo de contrato (obra, concesión) o si requiere revisión adicional de adjudicación.
+- **Frase para jurado**: "Montos extremos frente a pares suben la prioridad; el revisor decide si el tipo de contrato explica la diferencia".
+- **⚠️ Recuerda**: esto es priorización de revisión, no prueba conducta indebida.
 
-## CASE-003 — Monto atípico con duración (sample)
+## CASE-003 — Entidad municipal con PAA fuerte (REAL)
 
-- `sample_flag`: SAMPLE.
-- Proceso: `CO1.REQ.10388129`.
-- Entidad: Alcaldía Municipio de Puerto López.
-- Departamento: Meta.
-- Score: 37 | Confianza: 70 | Comparables: 5.
-- Señales a mostrar: monto atípico (2.00x mediana) y duración atípica (1.98x mediana).
-- Acción humana sugerida: contrastar objeto contractual y modalidad con pares del mismo departamento.
-- Frase para jurado: "Dos señales simultáneas de atipicidad suben la prioridad, pero siempre requieren contraste humano con la fuente".
-- Nota de demo: las entidades municipales pequeñas pueden tener comparables menos estables; revisar `confidence_score` siempre.
+- `process_key`: Top match con `paa_match_status=strong` (filtrar en ranking).
+- `entidad`: variable según datos.
+- `departamento`: Meta o Casanare.
+- `selector reproducible`: `ranking[ranking["paa_match_status"] == "strong"].nlargest(1, "paa_match_confidence")`.
+- **Qué mostrar en pantalla**: item PAA asociado, similitud semántica, confianza del match, comparación plan-vs-ejecución.
+- **Qué acción humana sigue**: revisar coherencia entre el item planeado en PAA y el proceso contractual ejecutado.
+- **Frase para jurado**: "El match PAA aporta trazabilidad de planeación; no es una conclusión, es evidencia para el revisor".
+- **⚠️ Recuerda**: el PAA visible es contexto de planeación, no inferencia acusatoria.
 
-## CASE-004 — Cola territorial Meta (sample)
+## CASE-004 — Confianza máxima (100/100) con score moderado (REAL)
 
-- `sample_flag`: SAMPLE.
-- Proceso: `CO1.REQ.10374235`.
-- Entidad: DMORI.
-- Departamento: Meta.
-- Score: 38 | Confianza: 70 | Comparables: 5.
-- Señales a mostrar: filtro departamental Meta, duración atípica, 5 comparables locales.
-- Acción humana sugerida: armar una muestra territorial de revisión para Meta.
-- Frase para jurado: "La comparación territorial siempre debe mostrar volumen y confianza, no solo score".
-- Nota de demo: 420 procesos en Meta/Casanare en sample mode; el filtro territorial ayuda a segmentar revisiones.
+- `process_key`: `CO1.REQ.9589534`
+- `entidad`: Empresa Social del Estado del Departamento del Meta E.S.E.
+- `departamento`: Meta
+- `score`: 15 | `confianza`: 100
+- `razones principales`: sin señales fuertes visibles, todos los datos presentes.
+- `comparables`: 5 disponibles
+- `PAA`: sin match
+- **Qué mostrar en pantalla**: confianza perfecta con score bajo — el sistema dice "datos completos, no hay señales de prioridad urgente".
+- **Qué acción humana sigue**: no escalar. Confianza alta y score bajo = proceso con datos completos que no presenta atipicidades. Ideal para mostrar que el sistema también dice "no revisar".
+- **Frase para jurado**: "Confianza 100 y score 15: el sistema prioriza bien. Datos completos sin señales de atipicidad; no todo es alerta".
+- **⚠️ Recuerda**: mostrar que el sistema también sabe callarse es tan importante como mostrar que prioriza.
 
-## CASE-005 — Confianza baja vs score (sample)
+## CASE-005 — Cola territorial Meta (REAL)
 
-- `sample_flag`: SAMPLE.
-- Proceso: `CO1.REQ.10368194`.
-- Entidad: varias entidades demo.
-- Departamento: Meta/Casanare.
-- Score: 29 | Confianza: 45.
-- Señales a mostrar: score moderado con confianza baja, pocos comparables o datos insuficientes.
-- Acción humana sugerida: validar calidad de datos antes de decidir si escala.
-- Frase para jurado: "Score y confianza se leen juntos; confianza baja pide validar datos antes de cualquier acción".
-- Nota de demo: usar este caso para mostrar que no todas las alertas son automáticas y que el sistema pide validación cuando los datos son insuficientes.
+- `selector reproducible`: `ranking[ranking["department"] == "Meta"].nlargest(1, "priority_score")`.
+- `entidades destacadas en Meta`: Alcaldía de Aguazul, CACOM-2, SUBRECURSOS FONAM, Empresas Públicas Granada, ICBF Regional Meta.
+- `volumen`: 3,527 procesos totales en Meta y Casanare.
+- **Qué mostrar en pantalla**: filtro departamental, distribución de scores, cobertura PAA por departamento.
+- **Qué acción humana sigue**: armar una muestra territorial de revisión priorizada, comparar Meta vs Casanare en score medio y confianza media.
+- **Frase para jurado**: "La comparación territorial exige mostrar volumen y confianza, no solo score. Territorios con menos datos pueden tener métricas menos estables".
+- **⚠️ Recuerda**: `docs/fairness_territorial.md` explica los límites de comparación entre departamentos.
 
 ---
 
-## Nota sobre sample mode vs datos reales
+## Datos de esta corrida
 
-Los casos arriba usan datos generados (`PRODUCT_SOURCE_MODE=sample`). Los scores
-son bajos (media 8.7, máximo 41) porque los fixtures no contienen la variabilidad
-real de contratos SECOP (competencia, montos, modalidades diversas). Para la demo
-de concurso se recomienda ejecutar:
+- **Fuente**: SECOP II Procesos de Contratación (`p6dx-8zbt`) + SECOP Integrado (`rpmr-utcd`) + PAA (`9sue-ezhx`) + control fiscal (`wasc-xi4h`).
+- **Alcance**: Meta y Casanare (demo scope).
+- **Total ranking**: 3,527 procesos puntuados.
+- **PAA strong matches**: 139 procesos con match de planeación fuerte.
+- **Comparables**: 17,605 pares proceso-proceso.
+- **Score medio**: 8.4 | **Score máximo**: 53 | **Confianza media**: 75.
+- **Generado**: 2026-05-27 con `PRODUCT_SOURCE_MODE=download`.
 
-```bash
-make product-pipeline PRODUCT_SOURCE_MODE=download
-make validate-product
-```
-
-Y regenerar los casos con el script Python de arriba. Los scores con datos reales
-típicamente tienen distribución más amplia (0-100) con señales de competencia,
-valor relativo, modalidad y PAA reales.
+La distribución de scores con datos de solo dos departamentos es naturalmente
+baja en scores extremos. Con el dataset nacional completo se esperan scores más
+altos y distribuciones más amplias.

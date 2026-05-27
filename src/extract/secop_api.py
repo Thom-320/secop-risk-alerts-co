@@ -18,7 +18,6 @@ from src.extract.state import (
     ensure_dataset_state,
     load_manifest,
     update_dataset_state,
-    validate_chunked_state,
     write_manifest,
 )
 from src.utils.config import get_settings
@@ -177,15 +176,16 @@ LEGACY_METADATA_FILES = [
 
 
 class SocrataClient:
-    def __init__(self) -> None:
+    def __init__(self, timeout_seconds: float | None = None) -> None:
         self.settings = get_settings()
         headers = {"Accept": "application/json"}
         if self.settings.app_token_socrata:
             headers["X-App-Token"] = self.settings.app_token_socrata
+        effective_timeout = timeout_seconds or self.settings.request_timeout_seconds
         self.client = httpx.Client(
             base_url=self.settings.socrata_domain,
             headers=headers,
-            timeout=self.settings.request_timeout_seconds,
+            timeout=effective_timeout,
         )
 
     def _request(self, path: str, params: dict[str, Any] | None = None) -> Any:
@@ -198,9 +198,9 @@ class SocrataClient:
             except httpx.HTTPError as exc:
                 if attempt == retries:
                     raise RuntimeError(f"Fallo consultando {path}: {exc}") from exc
-                wait_seconds = 1.5 * attempt
+                wait_seconds = 2.5 * attempt
                 logger.warning(
-                    "Error consultando {}. Reintento {}/{} en {}s.",
+                    "Error consultando {}. Reintento {}/{} en {:.1f}s.",
                     path,
                     attempt,
                     retries,
@@ -590,7 +590,28 @@ def stream_dataset_to_parquet(
     )
 
     output_dir.mkdir(parents=True, exist_ok=True)
-    validate_chunked_state(output_dir, state)
+
+    parts_on_disk = sorted(output_dir.glob("part-*.parquet"))
+    expected_parts = int(state.get("part_count", 0))
+    if len(parts_on_disk) != expected_parts:
+        logger.warning(
+            "Inconsistencia entre manifest (%d partes) y disco (%d partes) para %s. "
+            "Reiniciando extraccion desde offset 0.",
+            expected_parts,
+            len(parts_on_disk),
+            dataset_key,
+        )
+        for part in parts_on_disk:
+            part.unlink()
+        state["next_offset"] = 0
+        state["rows_written"] = 0
+        state["part_count"] = 0
+        state["completed"] = False
+        update_dataset_state(manifest, dataset_key, state)
+        write_manifest(settings.manifest_path, manifest)
+        if dataset_key == "paa_detail":
+            write_paa_status_json(manifest)
+
     if state.get("completed"):
         logger.info("Dataset {} ya estaba completo en modo {}.", dataset_key, state["mode"])
         if dataset_key == "paa_detail":
@@ -707,6 +728,66 @@ def write_paa_status_json(manifest: dict[str, Any]) -> None:
     write_json(status, settings.validation_dir / "paa_extraction_status.json")
 
 
+def finalize_single_file_dataset(
+    *,
+    dataset_key: str,
+    output_dir: Path,
+    manifest: dict[str, Any],
+) -> Path:
+    """Concatenate all part files into a single parquet and remove parts.
+    
+    The output file is written to the parent of output_dir (e.g.
+    data/raw/secop_ii_processes.parquet, not data/raw/secop_ii_processes/secop_ii_processes.parquet).
+    """
+    state = manifest.get("datasets", {}).get(dataset_key, {})
+    if not state.get("completed"):
+        return output_dir.parent / f"{dataset_key}.parquet"
+
+    part_files = sorted(output_dir.glob("part-*.parquet"))
+    if not part_files:
+        return output_dir.parent / f"{dataset_key}.parquet"
+
+    frames = [pl.read_parquet(str(p)) for p in part_files]
+    combined = pl.concat(frames, how="diagonal_relaxed")
+    output_path = output_dir.parent / f"{dataset_key}.parquet"
+    combined.write_parquet(output_path)
+    logger.info(
+        "Consolidado {} con {} filas desde {} partes.",
+        dataset_key,
+        combined.height,
+        len(frames),
+    )
+
+    for part_file in part_files:
+        part_file.unlink()
+    return output_path
+
+
+def _resolve_single_file_state(
+    manifest: dict[str, Any],
+    dataset_key: str,
+    output_dir: Path,
+) -> bool:
+    """Return True if the single_file dataset should be re-extracted from scratch.
+    
+    Returns False if the dataset is already complete and the output file exists.
+    Returns False if a partial extraction exists and should be resumed.
+    """
+    state = manifest.get("datasets", {}).get(dataset_key, {})
+    output_file = output_dir / f"{dataset_key}.parquet"
+    
+    if state.get("completed"):
+        if output_file.exists():
+            return False
+        part_files = sorted(output_dir.glob("part-*.parquet"))
+        if part_files:
+            return False
+        manifest["datasets"].pop(dataset_key, None)
+        return True
+    
+    return False
+
+
 def main() -> None:
     configure_logging()
     if (os.getenv("PRODUCT_SOURCE_MODE") or "").strip().lower() == "sample":
@@ -714,7 +795,10 @@ def main() -> None:
         return
     settings = get_settings()
     move_legacy_assets()
-    client = SocrataClient()
+
+    stream_client = SocrataClient(timeout_seconds=90.0)
+    metadata_client = SocrataClient()
+
     manifest = load_manifest(settings.manifest_path, scope_payload(settings))
     manifest["scope"] = scope_payload(settings)
 
@@ -726,38 +810,33 @@ def main() -> None:
                 continue
 
             dataset_id = spec["id"]
-            metadata = normalized_metadata(client.fetch_metadata(dataset_id))
+            metadata = normalized_metadata(metadata_client.fetch_metadata(dataset_id))
             write_json(metadata, metadata_dir / f"{dataset_key}.json")
 
-            if spec["layout"] == "chunked":
-                stream_dataset_to_parquet(
+            output_dir = settings.raw_dir / dataset_key
+            layout = spec.get("layout", "single_file")
+
+            if layout == "single_file" and _resolve_single_file_state(
+                manifest, dataset_key, output_dir
+            ):
+                for old_part in sorted(output_dir.glob("part-*.parquet")):
+                    old_part.unlink()
+
+            stream_dataset_to_parquet(
+                dataset_key=dataset_key,
+                dataset_id=dataset_id,
+                params=build_params(dataset_key, spec),
+                output_dir=output_dir,
+                fetch_page=stream_client.fetch_page,
+                manifest=manifest,
+            )
+
+            if layout == "single_file":
+                _ = finalize_single_file_dataset(
                     dataset_key=dataset_key,
-                    dataset_id=dataset_id,
-                    params=build_params(dataset_key, spec),
-                    output_dir=settings.raw_dir / dataset_key,
-                    fetch_page=client.fetch_page,
+                    output_dir=output_dir,
                     manifest=manifest,
                 )
-            else:
-                frame = client.fetch_all(dataset_id, build_params(dataset_key, spec))
-                write_parquet(frame, settings.raw_dir / f"{dataset_key}.parquet")
-                state = ensure_dataset_state(
-                    manifest,
-                    dataset_key=dataset_key,
-                    dataset_id=dataset_id,
-                    page_size=int(build_params(dataset_key, spec)["$limit"]),
-                    mode=settings.extract_scope,
-                    scope=dataset_scope(
-                        settings.extract_scope,
-                        settings.paa_years,
-                        settings.scope_departments,
-                        [],
-                    ),
-                    layout="single_file",
-                )
-                state["rows_written"] = frame.height
-                state["completed"] = True
-                update_dataset_state(manifest, dataset_key, state)
 
             manifest["datasets"][dataset_key]["metadata"] = metadata
             write_manifest(settings.manifest_path, manifest)
@@ -766,7 +845,8 @@ def main() -> None:
 
         write_paa_status_json(manifest)
     finally:
-        client.close()
+        stream_client.close()
+        metadata_client.close()
 
 
 if __name__ == "__main__":

@@ -1,0 +1,312 @@
+\documentclass[aspectratio=169,10pt]{beamer}
+
+\usepackage{fontspec}
+\setmainfont{Helvetica}
+\setsansfont{Helvetica}
+\setmonofont{Menlo}
+
+\usepackage[spanish]{babel}
+\usepackage{booktabs}
+\usepackage{tikz}
+\usetikzlibrary{calc,positioning}
+\usepackage{graphicx}
+\usepackage{xcolor}
+
+\graphicspath{{../assets/}}
+
+\definecolor{canvas}{HTML}{F8FAFC}
+\definecolor{accent}{HTML}{275DA8}
+\definecolor{accentlight}{HTML}{E8F0F9}
+\definecolor{textdark}{HTML}{1E293B}
+\definecolor{textmuted}{HTML}{64748B}
+
+\setbeamercolor{background canvas}{bg=canvas}
+\setbeamercolor{normal text}{fg=textdark}
+\setbeamercolor{frametitle}{fg=accent}
+\setbeamercolor{item}{fg=accent}
+
+\setbeamerfont{frametitle}{size=\large,series=\bfseries}
+\setbeamerfont{title}{size=\LARGE,series=\bfseries}
+\setbeamerfont{subtitle}{size=\large}
+
+\setbeamertemplate{navigation symbols}{}
+
+\setbeamertemplate{footline}{%
+  \begin{beamercolorbox}[wd=\paperwidth,ht=2.5ex,dp=1ex,leftskip=1em,rightskip=1em]{footline}%
+    \usebeamerfont{footline}%
+    \color{textmuted}\tiny Priorización de revisión humana; no prueba conductas indebidas.%
+    \hfill%
+    \insertframenumber/\inserttotalframenumber%
+  \end{beamercolorbox}%
+}
+
+\setbeamertemplate{frametitle}{%
+  \nointerlineskip
+  \begin{beamercolorbox}[wd=\paperwidth,ht=0.4cm,dp=0.2cm]{frametitle}
+    \begin{tikzpicture}[remember picture,overlay]
+      \fill[accent] (current page.north west) rectangle ++(\paperwidth,0.4cm);
+      \node[anchor=west,font=\large\bfseries,text=white] at ($(current page.north west)+(1em,-0.2cm)$) {\insertframetitle};
+    \end{tikzpicture}
+  \end{beamercolorbox}
+  \vspace{0.3cm}
+}
+
+\newcommand{\chip}[1]{%
+  \tikz[baseline=(text.base)]{%
+    \node[fill=accentlight,text=accent,rounded corners=2pt,inner sep=4pt,font=\scriptsize](text){#1};%
+  }%
+}
+
+\begin{document}
+
+\begin{frame}[plain]
+  \begin{tikzpicture}[remember picture,overlay]
+    \fill[accent] (current page.north west) rectangle ++(\paperwidth,0.6cm);
+  \end{tikzpicture}
+  
+  \vspace{1cm}
+  \centering
+  {\color{accent}\LARGE\bfseries Transparencia360}\\[0.3cm]
+  {\large ContratIA Abierta}\\[0.8cm]
+  
+  \begin{beamercolorbox}[wd=0.85\textwidth,rounded=true,shadow=false]{block body}
+    \centering\itshape
+    Ordenar miles de procesos SECOP para decidir qué revisar primero.
+  \end{beamercolorbox}
+  
+  \vspace{0.8cm}
+  {\small Ingeniería de Datos}\\
+  {\small Universidad del Rosario}\\[0.6cm]
+  
+  \chip{Revisión humana}\quad
+  \chip{Datos abiertos}\quad
+  \chip{Trazabilidad}
+\end{frame}
+
+\begin{frame}{Problema}
+  \begin{center}
+    \textbf{No faltan datos de contratación.}\\[0.3cm]
+    Falta capacidad humana para revisarlos con prioridad, evidencia y trazabilidad.
+  \end{center}
+  
+  \vspace{0.8cm}
+  
+  \begin{tikzpicture}[node distance=2cm,>=latex]
+    \node[draw=accent,fill=accentlight,rounded corners,minimum width=3cm,minimum height=1cm,align=center] (a) {Miles de\\procesos};
+    \node[draw=accent,fill=accentlight,rounded corners,minimum width=3cm,minimum height=1cm,align=center,right=of a] (b) {Ranking\\explicable};
+    \node[draw=accent,fill=accentlight,rounded corners,minimum width=3cm,minimum height=1cm,align=center,right=of b] (c) {Revisión\\humana};
+    
+    \draw[->,thick,accent] (a) -- (b);
+    \draw[->,thick,accent] (b) -- (c);
+  \end{tikzpicture}
+\end{frame}
+
+\begin{frame}{Stakeholders}
+  \begin{columns}[T]
+    \begin{column}{0.45\textwidth}
+      \textbf{Usuarios principales:}
+      \begin{itemize}
+        \item Veeduría ciudadana
+        \item Control interno
+        \item Periodista de datos
+      \end{itemize}
+    \end{column}
+    
+    \begin{column}{0.45\textwidth}
+      \textbf{Decisión semanal:}
+      \begin{center}
+        \itshape ¿Qué procesos revisar primero y por qué?
+      \end{center}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Requisitos cubiertos}
+  \begin{table}
+    \centering
+    \small
+    \begin{tabular}{@{}ll@{}}
+      \toprule
+      \textbf{Componente} & \textbf{Cobertura} \\
+      \midrule
+      PostgreSQL & 27 tablas + 33 objetos \\
+      MongoDB & 5 colecciones \\
+      FastAPI & 3 servicios \\
+      Dash & Interfaz de revisión \\
+      ETL & 17.229 procesos \\
+      SQL avanzado & Triggers, CTE, windows \\
+      Pruebas & 66 pytest \\
+      Documentación & 21 archivos \\
+      \bottomrule
+    \end{tabular}
+  \end{table}
+\end{frame}
+
+\begin{frame}{Fuentes de datos}
+  \begin{table}
+    \centering
+    \small
+    \begin{tabular}{@{}llll@{}}
+      \toprule
+      \textbf{Dataset} & \textbf{Descripción} & \textbf{Rol} & \textbf{Métrica} \\
+      \midrule
+      p6dx & SECOP II Procesos & Unidad analítica & 17.229 procesos \\
+      rpmr & SECOP Integrado & Contexto ejecución & 68.916 razones \\
+      9sue & PAA Detalle & Planeación & 4.494 items \\
+      wasc & Control fiscal & Contexto visible & 41.996 eventos \\
+      \bottomrule
+    \end{tabular}
+  \end{table}
+\end{frame}
+
+\begin{frame}{Arquitectura}
+  \begin{center}
+    \includegraphics[width=0.9\textwidth,height=0.65\textheight,keepaspectratio]{architecture.png}
+  \end{center}
+  
+  \begin{center}
+    \small\color{textmuted}
+    Socrata $\rightarrow$ ETL $\rightarrow$ PostgreSQL + MongoDB $\rightarrow$ FastAPI $\rightarrow$ Dash
+  \end{center}
+\end{frame}
+
+\begin{frame}{Modelo relacional}
+  \begin{center}
+    \includegraphics[width=0.95\textwidth,height=0.7\textheight,keepaspectratio]{er_model.png}
+  \end{center}
+  
+  \begin{center}
+    \small\color{textmuted}
+    PostgreSQL como fuente de verdad: 27 tablas con PK/FK, constraints, índices, vistas
+  \end{center}
+\end{frame}
+
+\begin{frame}{NoSQL y auditoría}
+  \textbf{MongoDB: trazabilidad y snapshots}
+  
+  \vspace{0.3cm}
+  
+  \begin{table}
+    \centering
+    \small
+    \begin{tabular}{@{}ll@{}}
+      \toprule
+      \textbf{Colección} & \textbf{Documentos} \\
+      \midrule
+      raw\_process\_snapshots & 100 docs \\
+      etl\_run\_logs & 1 doc \\
+      risk\_event\_logs & 1 doc \\
+      report\_snapshots & 1 doc \\
+      user\_action\_logs & 1 doc \\
+      \bottomrule
+    \end{tabular}
+  \end{table}
+\end{frame}
+
+\begin{frame}{Ingeniería SQL}
+  \begin{columns}[T]
+    \begin{column}{0.48\textwidth}
+      \textbf{Triggers}
+      \begin{itemize}
+        \item audit\_log
+        \item historial
+        \item updated\_at
+      \end{itemize}
+      
+      \vspace{0.3cm}
+      
+      \textbf{Window functions}
+      \begin{itemize}
+        \item Concentración
+        \item Outliers
+      \end{itemize}
+    \end{column}
+    
+    \begin{column}{0.48\textwidth}
+      \textbf{CTE recursiva}
+      \begin{itemize}
+        \item Jerarquía territorial
+      \end{itemize}
+      
+      \vspace{0.3cm}
+      
+      \textbf{Transacciones}
+      \begin{itemize}
+        \item Score + evento atómico
+      \end{itemize}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Score explicable}
+  \begin{columns}[T]
+    \begin{column}{0.45\textwidth}
+      \textbf{Componentes:}
+      \begin{itemize}
+        \item \textbf{Reglas:} señales auditables
+        \item \textbf{Pares:} desviación contextual
+        \item \textbf{Anomalía:} apoyo interpretable
+        \item \textbf{Confianza:} calidad y cobertura
+        \item \textbf{Razones:} texto trazable
+      \end{itemize}
+    \end{column}
+    
+    \begin{column}{0.45\textwidth}
+      \textbf{Salida:}
+      \begin{itemize}
+        \item Score numérico
+        \item Confianza (0--1)
+        \item Razones textuales
+        \item Procesos comparables
+      \end{itemize}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Demo}
+  \begin{columns}[T]
+    \begin{column}{0.32\textwidth}
+      \centering
+      \textbf{Panorama}\\[0.2cm]
+      \includegraphics[width=\textwidth]{screenshot_dashboard_home.png}
+    \end{column}
+    
+    \begin{column}{0.32\textwidth}
+      \centering
+      \textbf{Ranking}\\[0.2cm]
+      \includegraphics[width=\textwidth]{screenshot_ranking.png}
+    \end{column}
+    
+    \begin{column}{0.32\textwidth}
+      \centering
+      \textbf{Detalle}\\[0.2cm]
+      \includegraphics[width=\textwidth]{screenshot_process_detail.png}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Validación y cierre}
+  \begin{columns}[T]
+    \begin{column}{0.45\textwidth}
+      \includegraphics[width=\textwidth]{validation_summary.png}
+    \end{column}
+    
+    \begin{column}{0.5\textwidth}
+      \textbf{Límites:}
+      \begin{itemize}
+        \item Datos ruidosos
+        \item Joins imperfectos
+        \item Requiere revisión humana
+      \end{itemize}
+      
+      \vspace{0.3cm}
+      
+      \textbf{Siguiente paso:}
+      \begin{itemize}
+        \item Encuesta real con 5 usuarios
+      \end{itemize}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\end{document}

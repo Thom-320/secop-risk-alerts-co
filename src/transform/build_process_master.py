@@ -432,6 +432,7 @@ def build_process_master() -> dict[str, pd.DataFrame]:
     paa = normalize_paa(load_parquet(paa_raw_path(raw_dir)))
     control = normalize_control_context(load_parquet(raw_dir / "control_fiscal_context.parquet"))
 
+    processes = processes.drop_duplicates(subset=["process_key"], keep="last")
     validate_process_master(processes)
     rpmr_linkage = link_rpmr(processes, rpmr)
 

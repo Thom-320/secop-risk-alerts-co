@@ -1,0 +1,63 @@
+# Render Blueprint — ContratIA Abierta (lean MVP route)
+#
+# To deploy:
+#   1) Push this repo to GitHub (already done).
+#   2) Open https://dashboard.render.com/select-repo?type=blueprint
+#   3) Connect this repo. Render reads this file automatically.
+#   4) Click Apply. Free instance type. No paid plan required.
+#
+# Result:
+#   - Public read-only API:  https://contratia-api.onrender.com/health
+#   - Public Dash dashboard: https://contratia-dashboard.onrender.com
+#
+# Both services run from the same Dockerfile with different CMD overrides.
+
+services:
+  - type: web
+    name: contratia-api
+    runtime: docker
+    plan: free
+    region: oregon
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /health
+    envVars:
+      - key: PUBLIC_READ_ONLY
+        value: "true"
+      - key: PRODUCT_SOURCE_MODE
+        value: fixtures
+      - key: MODEL_BACKEND
+        value: tfidf
+      - key: PORT
+        value: "8000"
+
+  - type: web
+    name: contratia-dashboard
+    runtime: docker
+    plan: free
+    region: oregon
+    dockerfilePath: ./Dockerfile
+    dockerCommand: "python -m dashboard.dash_app"
+    envVars:
+      - key: PUBLIC_READ_ONLY
+        value: "true"
+      - key: DASH_ALLOW_DB_FALLBACK
+        value: "0"
+      - key: PRODUCT_SOURCE_MODE
+        value: fixtures
+      - key: PORT
+        value: "8050"
+      - key: CONTRACTS_SERVICE_URL
+        fromService:
+          name: contratia-api
+          type: web
+          property: hostport
+      - key: RISK_SERVICE_URL
+        fromService:
+          name: contratia-api
+          type: web
+          property: hostport
+      - key: ANALYTICS_SERVICE_URL
+        fromService:
+          name: contratia-api
+          type: web
+          property: hostport

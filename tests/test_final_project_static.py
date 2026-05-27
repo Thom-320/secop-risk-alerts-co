@@ -184,7 +184,7 @@ def test_data_cards_have_required_fields() -> None:
 def test_demo_and_validation_docs_have_expected_markers() -> None:
     expectations = {
         "docs/demo-guide.md": ["Flujo de 2 minutos", "Abrir dashboard"],
-        "docs/demo-casebook.md": ["SAMPLE", "CASE-005"],
+        "docs/demo-casebook.md": ["CASE-001", "CASE-005", "priorización de revisión"],
         "docs/human_validation_protocol.md": ["40 y 100 procesos", "controles aleatorios"],
         "docs/fairness_territorial.md": ["Proporción de alertas altas", "Pendientes"],
         "docs/deployment.md": ["PUBLIC_READ_ONLY", "POST /reviews"],
