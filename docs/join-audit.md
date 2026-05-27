@@ -23,3 +23,11 @@
 - `9sue-ezhx` queda visible desde el inicio,
   pero su entrada al score depende de compuerta posterior.
 - `wasc-xi4h` se mantiene como contexto visible y no entra al score base.
+
+## Señal y compuertas
+
+- Top-1 aceptable PAA observado: 0.00%
+- Cobertura de match PAA en alcance demo: 0.00%
+- Procesos con comparables semánticos válidos en alcance demo: 99.05%
+- Modo PAA resuelto para el score provisional: `visible_only`
+
