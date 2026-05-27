@@ -32,6 +32,7 @@ Priorizar revisión humana de procesos contractuales abiertos, sin emitir juicio
 
 ## 6. Despliegue
 
-- FastAPI
-- Streamlit
-- artefactos reproducibles en Parquet
+- PostgreSQL + MongoDB como columna vertebral de la entrega académica
+- FastAPI como microservicios de contratos, riesgo y analítica
+- Dash como interfaz oficial de sustentación
+- Parquet/DuckDB + Streamlit quedan como respaldo offline y plus de producto

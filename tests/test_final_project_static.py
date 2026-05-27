@@ -82,9 +82,28 @@ def test_required_docs_exist() -> None:
         "docs/manual_usuario.md",
         "docs/testing_plan.md",
         "docs/testing_evidence.md",
+        "docs/validation-summary.md",
+        "docs/human_validation_protocol.md",
+        "docs/human_validation_results.md",
+        "docs/demo-casebook.md",
         "docs/usability_survey_template.md",
         "docs/usability_results.md",
         "docs/ai_usage_disclosure.md",
+        "docs/product_route.md",
+        "docs/academic_route.md",
+        "docs/contest_submission_checklist.md",
+        "docs/class_submission_checklist.md",
+        "docs/model-card.md",
+        "docs/data-cards/secop-ii-procesos.md",
+        "docs/data-cards/secop-integrado.md",
+        "docs/data-cards/paa-detalle.md",
+        "docs/data-cards/control-fiscal.md",
+        "docs/fairness_territorial.md",
+        "docs/deployment.md",
+        "docs/product_route.md",
+        "docs/academic_route.md",
+        "docs/contest_submission_checklist.md",
+        "docs/class_submission_checklist.md",
         "docs/diagrams/architecture.mmd",
         "docs/diagrams/er_diagram.mmd",
         "docs/diagrams/microservices.mmd",
@@ -94,8 +113,151 @@ def test_required_docs_exist() -> None:
 
 def test_usability_results_are_not_fabricated() -> None:
     content = (ROOT / "docs" / "usability_results.md").read_text()
-    assert "Pendiente de diligenciar con 5 usuarios reales" in content
+    assert "Estado: pendiente de 5 usuarios reales" in content
     assert "No se incluyen resultados fabricados" in content
+    assert "is_real_response" in content
+
+
+def test_human_validation_results_are_not_fabricated() -> None:
+    content = (ROOT / "docs" / "human_validation_results.md").read_text()
+    assert "Estado: pendiente" in content
+    assert "No se fabrican etiquetas humanas" in content
+    assert "is_real_review" in content
+
+
+def test_model_card_has_required_sections() -> None:
+    content = (ROOT / "docs" / "model-card.md").read_text()
+    for section in [
+        "## 1. Nombre del sistema",
+        "## 2. Propósito",
+        "## 3. Usuarios previstos",
+        "## 4. Decisión que apoya",
+        "## 5. Decisiones que NO debe tomar",
+        "## 6. Fuentes de datos",
+        "## 7. Unidad de análisis",
+        "## 8. Features principales",
+        "## 9. Método de scoring",
+        "## 10. Componentes del score",
+        "## 11. Métrica de confianza",
+        "## 12. Validación automática existente",
+        "## 13. Validación humana pendiente",
+        "## 14. Sesgos y riesgos",
+        "## 15. Limitaciones técnicas",
+        "## 16. Uso permitido",
+        "## 17. Uso no permitido",
+        "## 18. Monitoreo recomendado",
+        "## 19. Cambios futuros",
+    ]:
+        assert section in content
+
+
+def test_data_cards_have_required_fields() -> None:
+    required = [
+        "## 1. Dataset",
+        "## 2. ID en datos.gov.co",
+        "## 3. Entidad fuente",
+        "## 4. Uso dentro del sistema",
+        "## 5. Granularidad",
+        "## 6. Campos usados",
+        "## 7. Llaves de enlace",
+        "## 8. Problemas de calidad esperados",
+        "## 9. Transformaciones aplicadas",
+        "## 10. Riesgos de sesgo",
+        "## 11. Qué NO se infiere desde este dataset",
+        "## 12. Estado en el MVP",
+    ]
+    cards = {
+        "docs/data-cards/secop-ii-procesos.md": "p6dx-8zbt",
+        "docs/data-cards/secop-integrado.md": "rpmr-utcd",
+        "docs/data-cards/paa-detalle.md": "9sue-ezhx",
+        "docs/data-cards/control-fiscal.md": "wasc-xi4h",
+    }
+    for relative, dataset_id in cards.items():
+        content = (ROOT / relative).read_text()
+        assert dataset_id in content
+        for heading in required:
+            assert heading in content
+
+
+def test_demo_and_validation_docs_have_expected_markers() -> None:
+    expectations = {
+        "docs/demo-guide.md": ["Flujo de 2 minutos", "Abrir dashboard"],
+        "docs/demo-casebook.md": ["SAMPLE", "CASE-005"],
+        "docs/human_validation_protocol.md": ["40 y 100 procesos", "controles aleatorios"],
+        "docs/fairness_territorial.md": ["Proporción de alertas altas", "Pendientes"],
+        "docs/deployment.md": ["PUBLIC_READ_ONLY", "POST /reviews"],
+    }
+    for relative, markers in expectations.items():
+        content = (ROOT / relative).read_text()
+        for marker in markers:
+            assert marker in content
+
+
+def test_route_docs_and_checklists_are_non_empty() -> None:
+    for relative in [
+        "docs/product_route.md",
+        "docs/academic_route.md",
+        "docs/contest_submission_checklist.md",
+        "docs/class_submission_checklist.md",
+        "docs/ethics-note.md",
+        "docs/reproducibility.md",
+    ]:
+        content = (ROOT / relative).read_text()
+        assert len(content.strip()) > 250
+
+
+def test_validators_declare_expected_modes() -> None:
+    product_validator = (ROOT / "etl" / "validate_product.py").read_text()
+    academic_validator = (ROOT / "etl" / "validate_final.py").read_text()
+
+    assert "product_validation.json" in product_validator
+    assert '"mode": "product-lean"' in product_validator
+    assert "final_validation.json" in academic_validator
+    assert '"mode": "academic-fullstack"' in academic_validator
+
+
+def test_dash_has_downloadable_evidence_exports() -> None:
+    content = (ROOT / "dashboard" / "dash_app.py").read_text()
+    assert "Descargar CSV" in content
+    assert "Descargar HTML" in content
+    assert "dcc.Download" in content
+
+
+def test_sample_csvs_are_marked_sample() -> None:
+    demo_cases = (ROOT / "validation" / "demo_cases_sample.csv").read_text().splitlines()
+    manual_review = (ROOT / "validation" / "manual_review_sample.csv").read_text().splitlines()
+
+    assert demo_cases[0].startswith("case_id,sample_flag,process_id")
+    assert all(",SAMPLE," in line for line in demo_cases[1:])
+    assert manual_review[0].startswith("sample_flag,review_id,process_id")
+    assert all(line.startswith("SAMPLE,") for line in manual_review[1:])
+
+
+def test_slide_sources_do_not_keep_stale_39_test_claim() -> None:
+    forbidden_claims = (
+        "39 pruebas",
+        "39 pasan",
+        "39 pytest",
+        "39 passed",
+        "50 tests",
+        "50 passed",
+    )
+    for relative in [
+        "slides/README.md",
+        "slides/contratia_abierta_deck.md",
+        "slides/contratia_abierta_speaker_notes.md",
+        "presentation/slides.md",
+        "presentation/speaker_notes.md",
+        "slides/scripts/build_deck.mjs",
+        "slides/scripts/generate_assets.py",
+        "slides/latex/contratia_abierta_beamer.tex",
+        "slides/html/contratia_abierta_interactive.html",
+        "presentation/html/contratia_abierta_interactive.html",
+    ]:
+        text = (ROOT / relative).read_text()
+        for forbidden in forbidden_claims:
+            assert forbidden not in text
+    assert "66 tests pasan" in (ROOT / "presentation/slides.md").read_text()
 
 
 def test_sample_demo_source_exists_for_clean_clone() -> None:

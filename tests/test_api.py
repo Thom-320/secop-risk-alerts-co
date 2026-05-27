@@ -28,7 +28,17 @@ def test_parquet_api_missing_process_returns_404(monkeypatch) -> None:
     assert response.status_code == 404
 
 
-def test_parquet_api_review_missing_process_returns_404(monkeypatch) -> None:
+def test_parquet_api_reviews_are_read_only_by_default(monkeypatch) -> None:
+    monkeypatch.setattr(api_main, "load_assets", _empty_assets)
+    response = TestClient(app).post(
+        "/reviews",
+        json={"process_key": "no-existe", "notes": "revision demo"},
+    )
+    assert response.status_code == 403
+
+
+def test_parquet_api_review_missing_process_returns_404_when_writes_enabled(monkeypatch) -> None:
+    monkeypatch.setenv("PUBLIC_READ_ONLY", "false")
     monkeypatch.setattr(api_main, "load_assets", _empty_assets)
     response = TestClient(app).post(
         "/reviews",

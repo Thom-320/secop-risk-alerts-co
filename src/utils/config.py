@@ -67,6 +67,7 @@ class Settings(BaseModel):
 @lru_cache(maxsize=1)
 def get_settings() -> Settings:
     token = os.getenv("APP_TOKEN_SOCRATA") or None
+    product_source_mode = (os.getenv("PRODUCT_SOURCE_MODE") or "").strip().lower()
     extract_scope = os.getenv("EXTRACT_SCOPE") or "demo"
     extract_only = [
         item.strip()
@@ -86,15 +87,25 @@ def get_settings() -> Settings:
     paa_signal_mode = os.getenv("PAA_SIGNAL_MODE") or "pending"
     page_size = int(os.getenv("SOCRATA_PAGE_SIZE") or "50000")
     paa_page_size = int(os.getenv("PAA_PAGE_SIZE") or "20000")
-    settings = Settings(
-        app_token_socrata=token,
-        extract_scope=extract_scope,
-        extract_only=extract_only,
-        paa_entity_codes=paa_entity_codes,
-        paa_years=paa_years,
-        paa_signal_mode=paa_signal_mode,
-        page_size=page_size,
-        paa_page_size=paa_page_size,
-    )
+    kwargs: dict[str, object] = {
+        "app_token_socrata": token,
+        "extract_scope": extract_scope,
+        "extract_only": extract_only,
+        "paa_entity_codes": paa_entity_codes,
+        "paa_years": paa_years,
+        "paa_signal_mode": paa_signal_mode,
+        "page_size": page_size,
+        "paa_page_size": paa_page_size,
+    }
+    if product_source_mode == "sample":
+        sample_base = project_root() / "data" / "sample"
+        kwargs.update(
+            {
+                "raw_dir": sample_base / "product_raw",
+                "interim_dir": sample_base / "product_interim",
+                "manifest_path": sample_base / "product_raw" / "manifest.json",
+            }
+        )
+    settings = Settings(**kwargs)
     settings.ensure_directories()
     return settings

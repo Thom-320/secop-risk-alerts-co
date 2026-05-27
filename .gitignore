@@ -19,6 +19,8 @@ data/reports/**
 validation/*.json
 validation/*.csv
 validation/generated/
+!validation/demo_cases_sample.csv
+!validation/manual_review_sample.csv
 docs/contratia_profesor_*.pdf
 docs/contratia_profesor_*.tex
 *.log
@@ -42,6 +44,9 @@ slides/html/export/contact_sheet.png
 !data/sample/
 !data/sample/**
 data/sample/generated/**
+data/sample/product_raw/**
+data/sample/product_interim/**
 !validation/
 !validation/README.md
 .worktrees/
+.streamlit/

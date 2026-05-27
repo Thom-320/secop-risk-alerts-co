@@ -30,6 +30,11 @@ def validate_sources() -> dict[str, object]:
 def main() -> None:
     summary = validate_sources()
     print(json.dumps(summary, indent=2, ensure_ascii=False))
+    if not summary["meets_10000_process_requirement"]:
+        raise SystemExit(
+            "La fuente demo disponible no cumple el minimo de 10.000 procesos; "
+            "usa Parquet local verificado o DEMO_SOURCE_MODE=download."
+        )
 
 
 if __name__ == "__main__":

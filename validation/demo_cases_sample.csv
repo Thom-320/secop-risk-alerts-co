@@ -1,0 +1,6 @@
+case_id,sample_flag,process_id,process_key,entity_name,department,priority_score,confidence_score,top_reason_1,top_reason_2,top_reason_3,human_action_suggested,demo_script_note
+CASE-001,SAMPLE,1001,SAMPLE-PROC-001,Alcaldia Demo Meta,Meta,82,76,competencia reducida,valor alto frente a pares,descripcion suficiente,Contrastar SECOP y registrar criterio,Explicar prioridad alta con soporte visible
+CASE-002,SAMPLE,1002,SAMPLE-PROC-002,Entidad Demo Casanare,Casanare,78,48,competencia reducida,modalidad sensible,datos incompletos,Validar calidad de datos antes de escalar,Explicar diferencia entre score y confianza
+CASE-003,SAMPLE,1003,SAMPLE-PROC-003,Alcaldia Demo Meta,Meta,66,71,match PAA fuerte,valor comparable,trazabilidad disponible,Revisar coherencia plan-vs-ejecucion,Mostrar contexto PAA sin inferir incumplimiento
+CASE-004,SAMPLE,1004,SAMPLE-PROC-004,Gobernacion Demo Casanare,Casanare,61,68,comparables disponibles,valor relativo,modalidad comparable,Comparar objeto modalidad y cuantia,Mostrar comparables como contexto de revision
+CASE-005,SAMPLE,1005,SAMPLE-PROC-005,Entidad Territorial Demo,Meta,58,64,filtro territorial,cobertura PAA parcial,pares limitados,Construir muestra territorial de revision,Mostrar limites de comparacion territorial

@@ -28,6 +28,7 @@ SQL_FILES = [
     "003_triggers.sql",
     "004_views_analytics.sql",
     "005_seed_reference_data.sql",
+    "007_security_roles.sql",
 ]
 
 
@@ -374,16 +375,36 @@ def load_contracts(
 ) -> int:
     loaded = 0
     for idx, row in contracts.head(limit).iterrows():
-        process_key = clean_text(row.get("proceso_de_compra"))
+        process_key = clean_text(
+            row.get("proceso_de_compra")
+            or row.get("numero_de_proceso")
+            or row.get("referencia_del_proceso")
+        )
         process_id = process_ids.get(process_key)
         if not process_id:
             continue
         provider_id = upsert_provider(
             conn,
-            row.get("proveedor_adjudicado"),
+            row.get("proveedor_adjudicado") or row.get("nom_raz_social_contratista"),
             row.get("documento_proveedor"),
         )
-        contract_key = clean_key(row.get("id_contrato"), f"demo-contract-{idx}")
+        contract_key = clean_key(
+            row.get("id_contrato") or row.get("numero_del_contrato"),
+            f"demo-contract-{idx}",
+        )
+        status = clean_text(
+            row.get("estado_contrato") or row.get("estado_del_proceso"),
+            "sin_estado",
+        )
+        signed_date = to_date(
+            row.get("fecha_de_firma") or row.get("fecha_de_firma_del_contrato")
+        )
+        start_date = to_date(
+            row.get("fecha_de_inicio_del_contrato") or row.get("fecha_inicio_ejecuci_n")
+        )
+        end_date = to_date(
+            row.get("fecha_de_fin_del_contrato") or row.get("fecha_fin_ejecuci_n")
+        )
         one(
             conn,
             """
@@ -402,13 +423,13 @@ def load_contracts(
                 contract_key,
                 process_id,
                 provider_id,
-                clean_text(row.get("estado_contrato"), "sin_estado"),
-                to_date(row.get("fecha_de_firma")),
-                to_date(row.get("fecha_de_inicio_del_contrato")),
-                to_date(row.get("fecha_de_fin_del_contrato")),
-                to_decimal(row.get("valor_del_contrato")),
+                status,
+                signed_date,
+                start_date,
+                end_date,
+                to_decimal(row.get("valor_del_contrato") or row.get("valor_contrato")),
                 to_decimal(row.get("valor_pagado")),
-                clean_text(row.get("urlproceso"), ""),
+                clean_text(row.get("urlproceso") or row.get("url_contrato"), ""),
             ),
         )
         loaded += 1

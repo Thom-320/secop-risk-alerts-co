@@ -1,131 +1,167 @@
-# Transparencia360 / ContratIA Abierta
+# ContratIA Abierta / Transparencia360
 
-Sistema poliglota de priorizacion de revision contractual en Colombia para veedurias, oficinas de transparencia y periodistas de datos.
+**Transparencia360** es el proyecto unificado para Ingeniería de Datos.
+**ContratIA Abierta** es el nombre de producto/demo de la misma solución, no un
+fork separado.
 
-El sistema **no prueba conductas indebidas ni responsabilidad individual**. Ordena procesos de contratacion publica para decidir que revisar primero con evidencia, trazabilidad y explicaciones.
+El sistema no acusa, no prueba corrupción y no reemplaza auditoría jurídica o fiscal; prioriza revisión humana con evidencia trazable.
 
-## Problema
+La idea central es convertir datos abiertos de contratación pública en una cola
+explicable: qué revisar primero, por qué, y qué acción humana sigue. La
+herramienta produce alertas explicables y reportes de apoyo; nunca declara
+responsabilidad individual ni conclusiones jurídicas.
 
-Las organizaciones de control social no pueden revisar manualmente miles de procesos SECOP. Transparencia360 convierte datos abiertos oficiales en un ranking explicable de revision humana.
+## Ruta oficial de entrega
 
-## Datos
+| Modo | Comando | UI | API | Storage | Evidencia |
+| --- | --- | --- | --- | --- | --- |
+| **Entrega ID oficial** | `make demo-full && make validate-final` | Dash `dashboard/dash_app.py` | Microservicios FastAPI `services/*` | PostgreSQL + MongoDB | 10k+ registros, modelo relacional, NoSQL, triggers, vistas, SQL avanzado, validación final |
+| Plus offline | `make product-pipeline && make validate-product` | Streamlit `src/app/streamlit_app.py` | FastAPI simple `src/api/main.py` | Parquet/DuckDB | Reproducción rápida, respaldo sin Docker, demo pública ligera |
 
-- `p6dx-8zbt`: SECOP II Procesos de Contratacion.
+La sustentación académica debe partir de la ruta full-stack. El modo
+Streamlit/Parquet se conserva como respaldo reproducible y como superficie de
+producto liviana cuando no se quiere depender de Docker o bases locales.
+
+## Fuentes de datos
+
+- `p6dx-8zbt`: SECOP II Procesos de Contratación.
 - `rpmr-utcd`: SECOP Integrado.
 - `9sue-ezhx`: SECOP II Plan Anual de Adquisiciones Detalle.
-- `wasc-xi4h`: ejecucion del plan de vigilancia/control fiscal.
+- `wasc-xi4h`: ejecución/control fiscal como contexto visible.
 
-La demo usa 10.000+ registros. Si la API Socrata no esta disponible, la carga usa Parquet local existente y falla claramente si tampoco existe.
+El contexto fiscal se muestra como evidencia contextual y no como etiqueta del
+modelo. La ausencia o presencia de contexto fiscal no prueba conducta indebida.
 
-## Arquitectura
+## Quickstart oficial académico full-stack
 
-```mermaid
-flowchart LR
-  Socrata[Socrata datos.gov.co] --> ETL[ETL Python]
-  Parquet[Fallback Parquet local] --> ETL
-  ETL --> PG[(PostgreSQL 16)]
-  ETL --> Mongo[(MongoDB 7)]
-  PG --> Contracts[contracts_service]
-  PG --> Risk[risk_service]
-  PG --> Analytics[analytics_service]
-  Contracts --> Dash[Dash dashboard]
-  Risk --> Dash
-  Analytics --> Dash
-```
-
-PostgreSQL es la fuente relacional principal. MongoDB guarda snapshots, logs y eventos. FastAPI expone microservicios y Dash es la interfaz oficial.
-
-## Quickstart
+Instalar dependencias:
 
 ```bash
 uv sync --python 3.11 --extra dev
-cp .env.example .env
+```
+
+Levantar la ruta completa:
+
+```bash
 make demo-full
 make validate-final
 ```
 
-`make demo-full` levanta PostgreSQL/MongoDB, reinicia el esquema, carga la demo,
-carga MongoDB y arranca los microservicios junto con Dash. `make validate-final`
-requiere que las bases y los servicios esten vivos.
-
-Por defecto Docker publica PostgreSQL en `localhost:55432` y MongoDB en
-`localhost:27018` para no chocar con instalaciones locales. Los contenedores siguen
-hablando internamente por `postgres:5432` y `mongo:27017`.
-
-Si un entorno local tiene puertos ocupados, `make validate-final` acepta URLs
-explicitas mediante `DATABASE_URL`, `MONGO_URL`, `CONTRACTS_SERVICE_URL`,
-`RISK_SERVICE_URL` y `ANALYTICS_SERVICE_URL`.
-
-Servicios:
+Comandos equivalentes por etapa:
 
 ```bash
-make api
-make dashboard
+make academic-db-up
+make academic-db-schema
+make academic-etl
+make academic-services-up
+make validate-final
 ```
 
 Endpoints locales:
 
-- Contracts: `http://localhost:8001/health`
-- Risk: `http://localhost:8002/health`
-- Analytics: `http://localhost:8003/health`
-- Dashboard: `http://localhost:8050`
+- Contracts service: `http://localhost:8001/health`
+- Risk service: `http://localhost:8002/health`
+- Analytics service: `http://localhost:8003/health`
+- Dash académico: `http://localhost:8050`
 
-## Comandos
+`validate-final` exige PostgreSQL, MongoDB y servicios vivos. Si Docker,
+OrbStack o los puertos no están disponibles, el JSON marca bloqueadores de
+integración y no declara éxito falso.
+
+## Plus offline / producto lean
+
+Generar artefactos de producto. Por defecto usa fixtures versionables de muestra
+para evitar descargas completas de Socrata en CI o clones limpios:
 
 ```bash
-make setup
-make db-up
-make db-schema
-make db-migrate
-make db-reset
-make extract-demo
-make build
-make score
-make etl-demo
-make mongo-load
-make api
-make services-up
-make dashboard
-make demo
-make demo-full
-make test
-make test-integration
-make lint
-make validate-final
+make product-pipeline
+make product-ui
+make product-api
 ```
 
-## Evidencia academica
+Usar fuentes Socrata reales cuando se quiera reconstruir con datos abiertos
+actuales:
 
-- 27 tablas relacionales en `sql/001_schema.sql`.
-- 33 objetos publicos entre tablas y vistas en la validacion local.
-- Constraints, FK, indices, triggers y vistas analiticas.
-- Triggers de auditoria, historial de estado, validacion de score y `updated_at`.
-- Window functions y CTE recursiva en `sql/004_views_analytics.sql`.
-- Transaccion demo en `sql/006_transactions_demo.sql`.
-- Reporte final en `docs/report/reporte_final.md`.
-- Manual, plan de pruebas, data dictionary y disclosure de IA en `docs/`.
+```bash
+make product-pipeline PRODUCT_SOURCE_MODE=download
+```
+
+Endpoints locales:
+
+- Streamlit producto: `http://localhost:8501`
+- FastAPI producto: `http://localhost:8000`
+- Health producto: `http://localhost:8000/health`
+
+Validación del producto lean:
+
+```bash
+make validate-product
+```
+
+`validate-product` no requiere PostgreSQL, MongoDB ni Docker. Si faltan marts,
+el reporte indicará: `Ejecute make product-pipeline`.
+
+## Targets legacy
+
+Los targets antiguos se conservan como alias para no romper flujos previos:
+
+- `make db-up` -> `make academic-db-up`
+- `make db-schema` -> `make academic-db-schema`
+- `make db-migrate` -> `make academic-db-schema`
+- `make etl-demo` -> `make academic-etl`
+- `make services-up` -> `make academic-services-up`
+- `make demo-full` -> `make academic-demo`
+- `make validate-final` -> `make product-pipeline` + `make validate-product` + `make validate-academic`
 
 ## Scoring
 
-El scoring mantiene una filosofia interpretable:
+El score combina señales interpretables:
 
-- componente de anomalia,
-- desviacion frente a pares,
-- reglas explicitas,
-- score de confianza,
+- componente de anomalía;
+- desviación frente a pares comparables;
+- reglas explícitas;
+- confianza de datos;
 - razones visibles.
 
-La salida es una alerta de prioridad, no una acusacion.
+La similitud textual usa NLP clásico con TF-IDF y coseno para matching
+PAA/proceso y comparables. La dependencia `sentence-transformers` queda como
+opción futura, pero esta versión no promete embeddings neuronales en la ruta
+validada. CI y validaciones locales usan TF-IDF para evitar descargas pesadas.
 
-## Limitaciones
+## Evidencia y límites
 
-- Los datos abiertos pueden tener campos incompletos o cambios de esquema.
-- Los enlaces SECOP/PAA no se asumen perfectos.
-- El contexto fiscal es visible y no se usa como etiqueta acusatoria.
-- La encuesta de usabilidad debe completarse con 5 usuarios reales antes de la entrega final.
-- La ruta oficial de sustentacion es Dash + PostgreSQL + microservicios; Streamlit/Parquet
-  queda como modo legado u offline.
+Documentos principales:
+
+- `docs/product_route.md`
+- `docs/academic_route.md`
+- `docs/model-card.md`
+- `docs/ethics-note.md`
+- `docs/demo-guide.md`
+- `docs/demo-casebook.md`
+- `docs/validation-summary.md`
+- `docs/human_validation_protocol.md`
+- `docs/human_validation_results.md`
+- `docs/deployment.md`
+
+Pendientes humanos que no se fabrican:
+
+- encuesta UX con 5 usuarios reales;
+- validación manual con revisores;
+- URL pública de despliegue;
+- registro en “Usos” si aplica al concurso.
+
+## Calidad
+
+```bash
+make lint
+make test
+make demo-full
+make validate-final
+# opcional:
+make product-pipeline && make validate-product
+```
 
 ## Licencia
 
-Codigo bajo MIT. Los datos provienen de fuentes abiertas oficiales de Colombia y conservan sus condiciones de uso originales.
+Código bajo MIT. Los datos provienen de fuentes abiertas oficiales de Colombia y
+conservan sus condiciones de uso originales.

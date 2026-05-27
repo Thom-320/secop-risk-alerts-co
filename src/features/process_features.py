@@ -8,6 +8,20 @@ from sklearn.ensemble import IsolationForest
 from src.utils.normalization import normalize_text
 
 
+def stable_missing_identifier(prefix: str, value: str) -> str:
+    """Generate a stable, opaque identifier for rows with missing codes.
+
+    Replaces the legacy ``etl.common.stable_missing_identifier`` with a
+    src-native implementation that uses ``normalize_text`` instead of
+    ``clean_text``.
+    """
+    import hashlib
+
+    normalized = normalize_text(value) or "sin_nombre"
+    digest = hashlib.sha256(normalized.lower().encode("utf-8")).hexdigest()[:16]
+    return f"{prefix}-{digest}"
+
+
 def normalize_to_100(series: pd.Series) -> pd.Series:
     clean = pd.to_numeric(series, errors="coerce").fillna(0.0)
     if clean.nunique(dropna=True) <= 1:

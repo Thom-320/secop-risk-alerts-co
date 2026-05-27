@@ -1,7 +1,7 @@
 # Evidencia de validacion
 
-Los archivos `*.json` y `*.csv` de esta carpeta son generados por el pipeline y no se
-versionan. Se regeneran con:
+Los archivos `*.json` y `*.csv` generados por el pipeline no se versionan. Se
+regeneran con:
 
 ```bash
 make etl-demo
@@ -15,3 +15,10 @@ Archivos esperados:
 - `table_counts.csv`
 - `mongo_summary.json`
 - `final_validation.json`
+
+Excepciones versionables:
+
+- `demo_cases_sample.csv`: casos de demostracion marcados como `SAMPLE`.
+- `manual_review_sample.csv`: plantilla de validacion humana marcada como `SAMPLE`.
+
+Estas excepciones no son resultados reales ni etiquetas humanas.

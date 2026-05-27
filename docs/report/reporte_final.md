@@ -1,63 +1,89 @@
 # 1. Hoja de presentación
 
-**Titulo:** Transparencia360 / ContratIA Abierta: Sistema Poliglota de Priorizacion de Revision Contractual en Colombia.
+**Título:** Transparencia360 / ContratIA Abierta: sistema full-stack de priorización explicable de revisión contractual en Colombia.
 
-**Integrantes y roles:** equipo académico responsable de ingeniería de datos, backend, documentación, pruebas y presentación. Los nombres finales deben corresponder al registro oficial del curso.
+**Integrantes y roles:** [COMPLETAR POR EL EQUIPO ANTES DE ENTREGA].
 
-**Director:** docente de Ingenieria de Datos.
+**Director/docente:** [COMPLETAR POR EL EQUIPO ANTES DE ENTREGA].
 
-**Universidad:** Universidad del Rosario, Escuela de Ciencias e Ingenieria.
+**Universidad:** Universidad del Rosario, Escuela de Ciencias e Ingeniería.
 
-**Ciudad y fecha:** Bogota, 2026.
+**Ciudad y fecha:** Bogotá, [COMPLETAR FECHA EXACTA POR EL EQUIPO ANTES DE ENTREGA].
+
+> [COMPLETAR POR EL EQUIPO ANTES DE ENTREGA]
+> Registrar nombres completos, roles reales, director/docente y fecha exacta según
+> el registro oficial del curso antes de entregar.
 
 # 2. Resumen ejecutivo
 
-Transparencia360 es una solucion de ingenieria de datos para priorizar revision humana de procesos de contratacion publica en Colombia. Integra datos abiertos de SECOP II, SECOP Integrado, Plan Anual de Adquisiciones y contexto de control fiscal. La solucion no detecta corrupcion ni emite acusaciones; entrega un ranking explicable para apoyar a veedurias, oficinas de transparencia y periodistas de datos.
+Transparencia360 es una solución de Ingeniería de Datos para priorizar revisión
+humana de procesos de contratación pública en Colombia. Integra datos abiertos
+de SECOP II, SECOP Integrado, Plan Anual de Adquisiciones y contexto de control
+fiscal. La solución no emite acusaciones ni conclusiones jurídicas o fiscales:
+entrega una cola explicable para decidir qué revisar primero, por qué y con qué
+evidencia.
 
-La arquitectura usa PostgreSQL como fuente relacional principal, MongoDB como soporte para documentos y eventos, ETL en Python, microservicios FastAPI y dashboard Plotly Dash. El diseno incluye mas de 20 tablas normalizadas, llaves primarias y foraneas, restricciones, indices, triggers de auditoria, historial de estados, vistas con funciones de ventana, CTE recursiva y una transaccion demostrativa.
+La ruta oficial de entrega es full-stack: PostgreSQL como base relacional
+principal, MongoDB como soporte NoSQL, tres microservicios FastAPI, dashboard en
+Plotly Dash, ETL reproducible y validación final con `make validate-final`. El
+modo Streamlit/Parquet se conserva como respaldo offline y superficie ligera de
+producto, pero no reemplaza la sustentación académica.
+
+El scoring combina señales interpretables: anomalía, desviación frente a pares,
+reglas explícitas, similitud textual TF-IDF/coseno y confianza de datos. Los
+embeddings neuronales quedan como mejora opcional con bandera de entorno; no son
+un requisito de la ruta validada.
 
 # 3. Definición del problema
 
-Las organizaciones de revision publica tienen capacidad humana limitada frente a miles de procesos contractuales. Necesitan decidir que revisar primero usando criterios transparentes, trazables y reproducibles.
+Las organizaciones de revisión pública tienen capacidad humana limitada frente a
+miles de procesos contractuales. Necesitan priorizar revisión con criterios
+transparentes, trazables y reproducibles, sin reemplazar el juicio jurídico,
+fiscal o profesional.
 
 Requerimientos funcionales:
 
-- Cargar 10.000+ procesos.
+- Cargar 10.000+ procesos desde fuentes oficiales abiertas.
+- Modelar datos relacionales y NoSQL con responsabilidades claras.
 - Consultar procesos, entidades, proveedores, ranking y detalle.
-- Mostrar razones de prioridad y comparables.
-- Registrar auditoria y cambios de estado.
+- Mostrar razones de prioridad, comparables y contexto PAA.
+- Exportar evidencia desde el dashboard para revisión humana.
 
 Requerimientos no funcionales:
 
-- Persistencia relacional con PostgreSQL.
-- Soporte NoSQL con MongoDB.
-- Integracion por microservicios.
-- Pruebas automatizadas.
-- Lenguaje etico y no acusatorio.
+- Reproducibilidad por comandos (`make demo-full`, `make validate-final`).
+- Trazabilidad de fuentes, joins, cargas y validación.
+- Pruebas automatizadas y validación operativa de servicios.
+- Lenguaje ético: priorización de revisión humana, no acusación.
 
 # 4. Objetivos
 
-Objetivo general: implementar una plataforma de priorizacion explicable de revision contractual sobre datos abiertos oficiales.
+Objetivo general: implementar una plataforma full-stack de priorización
+explicable de revisión contractual sobre datos abiertos oficiales.
 
-Objetivos especificos:
+Objetivos específicos:
 
-- Normalizar datos SECOP en un modelo relacional.
-- Registrar snapshots y eventos en MongoDB.
-- Exponer servicios de contratos, riesgo y analitica.
-- Construir una interfaz Dash para consulta y sustentacion.
-- Validar el sistema con pruebas y evidencia reproducible.
+- Extraer y normalizar fuentes SECOP II, SECOP Integrado, PAA y contexto fiscal.
+- Diseñar una base PostgreSQL con 15+ tablas, llaves, constraints, índices,
+  triggers, vistas, CTE recursiva, window functions y transacción demo.
+- Integrar MongoDB para snapshots, logs, eventos, reportes y soporte documental.
+- Exponer microservicios FastAPI de contratos, riesgo y analítica.
+- Construir dashboard Dash para panorama, ranking, detalle, exportación y
+  validación de calidad.
+- Validar con pruebas automatizadas, documentación y tareas humanas explícitas.
 
 # 5. Metodología
 
-Fases:
+El trabajo siguió fases de diseño de Ingeniería de Datos:
 
-- Exploracion de datos y requerimientos.
-- Diseno conceptual y seleccion de arquitectura.
-- Implementacion de PostgreSQL, MongoDB, ETL y servicios.
-- Implementacion de dashboard.
-- Pruebas, documentacion y preparacion de presentacion.
-
-Cronograma sugerido: ver bitacora de gerencia y commits del repositorio.
+- Exploración de fuentes Socrata y requisitos del curso.
+- Evaluación de alternativas: producto lean Parquet/Streamlit, relacional puro y
+  arquitectura poliglota PostgreSQL/MongoDB.
+- Selección de arquitectura oficial: poliglota full-stack para cumplir la
+  exigencia académica de bases, servicios, SQL avanzado y validación.
+- Implementación de ETL, cargas PostgreSQL/MongoDB, microservicios y Dash.
+- Scoring explicable con reglas, anomalía, pares comparables y confianza.
+- Pruebas, documentación, demo y checklist de entrega.
 
 # 6. Referencias y bibliografía consultada
 
@@ -68,60 +94,84 @@ Cronograma sugerido: ver bitacora de gerencia y commits del repositorio.
 - MongoDB Inc. (2026). *MongoDB Manual*. Consultado el 27 de mayo de 2026, en https://www.mongodb.com/docs/
 - FastAPI. (2026). *FastAPI Documentation*. Consultado el 27 de mayo de 2026, en https://fastapi.tiangolo.com/
 - Plotly. (2026). *Dash Documentation*. Consultado el 27 de mayo de 2026, en https://dash.plotly.com/
-- Guia del proyecto de clase de Ingenieria de Datos, Universidad del Rosario.
+- Scikit-learn. (2026). *IsolationForest*. Consultado el 27 de mayo de 2026, en https://scikit-learn.org/
+- Guía del proyecto de clase de Ingeniería de Datos, Universidad del Rosario.
 
 # 7. Evaluación de la solución propuesta
 
-Se evaluaron tres alternativas: MVP analitico Parquet/Streamlit, sistema relacional puro y arquitectura poliglota. Se selecciono la arquitectura poliglota porque cumple mejor los criterios del curso: base relacional fuerte, soporte NoSQL, microservicios, interfaz grafica, pruebas y trazabilidad.
+Se evaluaron tres alternativas. El MVP Parquet/Streamlit ofrece reproducción
+rápida; el sistema relacional puro demuestra SQL, pero pierde soporte documental
+flexible; la arquitectura poliglota PostgreSQL/MongoDB permite demostrar
+modelado relacional, NoSQL, microservicios, trazabilidad y dashboard operativo.
+
+Por eso se selecciona la arquitectura poliglota full-stack como entrega oficial
+del curso. Streamlit/Parquet queda documentado como modo plus offline.
 
 # 8. Evidencias de gerencia
 
-La gerencia del proyecto se evidencia con:
-
-- `docs/audit/current_state_audit.md`.
-- README reproducible.
-- Makefile con comandos de validacion.
-- Bitacora de cambios en Git.
-- Discusion de alternativas en este reporte.
+- README con ruta oficial `make demo-full && make validate-final`.
+- `docs/academic_route.md`, `docs/product_route.md` y
+  `docs/class_submission_checklist.md`.
+- Auditorías en `docs/audit/` y reportes de handoff en `docs/agent_handoffs/`.
+- Bitácora Git y comandos reproducibles en Makefile.
 
 # 9. Evidencias de diseño
 
-El diseno incluye:
-
-- Modelo relacional en `sql/001_schema.sql`.
-- Indices en `sql/002_indexes.sql`.
-- Triggers en `sql/003_triggers.sql`.
-- Vistas analiticas en `sql/004_views_analytics.sql`.
-- Diagramas Mermaid en `docs/diagrams/`.
+- PostgreSQL: `sql/001_schema.sql`, `sql/002_indexes.sql`,
+  `sql/003_triggers.sql`, `sql/004_views_analytics.sql` y
+  `sql/006_transactions_demo.sql`.
+- MongoDB: `mongo/collections.md`, `mongo/init_mongo.py` y
+  `etl/load_to_mongo.py`.
+- Microservicios: `services/contracts_service`, `services/risk_service` y
+  `services/analytics_service`.
+- Dashboard oficial: `dashboard/dash_app.py`.
+- Diagramas: `docs/diagrams/architecture.mmd`, `er_model.mmd` y
+  `microservices.mmd`.
 
 # 10. Evidencias de documentación
 
-Documentacion principal:
-
 - `README.md`.
-- `docs/data_dictionary.md`.
+- `docs/model-card.md`.
+- `docs/data-cards/`.
 - `docs/manual_usuario.md`.
-- `docs/testing_plan.md`.
-- `docs/ai_usage_disclosure.md`.
+- `docs/ethics-note.md`.
+- `docs/demo-guide.md`.
+- `docs/validation-summary.md`.
+- `docs/human_validation_protocol.md`.
+- `docs/usability_results.md`.
 
 # 11. Evidencias de pruebas
 
-El plan de pruebas esta en `docs/testing_plan.md`. La evidencia se registra en `docs/testing_evidence.md` y `validation/final_validation.json`.
+La evidencia viva se registra en `docs/testing_evidence.md`,
+`validation/product_validation.json` y `validation/final_validation.json`.
 
-Comandos:
+Comandos esperados:
 
 ```bash
 make lint
 make test
+make demo-full
 make validate-final
 ```
 
+La última evidencia documentada reporta 66 pruebas no integrales pasando y la
+validación final de la ruta académica cuando las bases y servicios están vivos.
+
 # 12. Evidencias de experiencia de usuario e interfaz gráfica
 
-La interfaz oficial es `dashboard/dash_app.py`, con vistas de panorama, ranking, concentracion y metodologia. El mapa de navegacion esta en `docs/manual_usuario.md`.
+Dash es la interfaz oficial de sustentación. Incluye panorama, ranking filtrable,
+detalle de proceso, comparables, concentración secundaria, calidad de datos,
+metodología, flujo de revisión humana y exportación CSV/HTML para evidencia.
 
-La encuesta de usabilidad debe diligenciarse con 5 personas reales. El archivo `docs/usability_results.md` esta marcado como pendiente y no contiene resultados fabricados.
+La encuesta de usabilidad debe diligenciarse con 5 personas reales. El archivo
+`docs/usability_results.md` queda explícitamente pendiente y no contiene
+resultados fabricados.
 
 # 13. Conclusiones
 
-Transparencia360 convierte un MVP de ciencia de datos en una solucion de ingenieria reproducible, con persistencia poliglota, microservicios, SQL avanzado, pruebas y documentacion. Las mejoras futuras incluyen despliegue cloud, resolucion de entidades mas robusta, mayor cobertura de datasets y encuesta real de usuarios.
+Transparencia360 demuestra una solución de Ingeniería de Datos reproducible con
+datos reales, persistencia poliglota, microservicios, SQL avanzado, dashboard,
+pruebas y documentación. El sistema prioriza revisión humana con evidencia
+trazable y no emite acusaciones. Los pendientes humanos antes de entregar son:
+encuesta UX con 5 usuarios reales, validación manual de casos, nombres/roles,
+director/docente y fecha exacta.

@@ -284,7 +284,7 @@ function requirementsSlide() {
     ["Dash", "interfaz oficial"],
     ["ETL", `${evidence.procurement_process_rows.toLocaleString("es-CO")} procesos demo`],
     ["SQL avanzado", "triggers, CTE, windows"],
-    ["Pruebas", "39 pytest pasan"],
+    ["Pruebas", "66 pytest pasan"],
     ["Docs", `${evidence.required_docs_present} archivos requeridos`],
   ];
   items.forEach(([a, b], i) => {
@@ -305,7 +305,7 @@ function requirementsSlide() {
   addFooter(slide);
   notes(
     slide,
-    "La guia de clase pedia una solucion de ingenieria de datos, no solo un dashboard. Por eso el proyecto se cerro con PostgreSQL como base relacional principal, MongoDB como soporte documental y de eventos, tres microservicios FastAPI, una interfaz oficial en Dash, ETL reproducible y SQL avanzado. La validacion final reporta 27 tablas relacionales y 33 objetos publicos, 17.229 procesos en la carga demo, colecciones Mongo con documentos, health checks en 200 y 39 pruebas automatizadas pasando.",
+    "La guia de clase pedia una solucion de ingenieria de datos, no solo un dashboard. Por eso el proyecto se cerro con PostgreSQL como base relacional principal, MongoDB como soporte documental y de eventos, tres microservicios FastAPI, una interfaz oficial en Dash, ETL reproducible y SQL avanzado. La validacion final reporta 27 tablas relacionales y 33 objetos publicos, 17.229 procesos en la carga demo, colecciones Mongo con documentos, health checks en 200 y la suite automatizada no integral pasando.",
   );
 }
 
@@ -331,7 +331,7 @@ function sourcesSlide() {
   addFooter(slide);
   notes(
     slide,
-    "Las fuentes son datasets oficiales abiertos. SECOP II Procesos aporta la unidad analitica principal: el proceso contractual. SECOP Integrado y PAA permiten contexto de ejecucion y planeacion. El dataset de vigilancia o control fiscal se usa como contexto visible, no como determinante de culpabilidad. La demo carga mas de 10.000 registros, concretamente 17.229 procesos, y deja conteos en validation/table_counts.csv para que el profesor pueda verificar el volumen.",
+    "Las fuentes son datasets oficiales abiertos. SECOP II Procesos aporta la unidad analitica principal: el proceso contractual. SECOP Integrado y PAA permiten contexto de ejecucion y planeacion. El dataset de vigilancia o control fiscal se usa como contexto visible, no como determinante de responsabilidad. La demo carga mas de 10.000 registros, concretamente 17.229 procesos, y deja conteos en validation/table_counts.csv para que el profesor pueda verificar el volumen.",
   );
 }
 

@@ -16,9 +16,24 @@ REQUIRED_DOCS = [
     "docs/manual_usuario.md",
     "docs/testing_plan.md",
     "docs/testing_evidence.md",
+    "docs/validation-summary.md",
+    "docs/human_validation_protocol.md",
+    "docs/human_validation_results.md",
+    "docs/demo-casebook.md",
     "docs/usability_survey_template.md",
     "docs/usability_results.md",
     "docs/ai_usage_disclosure.md",
+    "docs/model-card.md",
+    "docs/data-cards/secop-ii-procesos.md",
+    "docs/data-cards/secop-integrado.md",
+    "docs/data-cards/paa-detalle.md",
+    "docs/data-cards/control-fiscal.md",
+    "docs/fairness_territorial.md",
+    "docs/deployment.md",
+    "docs/product_route.md",
+    "docs/academic_route.md",
+    "docs/contest_submission_checklist.md",
+    "docs/class_submission_checklist.md",
     "docs/diagrams/architecture.mmd",
     "docs/diagrams/er_diagram.mmd",
     "docs/diagrams/er_model.mmd",
@@ -67,7 +82,9 @@ def check_postgres(blockers: list[str], evidence: dict[str, object]) -> None:
                 f"procurement_process tiene {process_rows} filas; se requieren 10.000+."
             )
     except Exception as exc:
-        blockers.append(f"No se pudo validar PostgreSQL en {database_url()}: {exc}")
+        blockers.append(
+            f"Integration blocker: no se pudo validar PostgreSQL en {database_url()}: {exc}"
+        )
 
 
 def check_mongo(blockers: list[str], evidence: dict[str, object]) -> None:
@@ -85,7 +102,7 @@ def check_mongo(blockers: list[str], evidence: dict[str, object]) -> None:
         if empty:
             blockers.append(f"Colecciones Mongo sin documentos: {', '.join(empty)}.")
     except Exception as exc:
-        blockers.append(f"No se pudo validar MongoDB en {mongo_url()}: {exc}")
+        blockers.append(f"Integration blocker: no se pudo validar MongoDB en {mongo_url()}: {exc}")
 
 
 def check_api_health(blockers: list[str], evidence: dict[str, object]) -> None:
@@ -107,7 +124,7 @@ def check_api_health(blockers: list[str], evidence: dict[str, object]) -> None:
     unavailable = [name for name, status in statuses.items() if status != "200"]
     if unavailable:
         blockers.append(
-            "Endpoints API no disponibles: "
+            "Integration blocker: endpoints API no disponibles: "
             + ", ".join(f"{name}={statuses[name]}" for name in unavailable)
         )
 
@@ -118,7 +135,18 @@ def check_docs(blockers: list[str], evidence: dict[str, object]) -> None:
     if missing:
         blockers.append("Faltan documentos requeridos: " + ", ".join(missing))
     readme = (ROOT / "README.md").read_text() if (ROOT / "README.md").exists() else ""
-    required_terms = ["make db-up", "make etl-demo", "make validate-final", "PostgreSQL", "MongoDB"]
+    required_terms = [
+        "ContratIA Abierta",
+        "Transparencia360",
+        "product-pipeline",
+        "academic-demo",
+        "validate-product",
+        "validate-academic",
+        "PostgreSQL",
+        "MongoDB",
+        "Streamlit",
+        "Dash",
+    ]
     missing_terms = [term for term in required_terms if term not in readme]
     if missing_terms:
         blockers.append(
@@ -128,7 +156,7 @@ def check_docs(blockers: list[str], evidence: dict[str, object]) -> None:
 
 def main() -> None:
     blockers: list[str] = []
-    evidence: dict[str, object] = {}
+    evidence: dict[str, object] = {"mode": "academic-fullstack"}
     for command_name, command in {
         "lint": ["uv", "run", "--python", "3.11", "--extra", "dev", "ruff", "check", "."],
         "test": [
@@ -155,7 +183,16 @@ def main() -> None:
     check_api_health(blockers, evidence)
     check_docs(blockers, evidence)
 
-    report = {"ok": not blockers, "blockers": blockers, "evidence": evidence}
+    integration_blockers = [
+        blocker for blocker in blockers if blocker.startswith("Integration blocker:")
+    ]
+    report = {
+        "mode": "academic-fullstack",
+        "ok": not blockers,
+        "blockers": blockers,
+        "integration_blockers": integration_blockers,
+        "evidence": evidence,
+    }
     validation_dir = ROOT / "validation"
     validation_dir.mkdir(exist_ok=True)
     (validation_dir / "final_validation.json").write_text(

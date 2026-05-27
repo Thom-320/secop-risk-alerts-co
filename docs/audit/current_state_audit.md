@@ -55,4 +55,4 @@ Fecha de auditoria: 2026-05-27
 
 ## Politica etica
 
-El sistema no detecta corrupcion, fraude ni responsabilidad individual. Produce priorizacion explicable para revision humana sobre datos abiertos oficiales y debe presentar sus limitaciones.
+El sistema no emite acusaciones, conclusiones de fraude ni responsabilidad individual. Produce priorizacion explicable para revision humana sobre datos abiertos oficiales y debe presentar sus limitaciones.

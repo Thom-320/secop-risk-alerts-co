@@ -89,7 +89,7 @@ Metricas usadas en el deck:
 - 17.229 procesos en `procurement_process`.
 - MongoDB con documentos en las colecciones requeridas.
 - Health checks de contratos, prioridad y analitica en HTTP 200.
-- 39 pruebas automatizadas pasando.
+- Suite automatizada no integral pasando (ver `docs/testing_evidence.md`).
 
 ## Criterios de diseno
 

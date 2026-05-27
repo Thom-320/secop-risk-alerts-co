@@ -12,7 +12,7 @@ ContratIA Abierta es un MVP de priorización de revisión contractual para el co
 
 ## Qué no hace
 
-- no detecta corrupción
+- no emite acusaciones ni conclusiones juridicas o fiscales
 - no sanciona
 - no usa LLM
 - no usa PEP ni grafos complejos

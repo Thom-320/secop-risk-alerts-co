@@ -1,6 +1,8 @@
 from __future__ import annotations
 
-from fastapi import FastAPI, Query
+import os
+
+from fastapi import FastAPI, HTTPException, Query
 
 from services.contracts_service.db import execute, fetch_all, fetch_one
 from services.contracts_service.schemas import (
@@ -13,6 +15,18 @@ from services.contracts_service.schemas import (
 )
 
 app = FastAPI(title="Transparencia360 Contracts Service", version="1.0.0")
+
+
+def public_read_only_enabled() -> bool:
+    return os.getenv("PUBLIC_READ_ONLY", "false").lower() in {"1", "true", "yes"}
+
+
+def reject_mutation_when_public() -> None:
+    if public_read_only_enabled():
+        raise HTTPException(
+            status_code=403,
+            detail="PUBLIC_READ_ONLY=true bloquea endpoints mutables en modo publico.",
+        )
 
 
 @app.get("/health", response_model=Health)
@@ -87,6 +101,7 @@ def process_history(process_id: int) -> list[dict]:
 
 @app.post("/reviews", response_model=HumanReviewResponse)
 def create_review(review: HumanReviewRequest) -> dict:
+    reject_mutation_when_public()
     return execute(
         """
         INSERT INTO human_review(

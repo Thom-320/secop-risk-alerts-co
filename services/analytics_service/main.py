@@ -19,6 +19,8 @@ def overview() -> list[dict]:
         """
         SELECT d.name AS department,
                count(p.process_id) AS processes,
+               count(DISTINCT e.entity_id) AS entities,
+               count(DISTINCT p.provider_id) AS providers,
                avg(ra.priority_score)::float AS avg_priority_score,
                avg(ra.confidence_score)::float AS avg_confidence_score
         FROM procurement_process p

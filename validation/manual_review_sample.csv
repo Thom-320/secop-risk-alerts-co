@@ -1,0 +1,3 @@
+sample_flag,review_id,process_id,process_key,priority_band,confidence_score,useful_alert,clear_reason,paa_match_correct,comparable_useful,review_decision,human_action_suggested,reviewer_id,reviewer_agreement,is_real_review,reviewer_notes,review_date
+SAMPLE,SAMPLE-001,1001,SAMPLE-PROC-001,alta,76,pending,pending,pending,pending,pending,pending,reviewer_a,pending,FALSE,template_only,
+SAMPLE,SAMPLE-002,1002,SAMPLE-PROC-002,media,58,pending,pending,pending,pending,pending,pending,reviewer_b,pending,FALSE,template_only,

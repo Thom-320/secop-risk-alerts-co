@@ -1,10 +1,11 @@
 from __future__ import annotations
 
+import os
 from functools import lru_cache
 from typing import Any
 
 import pandas as pd
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import FastAPI, Header, HTTPException, Query
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel, Field
 
@@ -13,6 +14,21 @@ from src.utils.reporting import build_process_report_html
 
 app = FastAPI(title="ContratIA Abierta API", version="0.1.0")
 REVIEWS: list[dict[str, Any]] = []
+
+
+def public_read_only_enabled() -> bool:
+    return os.getenv("PUBLIC_READ_ONLY", "true").lower() not in {"0", "false", "no"}
+
+
+def require_demo_write_token(token: str | None) -> None:
+    expected = os.getenv("DEMO_WRITE_TOKEN")
+    if public_read_only_enabled():
+        raise HTTPException(
+            status_code=403,
+            detail="PUBLIC_READ_ONLY=true bloquea endpoints mutables en demo publica.",
+        )
+    if expected and token != expected:
+        raise HTTPException(status_code=403, detail="Token de escritura demo invalido.")
 
 
 class ReviewRequest(BaseModel):
@@ -125,7 +141,11 @@ def process_report(process_key: str) -> str:
 
 
 @app.post("/reviews")
-def create_review(review: ReviewRequest) -> dict[str, Any]:
+def create_review(
+    review: ReviewRequest,
+    x_demo_write_token: str | None = Header(default=None),
+) -> dict[str, Any]:
+    require_demo_write_token(x_demo_write_token)
     process_detail(review.process_key)
     payload = review.model_dump()
     REVIEWS[:] = [

@@ -3,6 +3,11 @@ from __future__ import annotations
 import pandas as pd
 
 from src.features.process_features import confidence_band, priority_band, rule_score_from_row
+from src.scoring.semantic_similarity import (
+    TfidfSimilarityProvider,
+    get_similarity_provider,
+    semantic_similarity_matrix,
+)
 from src.utils.reporting import build_process_report_html
 
 
@@ -50,3 +55,21 @@ def test_html_report_contains_process_and_disclaimer() -> None:
     )
     assert "REF-001" in html
     assert "prioriza revision humana" in html.lower()
+    assert "Accion recomendada" in html
+    assert "Que revisar manualmente" in html
+    assert "no determina corrupcion" in html.lower()
+
+
+def test_tfidf_similarity_provider_returns_matrix() -> None:
+    matrix = semantic_similarity_matrix(
+        ["mantenimiento escuela rural", "compra computadores"],
+        ["mantenimiento infraestructura escolar", "software contable"],
+        provider=TfidfSimilarityProvider(),
+    )
+    assert matrix.shape == (2, 2)
+    assert matrix[0, 0] >= matrix[0, 1]
+
+
+def test_similarity_provider_defaults_to_tfidf(monkeypatch) -> None:
+    monkeypatch.delenv("CONTRATIA_USE_TRANSFORMER_EMBEDDINGS", raising=False)
+    assert get_similarity_provider().name == "tfidf"

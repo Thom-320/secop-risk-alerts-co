@@ -198,7 +198,7 @@ def validation_card() -> None:
         ("Tablas PostgreSQL", str(evidence["postgres_table_count"])),
         ("Procesos demo", f"{evidence['procurement_process_rows']:,}".replace(",", ".")),
         ("APIs health", "3/3"),
-        ("Pytest", "39 passed"),
+        ("Pytest", "66 passed"),
         ("Ruff", "passed"),
     ]
     for idx, (k, v) in enumerate(metrics):

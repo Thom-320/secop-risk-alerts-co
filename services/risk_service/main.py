@@ -1,12 +1,26 @@
 from __future__ import annotations
 
-from fastapi import FastAPI, Query
+import os
+
+from fastapi import FastAPI, HTTPException, Query
 
 from services.risk_service.db import execute, fetch_all, fetch_one
 from services.risk_service.schemas import Health, RiskRankingRow
 from services.risk_service.scoring import score_process_context
 
 app = FastAPI(title="Transparencia360 Risk Service", version="1.0.0")
+
+
+def public_read_only_enabled() -> bool:
+    return os.getenv("PUBLIC_READ_ONLY", "false").lower() in {"1", "true", "yes"}
+
+
+def reject_mutation_when_public() -> None:
+    if public_read_only_enabled():
+        raise HTTPException(
+            status_code=403,
+            detail="PUBLIC_READ_ONLY=true bloquea endpoints mutables en modo publico.",
+        )
 
 
 @app.get("/health", response_model=Health)
@@ -18,12 +32,30 @@ def health() -> Health:
 def ranking(limit: int = Query(default=100, ge=1, le=500)) -> list[dict]:
     return fetch_all(
         """
-        SELECT process_id, process_key, entity_name,
+        SELECT process_id,
+               process_key,
+               process_reference,
+               entity_name,
+               department,
+               modality,
+               base_price::float AS base_price,
                priority_score::float AS priority_score,
                confidence_score::float AS confidence_score,
-               explanation
+               explanation,
+               EXISTS (
+                   SELECT 1
+                   FROM semantic_comparable sc
+                   WHERE sc.process_id = v_ranking_processes.process_id
+               ) AS has_comparables
         FROM v_ranking_processes
-        ORDER BY priority_score DESC NULLS LAST, confidence_score DESC NULLS LAST
+        ORDER BY EXISTS (
+                     SELECT 1
+                     FROM semantic_comparable sc
+                     WHERE sc.process_id = v_ranking_processes.process_id
+                 ) DESC,
+                 priority_score DESC NULLS LAST,
+                 confidence_score DESC NULLS LAST,
+                 process_id
         LIMIT %s
         """,
         (limit,),
@@ -47,6 +79,7 @@ def process_risk(process_id: int) -> dict:
 
 @app.post("/risk/recompute/{process_id}")
 def recompute(process_id: int) -> dict:
+    reject_mutation_when_public()
     context = fetch_one(
         """
         WITH target AS (

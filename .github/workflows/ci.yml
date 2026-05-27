@@ -4,8 +4,11 @@ on:
   push:
   pull_request:
 
+permissions:
+  contents: read
+
 jobs:
-  test:
+  lint_test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -16,3 +19,42 @@ jobs:
         run: uv run --python 3.11 ruff check .
       - name: Test
         run: uv run --python 3.11 pytest -q -m "not integration"
+
+  product_sample_pipeline:
+    runs-on: ubuntu-latest
+    needs: lint_test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - name: Install dependencies
+        run: uv sync --python 3.11 --extra dev
+      - name: Build product marts from sample fixtures
+        run: make product-sample-pipeline
+      - name: Upload product marts evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: product-marts
+          path: |
+            data/marts/overview.parquet
+            data/marts/ranking.parquet
+            data/marts/process_detail.parquet
+            data/marts/comparables.parquet
+
+  product_validation:
+    runs-on: ubuntu-latest
+    needs: product_sample_pipeline
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - name: Install dependencies
+        run: uv sync --python 3.11 --extra dev
+      - name: Build product marts from sample fixtures
+        run: make product-sample-pipeline
+      - name: Validate product route
+        run: make validate-product
+      - name: Upload validation JSON
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: product-validation
+          path: validation/product_validation.json

@@ -136,9 +136,50 @@ def _download_demo_sources_if_requested(limit: int | None) -> dict[str, pd.DataF
 
 
 def read_local_demo_sources(limit: int | None = None) -> dict[str, pd.DataFrame]:
+    if os.getenv("DEMO_SOURCE_MODE", "").lower() == "generated":
+        generated_sources = _read_generated_sources(limit)
+        if generated_sources is not None:
+            return generated_sources
+
+    download_sources = _download_demo_sources_if_requested(limit)
+    if download_sources is not None:
+        return download_sources
+
+    active_processes_path = ROOT / "data" / "raw" / "secop_ii_processes.parquet"
+    active_contracts_path = ROOT / "data" / "raw" / "secop_integrado.parquet"
+    paa_dir = ROOT / "data" / "raw" / "paa_detail"
+    if active_processes_path.exists() and active_contracts_path.exists():
+        processes = pd.read_parquet(active_processes_path)
+        contracts = pd.read_parquet(active_contracts_path)
+        paa_parts = sorted(paa_dir.glob("*.parquet")) if paa_dir.exists() else []
+        paa = (
+            pd.concat([pd.read_parquet(path) for path in paa_parts], ignore_index=True)
+            if paa_parts
+            else pd.DataFrame()
+        )
+        if limit and len(processes) > limit:
+            department_col = "departamento_entidad"
+            if department_col in processes.columns and processes[department_col].nunique() > 1:
+                ordered = processes.sort_values("fecha_de_publicacion_del", ascending=False)
+                per_department = max(1, limit // int(ordered[department_col].nunique()))
+                balanced = ordered.groupby(
+                    department_col,
+                    group_keys=False,
+                    dropna=False,
+                ).head(per_department)
+                if len(balanced) < limit:
+                    remaining = ordered.drop(index=balanced.index, errors="ignore").head(
+                        limit - len(balanced)
+                    )
+                    processes = pd.concat([balanced, remaining], ignore_index=True)
+                else:
+                    processes = balanced.head(limit).copy()
+            else:
+                processes = processes.head(limit)
+        return {"processes": processes, "contracts": contracts, "paa": paa}
+
     processes_path = ROOT / "data" / "legacy_raw" / "processes.parquet"
     contracts_path = ROOT / "data" / "legacy_raw" / "contracts.parquet"
-    paa_dir = ROOT / "data" / "raw" / "paa_detail"
     if processes_path.exists() and contracts_path.exists():
         processes = pd.read_parquet(processes_path)
         contracts = pd.read_parquet(contracts_path)
@@ -152,7 +193,7 @@ def read_local_demo_sources(limit: int | None = None) -> dict[str, pd.DataFrame]
             processes = processes.head(limit)
         return {"processes": processes, "contracts": contracts, "paa": paa}
 
-    readers = (_read_generated_sources, _read_sample_sources, _download_demo_sources_if_requested)
+    readers = (_read_generated_sources, _read_sample_sources)
     for reader in readers:
         sources = reader(limit)
         if sources is not None:

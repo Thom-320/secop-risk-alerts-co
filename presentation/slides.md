@@ -1,6 +1,6 @@
 ---
 title: "Transparencia360 / ContratIA Abierta"
-subtitle: "Sistema Poliglota de Priorizacion de Revision Contractual en Colombia"
+subtitle: "Sistema de Priorizacion Explicable de Revision Contractual en Colombia"
 format: 16:9
 ---
 
@@ -38,17 +38,17 @@ Periodista de datos
 
 # 4. Requisitos cubiertos
 
-PostgreSQL: 27 tablas + vistas
+PostgreSQL + MongoDB como persistencia oficial
 
-MongoDB: documentos y eventos
+Polars para ETL
 
-FastAPI: 3 servicios
+Scoring explicable (3 componentes)
 
-Dash: interfaz oficial
+Dash para sustentación
 
-ETL: 17.229 procesos
+FastAPI x3 para microservicios
 
-Tests: 39 pasan
+66 tests pasan
 
 ---
 
@@ -68,55 +68,67 @@ Demo validada: 17.229 procesos.
 
 # 6. Arquitectura
 
-![Arquitectura](assets/architecture.png)
-
-Socrata -> ETL -> PostgreSQL + MongoDB -> FastAPI -> Dash.
+Socrata -> ETL Python -> PostgreSQL + MongoDB -> Microservicios FastAPI -> Dash
 
 ---
 
-# 7. Modelo relacional
+# 7. process_master como tabla canonica
 
-![ERD](assets/er_model.png)
+id_del_proceso como PK
 
-PostgreSQL es la fuente de verdad: PK/FK, constraints, indices, vistas y triggers.
+entity_key para joins
 
----
+4 fuentes con compuertas:
 
-# 8. NoSQL y auditoria
-
-MongoDB guarda:
-
-snapshots crudos
-
-logs de ETL
-
-eventos de prioridad
-
-reportes
-
-acciones de usuario
+- p6dx-8zbt: fuente principal
+- rpmr-utcd: enriquecimiento
+- 9sue-ezhx: entra si pasa compuerta
+- wasc-xi4h: solo contexto, no entra al score
 
 ---
 
-# 9. SQL engineering
+# 8. Score explicable
 
-Triggers: auditoria, historial, updated_at.
+6 señales interpretables con pesos:
 
-Window functions: concentracion y outliers.
+- Competencia (0.24): ofertas recibidas
+- Valor relativo (0.24): percentil frente a pares
+- Modalidad (0.16): tipo de contratacion
+- Planeacion (0.14): presencia de match PAA
+- Concentracion de proveedor (0.12)
+- Calidad de descripcion (0.10)
 
-CTE recursiva: jerarquia territorial.
+PAA entra solo si pasa compuerta.
+Confianza mide soporte de datos disponible.
 
-Transacciones: score + evento atomico.
+---
+
+# 9. Confianza y bandas
+
+Confidence score: base 45 + bonuses
+
+Bandas de prioridad:
+
+- Alerta prioritaria: 85+
+- Alerta alta: 70+
+- Observacion: 40+
+- Baja prioridad: <40
+
+Bandas de confianza:
+
+- Alta: 75+
+- Media: 55+
+- Baja: <55
 
 ---
 
 # 10. Score explicable
 
-Reglas primero.
+Competencia + valor relativo como senales principales.
 
-Desviacion frente a pares.
+Modalidad, planeacion y concentracion como contexto.
 
-Componente de anomalia.
+Descripcion como soporte visible.
 
 Confianza de datos.
 
@@ -126,16 +138,14 @@ Razones auditables.
 
 # 11. Demo
 
-![Dashboard](assets/screenshot_dashboard_home.png)
+Panel principal -> Ranking de alertas -> Detalle de proceso -> Comparables
 
-Panorama -> Ranking -> Detalle -> Comparables.
+Dash en localhost:8050
 
 ---
 
 # 12. Validacion y cierre
 
-![Validacion](assets/validation_summary.png)
-
 Limites: datos ruidosos, joins imperfectos, requiere revision humana.
 
-Siguiente: encuesta real con 5 usuarios.
+Siguiente: extender a mas departamentos, mas procesos, ajustar pesos con evidencia.

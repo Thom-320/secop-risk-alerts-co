@@ -4,8 +4,6 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.metrics.pairwise import cosine_similarity
 
 from src.features.process_features import (
     build_reason_snippets,
@@ -17,6 +15,7 @@ from src.features.process_features import (
     priority_band,
     rule_score_from_row,
 )
+from src.scoring.semantic_similarity import semantic_similarity_matrix
 from src.utils.config import get_settings
 from src.utils.logging import configure_logging, logger
 from src.utils.normalization import normalize_text
@@ -97,11 +96,7 @@ def build_paa_matches(processes: pd.DataFrame, paa: pd.DataFrame) -> pd.DataFram
             continue
         process_texts = group["process_text"].fillna("").astype(str).tolist()
         paa_texts = candidates["paa_text"].fillna("").astype(str).tolist()
-        vectorizer = TfidfVectorizer(stop_words=None, min_df=1, ngram_range=(1, 2))
-        matrix = vectorizer.fit_transform(process_texts + paa_texts)
-        process_matrix = matrix[: len(process_texts)]
-        paa_matrix = matrix[len(process_texts) :]
-        similarity = cosine_similarity(process_matrix, paa_matrix)
+        similarity = semantic_similarity_matrix(process_texts, paa_texts)
         for idx, (_, process_row) in enumerate(group.iterrows()):
             best_idx = int(similarity[idx].argmax())
             best_score = float(similarity[idx, best_idx])
@@ -179,9 +174,8 @@ def build_semantic_comparables(processes: pd.DataFrame) -> pd.DataFrame:
     for (_, _modality_family), group in grouped:
         if len(group) < 2:
             continue
-        vectorizer = TfidfVectorizer(stop_words=None, min_df=1, ngram_range=(1, 2))
-        matrix = vectorizer.fit_transform(group["process_text"].fillna("").astype(str).tolist())
-        similarity_matrix = cosine_similarity(matrix)
+        texts = group["process_text"].fillna("").astype(str).tolist()
+        similarity_matrix = semantic_similarity_matrix(texts)
         group_rows = list(group.iterrows())
         for row_idx, (_idx, row) in enumerate(group_rows):
             ranking = similarity_matrix[row_idx].argsort()[::-1]

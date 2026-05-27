@@ -154,7 +154,11 @@ services:
       - --with
       - pandas
       - --with
+      - pyarrow
+      - --with
       - httpx
+      - --with
+      - fastapi
       - --with
       - psycopg[binary]
       - python

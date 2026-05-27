@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-ROOT="/Users/thom/Desktop/IA colombia/secop-risk-alerts-co"
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 PROMPT="$ROOT/docs/agent_handoffs/overnight_repo_finish_prompt.md"
 RUN_DIR="/tmp/secop-risk-alerts-co-agent-runs/$(date +%Y%m%d-%H%M%S)"
 

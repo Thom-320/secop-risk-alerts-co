@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 import shutil
 import time
 from collections.abc import Callable
@@ -289,6 +290,191 @@ def write_json(data: dict[str, Any], path: Path) -> None:
     path.write_text(json.dumps(data, ensure_ascii=False, indent=2))
 
 
+def _column_frame(rows: list[dict[str, Any]], columns: list[str]) -> pd.DataFrame:
+    frame = pd.DataFrame(rows)
+    for column in columns:
+        if column not in frame.columns:
+            frame[column] = ""
+    return frame[columns]
+
+
+def write_sample_product_sources() -> None:
+    """Prepare a versionable product dataset without calling Socrata.
+
+    Prefers the larger generated Parquet (20k+ rows) when available so the
+    demo shows a meaningful ranking.  Falls back to the tiny fixture CSV for
+    CI / minimal smoke tests.
+    """
+    settings = get_settings()
+    generated_proc = settings.root_dir / "data" / "sample" / "generated" / "processes.parquet"
+    if generated_proc.exists():
+        processes = pd.read_parquet(generated_proc).drop_duplicates(subset=["id_del_proceso"])
+        logger.info("Usando datos generados ({:,} procesos).", len(processes))
+    else:
+        fixture_dir = settings.root_dir / "data" / "sample" / "fixtures"
+        processes = pd.read_csv(fixture_dir / "processes.csv")
+        logger.info("Usando fixtures CSV ({:,} procesos).", len(processes))
+    fixture_dir = settings.root_dir / "data" / "sample" / "fixtures"
+    contracts = pd.read_csv(fixture_dir / "contracts.csv")
+    paa = pd.read_csv(fixture_dir / "paa.csv")
+
+    process_rows = []
+    reference_by_process = dict(
+        zip(processes["id_del_proceso"], processes["referencia_del_proceso"], strict=False)
+    )
+    for row in processes.to_dict(orient="records"):
+        publication_date = row.get(
+            "fecha_de_publicacion_del"
+        ) or row.get(
+            "fecha_de_apertura_efectiva"
+        ) or row.get(
+            "fecha_de_apertura_de_respuesta"
+        ) or row.get(
+            "fecha_de_recepcion_de"
+        ) or ""
+        process_rows.append(
+            {
+                **row,
+                "ppi": "",
+                "id_del_portafolio": "",
+                "fase": "",
+                "fecha_de_publicacion_del": publication_date,
+                "fecha_de_ultima_publicaci": publication_date,
+                "unidad_de_duracion": "Dias",
+                "justificaci_n_modalidad_de": "",
+                "proveedores_con_invitacion": row.get("proveedores_invitados", ""),
+                "proveedores_que_manifestaron": row.get("proveedores_unicos_con", ""),
+                "numero_de_lotes": "1",
+                "estado_de_apertura_del_proceso": "",
+                "subtipo_de_contrato": "",
+                "codigo_pci": "",
+                "adjudicado": "Si" if row.get("fecha_adjudicacion") else "No",
+                "estado_resumen": row.get("estado_del_procedimiento", ""),
+            }
+        )
+
+    contract_rows = []
+    process_lookup = processes.set_index("id_del_proceso").to_dict(orient="index")
+    for row in contracts.to_dict(orient="records"):
+        source = process_lookup.get(row.get("proceso_de_compra"), {})
+        contract_rows.append(
+            {
+                "nivel_entidad": source.get("ordenentidad", "Territorial"),
+                "codigo_entidad_en_secop": source.get("codigo_entidad", ""),
+                "nombre_de_la_entidad": source.get("entidad", ""),
+                "nit_de_la_entidad": source.get("nit_entidad", ""),
+                "departamento_entidad": source.get("departamento_entidad", ""),
+                "municipio_entidad": source.get("ciudad_entidad", ""),
+                "estado_del_proceso": source.get("estado_del_procedimiento", ""),
+                "modalidad_de_contrataci_n": source.get("modalidad_de_contratacion", ""),
+                "objeto_a_contratar": source.get("nombre_del_procedimiento", ""),
+                "objeto_del_proceso": source.get("descripci_n_del_procedimiento", ""),
+                "tipo_de_contrato": source.get("tipo_de_contrato", ""),
+                "fecha_de_firma_del_contrato": row.get("fecha_de_firma", ""),
+                "fecha_inicio_ejecuci_n": row.get("fecha_de_inicio_del_contrato", ""),
+                "fecha_fin_ejecuci_n": row.get("fecha_de_fin_del_contrato", ""),
+                "numero_del_contrato": row.get("id_contrato", ""),
+                "numero_de_proceso": reference_by_process.get(row.get("proceso_de_compra"), ""),
+                "valor_contrato": row.get("valor_del_contrato", ""),
+                "nom_raz_social_contratista": row.get("proveedor_adjudicado", ""),
+                "url_contrato": row.get("urlproceso", ""),
+                "origen": "sample",
+                "tipo_documento_proveedor": "",
+                "documento_proveedor": row.get("documento_proveedor", ""),
+            }
+        )
+
+    paa_rows = []
+    for row in paa.to_dict(orient="records"):
+        paa_rows.append(
+            {
+                **row,
+                "identificador_unico": row.get("id", ""),
+                "unidad_de_duracion_esperada": "Dias",
+                "origen_recursos": "",
+                "valor_esperado_de_presupuesto": row.get("valor_total_esperado", ""),
+                "categorias_unspsc": "",
+                "id_paa_encabezado": row.get("id_plan_anual_de_adquisiciones", ""),
+                "causal_de_contratacion": "",
+                "grupo_de_procedimiento": "",
+                "tipo": "",
+                "fecha_version": "",
+                "fecha_de_carga_del_paa": "",
+            }
+        )
+
+    control_rows = [
+        {
+            "sujeto_auditado": "Alcaldia Demo Meta",
+            "modalidad_de_auditor_a": "Contexto visible sample",
+            "hallazgos_administrativos": 0,
+            "hallazgos_disciplinarios": 0,
+            "hallazgos_penales": 0,
+            "hallazgos_fiscales": 0,
+            "cuant_a": 0,
+            "vigencia": 2025,
+        },
+        {
+            "sujeto_auditado": "Gobernacion Demo Casanare",
+            "modalidad_de_auditor_a": "Contexto visible sample",
+            "hallazgos_administrativos": 0,
+            "hallazgos_disciplinarios": 0,
+            "hallazgos_penales": 0,
+            "hallazgos_fiscales": 0,
+            "cuant_a": 0,
+            "vigencia": 2025,
+        },
+    ]
+
+    settings.raw_dir.mkdir(parents=True, exist_ok=True)
+    metadata_dir = settings.raw_dir / "metadata"
+    metadata_dir.mkdir(parents=True, exist_ok=True)
+    _column_frame(process_rows, DATASET_SPECS["secop_ii_processes"]["select"]).to_parquet(
+        settings.raw_dir / "secop_ii_processes.parquet",
+        index=False,
+    )
+    _column_frame(contract_rows, DATASET_SPECS["secop_integrado"]["select"]).to_parquet(
+        settings.raw_dir / "secop_integrado.parquet",
+        index=False,
+    )
+    _column_frame(paa_rows, DATASET_SPECS["paa_detail"]["select"]).to_parquet(
+        settings.raw_dir / "paa_detail.parquet",
+        index=False,
+    )
+    _column_frame(control_rows, DATASET_SPECS["control_fiscal_context"]["select"]).to_parquet(
+        settings.raw_dir / "control_fiscal_context.parquet",
+        index=False,
+    )
+    manifest = {
+        "version": 2,
+        "scope": scope_payload(settings),
+        "datasets": {
+            key: {
+                "dataset_key": key,
+                "dataset_id": spec["id"],
+                "mode": "sample",
+                "layout": spec["layout"],
+                "rows_written": (
+                    len(process_rows)
+                    if key == "secop_ii_processes"
+                    else len(contract_rows)
+                    if key == "secop_integrado"
+                    else len(paa_rows)
+                    if key == "paa_detail"
+                    else len(control_rows)
+                ),
+                "completed": True,
+                "metadata": {"id": spec["id"], "name": f"sample::{key}"},
+            }
+            for key, spec in DATASET_SPECS.items()
+        },
+    }
+    write_manifest(settings.manifest_path, manifest)
+    for key, spec in DATASET_SPECS.items():
+        write_json({"id": spec["id"], "name": f"sample::{key}"}, metadata_dir / f"{key}.json")
+    logger.info("Fuentes sample del producto escritas en {}.", settings.raw_dir)
+
+
 def scope_payload(settings: Any) -> dict[str, Any]:
     return {
         "start_date": settings.start_date,
@@ -523,6 +709,9 @@ def write_paa_status_json(manifest: dict[str, Any]) -> None:
 
 def main() -> None:
     configure_logging()
+    if (os.getenv("PRODUCT_SOURCE_MODE") or "").strip().lower() == "sample":
+        write_sample_product_sources()
+        return
     settings = get_settings()
     move_legacy_assets()
     client = SocrataClient()
