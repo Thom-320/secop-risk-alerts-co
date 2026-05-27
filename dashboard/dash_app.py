@@ -655,19 +655,30 @@ def create_app() -> Any:
             x="processes",
             y="department",
             color="avg_priority_score",
-            title="Procesos por departamento",
+            title="Procesos por departamento (color = score promedio)",
             orientation="h",
-            color_continuous_scale=["#dce8f4", "#2f6fbb"],
+            color_continuous_scale=["#E8EFF7", "#103A5C", "#E35A4B"],
         )
         overview_figure.update_layout(
-            paper_bgcolor="#f8fafc",
-            plot_bgcolor="#ffffff",
+            paper_bgcolor="#FFFFFF",
+            plot_bgcolor="#FFFFFF",
             height=max(430, 42 * len(overview_for_chart) + 160),
-            margin={"l": 150, "r": 24, "t": 56, "b": 42},
-            font={"family": "Inter, system-ui, sans-serif", "color": "#1f2937"},
+            margin={"l": 160, "r": 32, "t": 64, "b": 48},
+            font={"family": "Inter, system-ui, sans-serif", "color": "#0B1E33", "size": 12},
+            title={"font": {"size": 16, "color": "#0B1E33"}, "x": 0.01, "xanchor": "left"},
+            coloraxis_colorbar={"title": "Score", "tickfont": {"color": "#5A6478"}},
         )
-        overview_figure.update_xaxes(tickfont={"color": "#1f2937"}, title_font={"color": "#1f2937"})
-        overview_figure.update_yaxes(tickfont={"color": "#1f2937"}, title_font={"color": "#1f2937"})
+        overview_figure.update_xaxes(
+            tickfont={"color": "#5A6478"},
+            title_font={"color": "#5A6478", "size": 11},
+            gridcolor="#E3E8F0",
+            zerolinecolor="#E3E8F0",
+        )
+        overview_figure.update_yaxes(
+            tickfont={"color": "#0B1E33"},
+            title=None,
+            gridcolor="#E3E8F0",
+        )
     if not concentration.empty:
         concentration = concentration.sort_values("awarded_value", ascending=False).head(12)
 
@@ -747,6 +758,59 @@ def create_app() -> Any:
                         sort_action="native",
                         filter_action="native",
                         style_as_list_view=True,
+                        style_data_conditional=[
+                            {
+                                "if": {"filter_query": "{priority_score} >= 71", "column_id": "priority_score"},
+                                "backgroundColor": "#FCEAE5",
+                                "color": "#E35A4B",
+                                "fontWeight": "700",
+                            },
+                            {
+                                "if": {"filter_query": "{priority_score} >= 41 && {priority_score} < 71", "column_id": "priority_score"},
+                                "backgroundColor": "#FBF1DC",
+                                "color": "#C28832",
+                                "fontWeight": "700",
+                            },
+                            {
+                                "if": {"filter_query": "{priority_score} >= 21 && {priority_score} < 41", "column_id": "priority_score"},
+                                "backgroundColor": "#E8EFF7",
+                                "color": "#103A5C",
+                                "fontWeight": "700",
+                            },
+                            {
+                                "if": {"filter_query": "{priority_score} < 21", "column_id": "priority_score"},
+                                "backgroundColor": "#DDF1EF",
+                                "color": "#1F827C",
+                                "fontWeight": "700",
+                            },
+                            {
+                                "if": {"filter_query": "{confidence_score} >= 0.75", "column_id": "confidence_score"},
+                                "color": "#1F827C",
+                                "fontWeight": "700",
+                            },
+                            {
+                                "if": {"filter_query": "{confidence_score} < 0.4", "column_id": "confidence_score"},
+                                "color": "#E35A4B",
+                                "fontWeight": "700",
+                            },
+                        ],
+                        style_header={
+                            "backgroundColor": "#F1F4F9",
+                            "color": "#0B1E33",
+                            "fontWeight": "700",
+                            "textTransform": "uppercase",
+                            "fontSize": "11px",
+                            "letterSpacing": "0.06em",
+                            "borderBottom": "1px solid #CCD3DF",
+                        },
+                        style_cell={
+                            "padding": "10px 14px",
+                            "fontSize": "13px",
+                            "fontFamily": "Inter, system-ui, sans-serif",
+                            "color": "#1F2C40",
+                            "border": "0",
+                            "borderBottom": "1px solid #E3E8F0",
+                        },
                     )
                     if not ranking.empty
                     else empty_state("Ranking sin procesos")
@@ -875,11 +939,16 @@ def create_app() -> Any:
         [
             html.Header(
                 [
-                    html.Div("ContratIA Abierta", className="app-eyebrow"),
-                    html.H1("Cola explicable de revision contractual"),
+                    html.Div(
+                        "Concurso Datos al Ecosistema 2026  ·  Gobernanza y Transparencia",
+                        className="app-eyebrow",
+                    ),
+                    html.H1(
+                        "ContratIA Abierta — Cola explicable de revisión contractual"
+                    ),
                     html.P(
                         "Herramienta para ordenar procesos SECOP, abrir evidencia y "
-                        "decidir que revisar primero."
+                        "decidir qué revisar primero."
                     ),
                     html.P(ETHICS_DISCLAIMER, className="ethics-note"),
                 ],
