@@ -14,8 +14,10 @@ fi
 
 cd "$ROOT"
 
+MESSAGE="Read and execute the full overnight orchestration prompt at: $PROMPT. It begins with /goal and gives you up to 8 hours. Treat yourself as an orchestrator, use subagents/specialists when available, work against the repository at $ROOT, and leave a final report under docs/agent_handoffs/."
+
 nohup hermes chat \
-  --query "$(cat "$PROMPT")" \
+  --query "$MESSAGE" \
   --max-turns 500 \
   --worktree \
   --accept-hooks \
@@ -27,9 +29,10 @@ echo "$!" > "$RUN_DIR/hermes.pid"
 
 nohup openclaw agent \
   --local \
+  --agent ops \
   --timeout 28800 \
   --thinking max \
-  --message "$(cat "$PROMPT")" \
+  --message "$MESSAGE" \
   --json \
   > "$RUN_DIR/openclaw.log" 2>&1 &
 echo "$!" > "$RUN_DIR/openclaw.pid"
@@ -49,4 +52,3 @@ tail -f "$RUN_DIR/openclaw.log"
 EOF
 
 echo "$RUN_DIR"
-
