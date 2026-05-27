@@ -133,7 +133,7 @@ micro:         9-10px   (paginación, footer)
 
 ### Reglas que NO cambian del primer brief
 
-- Cero "detecta corrupción". El sistema **emite juicios de prioridad de revisión**, no de corrupción.
+- Cero lenguaje acusatorio. El sistema **emite juicios de prioridad de revisión**, no de corrupción.
 - Cero stock photos. Cero glassmorphism. Cero pie charts.
 - Datos reales del repo. No inventes números.
 - Export limpio a PDF A4 horizontal con `@media print` correcto.
