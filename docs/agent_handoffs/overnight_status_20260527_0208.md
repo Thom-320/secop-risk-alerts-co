@@ -31,6 +31,9 @@ Estado observado:
 - Rama: `hermes/hermes-78568e84`.
 - Hermes leyó el prompt maestro, creó plan de 10 tareas y empezó validación.
 - Evidencia inicial en log: lint pasa y 46 pruebas pasan.
+- Corte 2026-05-27 02:13: proceso hijo de Hermes sigue vivo; el worktree
+  `hermes/hermes-78568e84` sigue limpio. Hermes detectó que Docker/OrbStack no
+  respondió desde su entorno y continuó leyendo documentación clave.
 
 OpenClaw:
 
@@ -46,6 +49,10 @@ Estado observado:
   `--thinking xhigh`.
 - La sesión activa arrancó con bootstrap de OpenClaw, pero aún no emitió reporte
   final visible en el log al momento de este corte.
+- Corte 2026-05-27 02:13: proceso hijo de OpenClaw sigue vivo. El log no ha
+  avanzado después del bootstrap, probablemente por una llamada larga al modelo.
+  No se interrumpió porque el objetivo explícito permite ejecución nocturna de
+  hasta 8 horas.
 
 ## Comandos de inspección
 
@@ -69,4 +76,3 @@ Antes de mezclar cambios al `main`:
 5. Ejecutar `make validate-final` si las bases/servicios están disponibles.
 6. No versionar `.venv`, caches, Parquet, `validation/*.json` ni `validation/*.csv`.
 7. Mantener el lenguaje ético: priorización de revisión humana, no acusación.
-
