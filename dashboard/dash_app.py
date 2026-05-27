@@ -9,8 +9,7 @@ import plotly.express as px
 from services.common.db import fetch_all
 
 try:
-    import dash_table
-    from dash import Dash, Input, Output, dcc, html
+    from dash import Dash, Input, Output, dash_table, dcc, html
 except ImportError:  # Allows smoke imports before optional dependency install.
     Dash = None  # type: ignore[assignment]
     Input = Output = dcc = html = dash_table = None  # type: ignore[assignment]
@@ -121,6 +120,11 @@ def create_app() -> Any:
     overview = load_overview()
     ranking = load_ranking()
     plan_matches = load_plan_vs_execution()
+    concentration = db_frame(
+        "SELECT entity_name, provider_name, awarded_value::float AS awarded_value "
+        "FROM v_entity_provider_concentration "
+        "ORDER BY awarded_value DESC LIMIT 30"
+    )
 
     total_processes = int(overview["processes"].sum()) if not overview.empty else 0
     total_entities = int(overview["entities"].sum()) if "entities" in overview else 0
@@ -253,17 +257,16 @@ def create_app() -> Any:
                         label="Concentracion",
                         children=[
                             dcc.Graph(
-                                figure=px.bar(
-                                    db_frame(
-                                        "SELECT entity_name, provider_name, "
-                                        "awarded_value::float AS awarded_value "
-                                        "FROM v_entity_provider_concentration "
-                                        "ORDER BY awarded_value DESC LIMIT 30"
-                                    ),
-                                    x="provider_name",
-                                    y="awarded_value",
-                                    color="entity_name",
-                                    title="Top proveedores por valor adjudicado",
+                                figure=(
+                                    px.bar(
+                                        concentration,
+                                        x="provider_name",
+                                        y="awarded_value",
+                                        color="entity_name",
+                                        title="Top proveedores por valor adjudicado",
+                                    )
+                                    if not concentration.empty
+                                    else px.bar(title="Sin contratos cargados en la demo")
                                 )
                             )
                         ],
@@ -383,6 +386,7 @@ server = app.server if app is not None else None
 
 if __name__ == "__main__":
     port = int(os.getenv("DASH_PORT", "8050"))
+    debug = os.getenv("DASH_DEBUG", "0").lower() in {"1", "true", "yes"}
     if app is None:
         raise SystemExit("Dash no esta instalado. Ejecuta `uv sync --python 3.11 --extra dev`.")
-    app.run(debug=True, host="0.0.0.0", port=port)
+    app.run(debug=debug, host="0.0.0.0", port=port)
