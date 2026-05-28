@@ -525,7 +525,14 @@ def decision_card(label: str, value: str, note: str) -> Any:
 def plot_or_empty(frame: pd.DataFrame, figure: Any, title: str) -> Any:
     if frame.empty:
         return empty_state(title)
-    return dcc.Graph(figure=figure, className="chart-panel")
+    return html.Div(
+        dcc.Graph(
+            figure=figure,
+            config={"displayModeBar": False, "responsive": False},
+            style={"height": "520px", "width": "100%"},
+        ),
+        className="chart-panel",
+    )
 
 
 def selected_process_markdown(
@@ -654,30 +661,43 @@ def create_app() -> Any:
             overview_for_chart,
             x="processes",
             y="department",
-            color="avg_priority_score",
-            title="Procesos por departamento (color = score promedio)",
             orientation="h",
-            color_continuous_scale=["#E8EFF7", "#103A5C", "#E35A4B"],
+            text="processes",
+        )
+        overview_figure.update_traces(
+            marker_color="#103A5C",
+            marker_line_color="#0B1E33",
+            marker_line_width=0,
+            texttemplate="%{x:,}",
+            textposition="outside",
+            textfont={"family": "Inter, system-ui, sans-serif", "size": 11, "color": "#0B1E33"},
+            cliponaxis=False,
         )
         overview_figure.update_layout(
+            autosize=False,
             paper_bgcolor="#FFFFFF",
             plot_bgcolor="#FFFFFF",
-            height=max(430, 42 * len(overview_for_chart) + 160),
-            margin={"l": 160, "r": 32, "t": 64, "b": 48},
+            height=480,
+            margin={"l": 140, "r": 80, "t": 48, "b": 40},
             font={"family": "Inter, system-ui, sans-serif", "color": "#0B1E33", "size": 12},
-            title={"font": {"size": 16, "color": "#0B1E33"}, "x": 0.01, "xanchor": "left"},
-            coloraxis_colorbar={"title": "Score", "tickfont": {"color": "#5A6478"}},
+            title=None,
+            showlegend=False,
+            bargap=0.45,
         )
         overview_figure.update_xaxes(
-            tickfont={"color": "#5A6478"},
-            title_font={"color": "#5A6478", "size": 11},
-            gridcolor="#E3E8F0",
+            tickfont={"color": "#5A6478", "size": 10},
+            title=None,
+            gridcolor="#EEF2F8",
             zerolinecolor="#E3E8F0",
+            showline=False,
+            ticks="",
         )
         overview_figure.update_yaxes(
-            tickfont={"color": "#0B1E33"},
+            tickfont={"color": "#0B1E33", "size": 13},
             title=None,
-            gridcolor="#E3E8F0",
+            gridcolor="rgba(0,0,0,0)",
+            showline=False,
+            ticks="",
         )
     if not concentration.empty:
         concentration = concentration.sort_values("awarded_value", ascending=False).head(12)
