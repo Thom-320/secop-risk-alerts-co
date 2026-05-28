@@ -1,8 +1,8 @@
-# ContratIA Abierta / Transparencia360
+# ContratIA Abierta
 
-**Transparencia360** es el proyecto unificado para Ingeniería de Datos.
-**ContratIA Abierta** es el nombre de producto/demo de la misma solución, no un
-fork separado.
+**ContratIA Abierta** es un sistema de **ingeniería de datos** que prioriza la
+revisión humana de la contratación pública colombiana usando datos abiertos de
+SECOP.
 
 El sistema no acusa, no prueba corrupción y no reemplaza auditoría jurídica o fiscal; prioriza revisión humana con evidencia trazable.
 
@@ -11,16 +11,27 @@ explicable: qué revisar primero, por qué, y qué acción humana sigue. La
 herramienta produce alertas explicables y reportes de apoyo; nunca declara
 responsabilidad individual ni conclusiones jurídicas.
 
-## Ruta oficial de entrega
+## Arquitectura única (una sola lane)
 
-| Modo | Comando | UI | API | Storage | Evidencia |
-| --- | --- | --- | --- | --- | --- |
-| **Demo de concurso (ContratIA Abierta)** | `make product-pipeline && make validate-product` | Dash `dashboard/dash_app.py` | FastAPI lean `src/api/main.py` | Parquet/DuckDB | Ruta liviana, reproducible sin Docker, export CSV+HTML |
-| **Evidencia de ingeniería (Transparencia360)** | `make demo-full && make validate-final` | Dash `dashboard/dash_app.py` | Microservicios FastAPI `services/*` | PostgreSQL + MongoDB | 13.999 procesos, 33 objetos PG, 5 colecciones Mongo, APIs 200 |
+Hay **una sola arquitectura oficial** de extremo a extremo:
 
-La demo de concurso usa la ruta lean de ContratIA Abierta. El stack full-stack
-académico queda como evidencia de ingeniería avanzada. No son equivalentes; el
-jurado debe mirar primero la ruta de concurso.
+```
+Socrata API → ETL (Polars + Parquet) → PostgreSQL + MongoDB
+            → FastAPI ×3 (contracts · risk · analytics) → Dash (DECIDIR/ENTENDER/CONFIAR)
+```
+
+| Componente | Detalle |
+| --- | --- |
+| **Comando** | `make demo-full && make validate-final` |
+| **UI** | Dash `dashboard/dash_app.py` — zonas DECIDIR / ENTENDER / CONFIAR |
+| **API** | Microservicios FastAPI `services/*` (puertos 8001/8002/8003) |
+| **Storage** | PostgreSQL (33 objetos, fuente de verdad) + MongoDB (evidencia/eventos) |
+| **Evidencia** | 90.431 procesos scoreados (Meta + Casanare), validación AGR 2.5×, caso real Puerto Gaitán 3.1× |
+
+> Nota: `src/app/streamlit_app.py` y `src/api/main.py` (ruta lean Parquet) quedan
+> como **fallback offline interno deprecado**, no como un segundo producto. El
+> pipeline de scoring (`src/scoring`, `src/features`) es compartido por ambas
+> rutas; la lane oficial es el stack full descrito arriba.
 
 ## Fuentes de datos
 
