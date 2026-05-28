@@ -86,6 +86,38 @@ def provider(provider_id: int) -> dict:
     )
 
 
+@app.get("/processes/{process_id}/value-context")
+def value_context(process_id: int) -> dict:
+    """Contexto de valor del proceso dentro de su grupo de pares fino
+    (misma modalidad + categoría UNSPSC).
+
+    Reemplaza la 'desviación X veces la mediana' (que explota para contratos
+    grandes en grupos heterogéneos) por un percentil de valor, que es robusto
+    al sesgo: '$588M está en el percentil 81 de su categoría' tiene sentido;
+    '289x la mediana' no.
+    """
+    row = fetch_one(
+        """
+        WITH t AS (
+            SELECT modality_id, unspsc_category_id, base_price
+            FROM procurement_process WHERE process_id = %s
+        )
+        SELECT t.base_price::float AS base_price,
+               count(p.process_id) AS peer_count,
+               round((100.0 * avg((p.base_price <= t.base_price)::int))::numeric, 1)::float
+                   AS value_percentile,
+               percentile_cont(0.5) WITHIN GROUP (ORDER BY p.base_price)::float
+                   AS peer_median
+        FROM procurement_process p, t
+        WHERE p.modality_id = t.modality_id
+          AND p.unspsc_category_id IS NOT DISTINCT FROM t.unspsc_category_id
+        GROUP BY t.base_price
+        """,
+        (process_id,),
+    )
+    return row or {}
+
+
 @app.get("/processes/{process_id}/fiscal-context")
 def fiscal_context(process_id: int) -> dict:
     """Contexto fiscal AGR de la entidad del proceso.

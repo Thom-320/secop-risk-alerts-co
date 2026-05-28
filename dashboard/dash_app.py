@@ -973,13 +973,12 @@ def detail_panel(detail: dict, comps: pd.DataFrame) -> list[Any]:
                 _value_metric(
                     detail.get("base_price"),
                     "Valor base",
-                    detail.get("peer_price_median"),
-                    "Mediana de pares",
+                    detail.get("value_peer_median"),
+                    "Mediana de su categoría",
                 ),
-                _ratio_metric(
-                    detail.get("value_deviation_ratio"),
-                    "Desviacion vs pares",
-                    "Cuanto mas caro que procesos similares",
+                _value_pctile_metric(
+                    detail.get("value_percentile"),
+                    detail.get("value_peer_count"),
                 ),
                 _simple_metric(detail.get("priority_score"), "Score"),
                 _percentile_metric(pct, pct_text),
@@ -1069,6 +1068,28 @@ def _ratio_metric(
     )
 
 
+def _value_pctile_metric(percentile: Any, peer_count: Any) -> Any:
+    """Value position within the fine peer group (modality + category), as a
+    robust percentile instead of an explosive 'Nx la mediana' ratio."""
+    p = pd.to_numeric(pd.Series([percentile]), errors="coerce").iloc[0]
+    n = pd.to_numeric(pd.Series([peer_count]), errors="coerce").iloc[0]
+    if pd.isna(p):
+        text, level, note = "Sin dato", "neutral", "Sin pares suficientes"
+    else:
+        text = f"percentil {p:.0f}"
+        level = "high" if p >= 95 else ("medium" if p >= 80 else "low")
+        n_txt = f"{int(n):,} pares" if not pd.isna(n) else "su categoría"
+        note = f"más alto que el {p:.0f}% de {n_txt}"
+    return html.Div(
+        [
+            html.Span("Valor en su categoría", className="card-label"),
+            html.Strong(text, className=f"metric-ratio metric-ratio--{level}"),
+            html.Span(note, className="metric-reference"),
+        ],
+        className="metric-card metric-card--ratio",
+    )
+
+
 def _simple_metric(value: Any, label: str) -> Any:
     v = pd.to_numeric(pd.Series([value]), errors="coerce").iloc[0]
     text = f"{v:.0f}" if not pd.isna(v) else "Sin dato"
@@ -1078,6 +1099,32 @@ def _simple_metric(value: Any, label: str) -> Any:
             html.Strong(text, className="metric-value-main"),
         ],
         className="metric-card",
+    )
+
+
+def _value_pctile_metric(percentile: Any, peer_count: Any) -> Any:
+    """Posición de valor dentro del grupo fino (modalidad + categoría).
+
+    Robusto al sesgo: 'percentil 81 de 363 pares' tiene sentido para un
+    contrato grande; 'X veces la mediana' explota en grupos heterogéneos.
+    """
+    p = pd.to_numeric(pd.Series([percentile]), errors="coerce").iloc[0]
+    n = pd.to_numeric(pd.Series([peer_count]), errors="coerce").iloc[0]
+    if pd.isna(p):
+        text, note, level = "Sin dato", "Pares insuficientes en su categoría", "neutral"
+    else:
+        top = max(0.1, 100 - float(p))
+        text = f"top {top:.0f}%"
+        n_txt = f"{int(n):,} pares" if not pd.isna(n) else "su categoría"
+        note = f"por valor entre {n_txt} de su modalidad + categoría"
+        level = "high" if p >= 95 else ("medium" if p >= 80 else "low")
+    return html.Div(
+        [
+            html.Span("Valor en su categoría", className="card-label"),
+            html.Strong(text, className=f"metric-ratio metric-ratio--{level}"),
+            html.Span(note, className="metric-reference"),
+        ],
+        className="metric-card metric-card--ratio",
     )
 
 
@@ -2238,6 +2285,16 @@ def _detail_payload(ranking: pd.DataFrame, pid: int | None) -> dict | None:
                         d[k] = svc_dict.get(k)
         except Exception:
             pass
+    # Value context: sensible percentile within the FINE peer group
+    # (modality + UNSPSC category), not the coarse "Nx la mediana".
+    try:
+        vc = svc_json(CONTRACTS_URL, f"/processes/{pid}/value-context")
+        if vc:
+            d["value_percentile"] = vc.get("value_percentile")
+            d["value_peer_median"] = vc.get("peer_median")
+            d["value_peer_count"] = vc.get("peer_count")
+    except Exception:
+        pass
     return d or None
 
 

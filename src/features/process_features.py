@@ -77,12 +77,23 @@ def compute_anomaly_component(df: pd.DataFrame, random_state: int = 42) -> pd.Se
 
 def compute_peer_statistics(df: pd.DataFrame) -> pd.DataFrame:
     category = df["category_code"].fillna("").astype(str)
+    # Value band by order of magnitude: keeps peers value-homogeneous so the
+    # median is meaningful. Without it, a $588M contract lands in the same group
+    # as $2M ones and shows an absurd "289x la mediana". A $588M contract is
+    # compared against other ~$100M-$1B contracts of its modality+category.
+    import math
+    price = pd.to_numeric(df.get("base_price"), errors="coerce").fillna(0.0)
+    value_band = price.clip(lower=1.0).map(
+        lambda v: str(int(math.log10(v)))
+    )
     peer_group = (
         df["modality_family"].fillna("otros").astype(str)
         + "||"
         + category.where(category.ne(""), "sin_categoria")
         + "||"
         + df["process_year"].fillna(0).astype(int).astype(str)
+        + "||v"
+        + value_band
     )
     peer = df.copy()
     peer["peer_group_key"] = peer_group
