@@ -342,36 +342,63 @@ def load_plan() -> pd.DataFrame:
 
 
 def load_comparables(pid: int) -> pd.DataFrame:
-    rk = _ranking_from_marts()
-    comp = mart("comparables")
-    if not rk.empty and not comp.empty:
-        row = rk[rk["process_id"] == pid]
-        if not row.empty:
-            pk = row.iloc[0]["process_key"]
-            m = comp[comp["process_key"] == pk].copy()
-            if not m.empty:
-                m = m.drop(columns=["process_key"], errors="ignore")
-                m = m.rename(columns={
-                    "comparable_process_key": "process_key",
-                    "comparable_title": "title",
-                    "comparable_value": "base_price",
-                })
-                return _enrich_comparables(m)
-    f = svc_frame(RISK_URL, f"/risk/process/{pid}/comparables")
-    if not f.empty:
-        return _enrich_comparables(f)
+    """Comparables semánticos del proceso.
+
+    Fuente primaria: el servicio de riesgo, que ya excluye gemelos de fase
+    (mismo proceso, otra fase) y procesos sin entidad/título. Una respuesta
+    vacía del servicio es VÁLIDA (el proceso no tiene comparables útiles): en
+    ese caso NO caemos a fuentes obsoletas que reintroducirían blancos o
+    self-matches. Solo si el servicio es inalcanzable usamos un fallback con el
+    mismo filtrado.
+    """
+    try:
+        payload = svc_json(RISK_URL, f"/risk/process/{pid}/comparables")
+        f = pd.DataFrame(payload if isinstance(payload, list) else [])
+        return _filter_comparables(f, pid)
+    except Exception:
+        pass
+    # Fallback (servicio caído): mismo filtrado que el endpoint.
     db = db_sql(f"""
-        SELECT sc.rank, sc.similarity::float AS similarity,
-               p.process_key, p.title, p.base_price::float AS base_price
+        WITH target AS (
+            SELECT regexp_replace(upper(trim(process_reference)), '\\s*\\(.*$', '')
+                   AS ref_norm
+            FROM procurement_process WHERE process_id = {int(pid)}
+        )
+        SELECT sc.similarity::float AS similarity,
+               p.process_id, p.process_key,
+               COALESCE(NULLIF(trim(p.title), ''), p.process_reference,
+                        p.process_key) AS title,
+               p.process_reference AS reference,
+               e.name AS entity_name,
+               p.base_price::float AS base_price
         FROM semantic_comparable sc
         JOIN procurement_process p ON p.process_id = sc.comparable_process_id
-        WHERE sc.process_id = {pid}
-        ORDER BY sc.rank LIMIT 5
+        JOIN public_entity e ON e.entity_id = p.entity_id
+        CROSS JOIN target t
+        WHERE sc.process_id = {int(pid)}
+          AND sc.comparable_process_id <> {int(pid)}
+          AND sc.similarity < 0.985
+          AND regexp_replace(upper(trim(p.process_reference)), '\\s*\\(.*$', '')
+              IS DISTINCT FROM t.ref_norm
+        ORDER BY sc.similarity DESC LIMIT 5
     """)
     if not db.empty:
-        return _enrich_comparables(db)
+        return _filter_comparables(db, pid)
     return pd.DataFrame()
-    return _enrich_comparables(m)
+
+
+def _filter_comparables(comps: pd.DataFrame, pid: int) -> pd.DataFrame:
+    """Defensa final: nunca mostrar filas sin título/entidad ni gemelos de fase
+    del proceso objetivo (misma referencia normalizada)."""
+    if comps.empty:
+        return comps
+    f = comps.copy()
+    # drop rows that did not resolve to a real process
+    if "title" in f.columns:
+        f = f[f["title"].notna() & (f["title"].astype(str).str.strip() != "")]
+    if "entity_name" in f.columns:
+        f = f[f["entity_name"].notna() & (f["entity_name"].astype(str).str.strip() != "")]
+    return f.head(5).reset_index(drop=True)
 
 
 def _enrich_comparables(comps: pd.DataFrame) -> pd.DataFrame:

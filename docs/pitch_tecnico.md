@@ -374,6 +374,23 @@ percentil es honesto: "top 0.5%", no "85/100 = malo".
 R: Process ↔ Contract ~62%, Process ↔ PAA ~47%. Lo reportamos, no lo escondemos.
 Cuando no hay match fuerte, el sistema lo declara.
 
+**P: Vi el mismo proceso con dos scores distintos. ¿El score es aleatorio?**
+R: No. El score es una función determinista de las features (IsolationForest con
+`random_state=42` fijo; mismo vector de entrada → mismo score). Lo que se ve son
+DOS FASES del mismo proceso que SECOP publica por separado: la fase "Evaluación"
+(sin adjudicar: `awarded_total=0`, 0 oferentes) y la fase "Seleccionado"
+(adjudicado: $544M, 5 oferentes). Tienen features distintas, así que scores
+distintos (47 vs 96). Es correcto. La decisión de producto es mostrar UNA fila
+por proceso (la fase más avanzada), y por eso deduplicamos por referencia
+normalizada en la cola, el detalle y los comparables.
+
+**P: ¿Por qué la mediana de pares es $2M si el proceso es de $588M?**
+R: El grupo de pares es `modalidad · categoría UNSPSC · año`. En subasta inversa
+de suministros aeronáuticos del año, la mayoría son contratos pequeños, así que la
+mediana baja es real y el $588M es un outlier legítimo (289x). No es un artefacto:
+es exactamente la señal que queremos que el revisor vea. Si el grupo tuviera menos
+de N pares, el sistema reporta "evidencia insuficiente" en lugar de forzar el ratio.
+
 **P: ¿Cómo sé que esto corre y no es un screenshot?**
 R: `make demo-full && make validate-final`. 71 tests, 3 healthchecks, 33 objetos.
 Cinco minutos desde un clone limpio. Lo puedo correr ahora.
