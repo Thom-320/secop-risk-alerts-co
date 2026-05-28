@@ -648,9 +648,51 @@ def panorama_page(overview: pd.DataFrame, ranking: pd.DataFrame) -> None:
     )
     c1, c2, c3, c4 = st.columns(4)
     c1.metric("Procesos analizados", f"{len(ranking):,}".replace(",", "."))
-    c2.metric("% alta prioridad", f"{(ranking['priority_score'] >= 70).mean():.1%}")
+    c2.metric("% alerta prioritaria", f"{(ranking['priority_score'] >= 85).mean():.2%}")
     c3.metric("Entidades revisables", f"{ranking['entity_name'].nunique():,}".replace(",", "."))
     c4.metric("% match PAA fuerte", f"{(ranking['paa_match_confidence'] >= 0.75).mean():.1%}")
+
+    # Weekly review queue — top processes to review NOW
+    section_title(
+        "Cola semanal de revisión",
+        "Los 10 procesos con mayor prioridad que requieren atención inmediata.",
+    )
+    weekly_queue = ranking.nlargest(10, "priority_score")[
+        ["process_reference", "entity_name", "department", "modality", "base_price",
+         "priority_score", "confidence_score", "priority_band", "reasons"]
+    ].copy()
+    if not weekly_queue.empty:
+        weekly_queue["base_price"] = weekly_queue["base_price"].apply(format_currency)
+        weekly_queue["priority_score"] = weekly_queue["priority_score"].round(0).astype(int)
+        weekly_queue["confidence_score"] = weekly_queue["confidence_score"].round(0).astype(int)
+        weekly_queue["acción"] = weekly_queue.apply(
+            lambda row: "Abrir SECOP y contrastar" if row["priority_score"] >= 70
+            else "Revisar en contexto" if row["priority_score"] >= 40
+            else "Monitorear",
+            axis=1,
+        )
+        st.dataframe(
+            weekly_queue.rename(columns={
+                "process_reference": "Referencia",
+                "entity_name": "Entidad",
+                "department": "Depto",
+                "modality": "Modalidad",
+                "base_price": "Valor base",
+                "priority_score": "Score",
+                "confidence_score": "Confianza",
+                "priority_band": "Banda",
+                "reasons": "Razones",
+                "acción": "Acción sugerida",
+            }),
+            use_container_width=True,
+            hide_index=True,
+        )
+        st.download_button(
+            "Descargar cola semanal (CSV)",
+            data=weekly_queue.to_csv(index=False).encode("utf-8"),
+            file_name="contratia-cola-semanal.csv",
+            mime="text/csv",
+        )
 
     section_title(
         "Panorama territorial",

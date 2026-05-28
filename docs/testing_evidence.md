@@ -104,3 +104,38 @@ aquí usa scope Meta/Casanare (13.999 procesos) y pasa validación completa.
 - Nombres, roles, director/docente y fecha exacta de entrega.
 - URL pública de despliegue.
 - Registro en "Usos" si aplica al concurso.
+
+## Sync product→academic (2026-05-28)
+
+El pipeline de scoring real (IsolationForest + PAA + reglas) se sincronizó
+a PostgreSQL y MongoDB mediante `etl/sync_product_to_academic.py`.
+
+### Resultados
+
+- **PostgreSQL procurement_process**: 100.903 filas (upserted desde product pipeline).
+- **PostgreSQL risk_assessment**: 90.431 evaluaciones con scoring real de IA.
+  - Anomaly score: IsolationForest (200 estimators, robust normalization).
+  - Peer deviation: percentile-clipped min-max normalization.
+  - Rule score: thresholds explicables sobre value/duration/response deviation.
+- **PostgreSQL paa_process_match**: 56.717 matches (62.5% strong, 1% weak).
+- **PostgreSQL semantic_comparable**: 6.003 comparables (TF-IDF + NearestNeighbors).
+- **PostgreSQL risk_reason**: 80.173 razones explicables.
+- **MongoDB risk_event_logs**: 90.431 eventos de riesgo registrados.
+- **MongoDB join_audits**: evento de sync registrado.
+- **MongoDB etl_run_logs**: log de corrida registrado.
+
+### Score distribution (real data)
+
+- 116 procesos "alerta prioritaria" (score ≥ 85).
+- 342 procesos "alerta alta" (score ≥ 70).
+- 6.402 procesos "observación" (score ≥ 40).
+- 83.571 procesos "baja prioridad" (score < 40).
+- Score máximo: 96 (CACOM-2, monto 289x la mediana de pares).
+
+### Commands
+
+```bash
+make product-pipeline          # Scoring real con IA
+make sync-product-to-academic  # Sincronizar a PostgreSQL + MongoDB
+make validate-final            # Validación completa
+```

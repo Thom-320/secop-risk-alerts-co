@@ -22,10 +22,17 @@ def stable_missing_identifier(prefix: str, value: str) -> str:
     return f"{prefix}-{digest}"
 
 
-def normalize_to_100(series: pd.Series) -> pd.Series:
+def normalize_to_100(series: pd.Series, *, robust: bool = False) -> pd.Series:
     clean = pd.to_numeric(series, errors="coerce").fillna(0.0)
     if clean.nunique(dropna=True) <= 1:
         return pd.Series([0.0] * len(clean), index=clean.index)
+    if robust:
+        p99 = clean.quantile(0.99)
+        p1 = clean.quantile(0.01)
+        if p99 == p1:
+            return pd.Series([0.0] * len(clean), index=clean.index)
+        clipped = clean.clip(lower=p1, upper=p99)
+        return ((clipped - p1) / (p99 - p1) * 100).clip(0, 100)
     min_value = clean.min()
     max_value = clean.max()
     return ((clean - min_value) / (max_value - min_value) * 100).clip(0, 100)
@@ -65,7 +72,7 @@ def compute_anomaly_component(df: pd.DataFrame, random_state: int = 42) -> pd.Se
     )
     model.fit(numeric)
     raw_score = pd.Series(-model.decision_function(numeric), index=df.index)
-    return normalize_to_100(raw_score).round(2)
+    return normalize_to_100(raw_score, robust=True).round(2)
 
 
 def compute_peer_statistics(df: pd.DataFrame) -> pd.DataFrame:
@@ -108,7 +115,7 @@ def compute_peer_deviation_component(df: pd.DataFrame) -> pd.DataFrame:
         + duration_ratio.fillna(1.0).clip(lower=0.0)
         + response_gap.fillna(0.0)
     )
-    peer["peer_deviation_score"] = normalize_to_100(raw).round(2)
+    peer["peer_deviation_score"] = normalize_to_100(raw, robust=True).round(2)
     return peer
 
 

@@ -154,6 +154,9 @@ def build_paa_matches(processes: pd.DataFrame, paa: pd.DataFrame) -> pd.DataFram
 
 
 def build_semantic_comparables(processes: pd.DataFrame) -> pd.DataFrame:
+    from sklearn.feature_extraction.text import TfidfVectorizer
+    from sklearn.neighbors import NearestNeighbors
+
     demo = processes[processes["demo_scope"] & processes["text_sufficient"]].copy()
     if demo.empty:
         return pd.DataFrame(
@@ -168,36 +171,44 @@ def build_semantic_comparables(processes: pd.DataFrame) -> pd.DataFrame:
             ]
         )
 
-    rows: list[dict[str, object]] = []
     settings = get_settings()
+    top_k = settings.demo_top_k_comparables
+    rows: list[dict[str, object]] = []
+
     grouped = demo.groupby(["department", "modality_family"], dropna=False)
     for (_, _modality_family), group in grouped:
         if len(group) < 2:
             continue
         texts = group["process_text"].fillna("").astype(str).tolist()
-        similarity_matrix = semantic_similarity_matrix(texts)
         group_rows = list(group.iterrows())
+
+        # Use TF-IDF + NearestNeighbors for efficient top-K search
+        vectorizer = TfidfVectorizer(stop_words=None, min_df=1, ngram_range=(1, 2))
+        vectors = vectorizer.fit_transform(texts)
+
+        k = min(top_k + 1, len(texts))  # +1 because self is included
+        nn = NearestNeighbors(n_neighbors=k, metric="cosine", algorithm="brute")
+        nn.fit(vectors)
+        distances, indices = nn.kneighbors(vectors)
+
         for row_idx, (_idx, row) in enumerate(group_rows):
-            ranking = similarity_matrix[row_idx].argsort()[::-1]
-            added = 0
-            for candidate_pos in ranking:
-                if candidate_pos == row_idx:
+            for rank, neighbor_idx in enumerate(indices[row_idx]):
+                if neighbor_idx == row_idx:
                     continue
-                candidate = group.iloc[candidate_pos]
-                sim = float(similarity_matrix[row_idx, candidate_pos])
+                candidate = group.iloc[neighbor_idx]
+                sim = 1.0 - distances[row_idx][rank]  # cosine distance -> similarity
                 rows.append(
                     {
                         "process_key": row["process_key"],
                         "comparable_process_key": candidate["process_key"],
-                        "similarity": sim,
-                        "rank": added + 1,
+                        "similarity": float(sim),
+                        "rank": rank,
                         "comparable_label": comparable_label(candidate),
                         "comparable_value": candidate["base_price"],
                         "comparable_duration_days": candidate["duration_days"],
                     }
                 )
-                added += 1
-                if added >= settings.demo_top_k_comparables:
+                if rank >= top_k - 1:
                     break
     return pd.DataFrame(rows)
 
@@ -238,52 +249,59 @@ def apply_gate_recommendation(
 def build_process_scores() -> dict[str, pd.DataFrame]:
     settings = get_settings()
     processes, paa_items, control, _rpmr_linkage = load_assets()
-    scored = attach_control_context(processes, control)
-    scored = attach_peer_reason_metrics(scored)
-    scored["anomaly_score"] = compute_anomaly_component(scored, random_state=settings.random_state)
 
-    paa_matches = build_paa_matches(scored, paa_items)
-    semantic_comparables = build_semantic_comparables(scored)
+    # Phase 1: compute peer statistics on ALL processes (for good peer groups)
+    all_with_peers = attach_peer_reason_metrics(processes)
+    all_with_peers = attach_control_context(all_with_peers, control)
+
+    # Phase 2: filter to demo scope for expensive operations (anomaly, PAA, comparables)
+    demo = all_with_peers[all_with_peers["demo_scope"]].copy()
+    logger.info("Demo scope: {} procesos de {} totales.", len(demo), len(all_with_peers))
+
+    demo["anomaly_score"] = compute_anomaly_component(demo, random_state=settings.random_state)
+
+    paa_matches = build_paa_matches(demo, paa_items)
+    semantic_comparables = build_semantic_comparables(demo)
     comparable_counts = (
         semantic_comparables.groupby("process_key")
         .size()
         .rename("semantic_comparable_count")
     )
 
-    scored = scored.merge(paa_matches, on="process_key", how="left")
-    scored = scored.merge(comparable_counts, on="process_key", how="left")
-    scored["semantic_comparable_count"] = scored["semantic_comparable_count"].fillna(0).astype(int)
-    scored["paa_match_status"] = scored["paa_match_status"].fillna("none")
-    scored["paa_match_confidence"] = scored["paa_match_confidence"].fillna(0.0)
-    scored["paa_match_method"] = scored["paa_match_method"].fillna("none")
+    demo = demo.merge(paa_matches, on="process_key", how="left")
+    demo = demo.merge(comparable_counts, on="process_key", how="left")
+    demo["semantic_comparable_count"] = demo["semantic_comparable_count"].fillna(0).astype(int)
+    demo["paa_match_status"] = demo["paa_match_status"].fillna("none")
+    demo["paa_match_confidence"] = demo["paa_match_confidence"].fillna(0.0)
+    demo["paa_match_method"] = demo["paa_match_method"].fillna("none")
 
-    demo_scope = scored[scored["demo_scope"]]
     resolved_paa_mode, paa_precision, paa_coverage = apply_gate_recommendation(
         paa_matches,
-        demo_scope,
+        demo,
     )
-    scored["rule_score"] = scored.apply(
+    demo["rule_score"] = demo.apply(
         lambda row: rule_score_from_row(row, resolved_paa_mode),
         axis=1,
     )
     weights = settings.provisional_weights
-    scored["priority_score"] = (
-        scored["anomaly_score"] * weights["anomaly"]
-        + scored["peer_deviation_score"] * weights["peer_deviation"]
-        + scored["rule_score"] * weights["rule"]
+    demo["priority_score"] = (
+        demo["anomaly_score"] * weights["anomaly"]
+        + demo["peer_deviation_score"] * weights["peer_deviation"]
+        + demo["rule_score"] * weights["rule"]
     ).clip(0, 100).round(0)
-    scored["confidence_score"] = compute_confidence_score(scored)
-    scored["confidence_band"] = scored["confidence_score"].map(confidence_band)
-    scored["priority_band"] = scored["priority_score"].map(priority_band)
-    scored["reason_snippets"] = scored.apply(
+    demo["confidence_score"] = compute_confidence_score(demo)
+    demo["confidence_band"] = demo["confidence_score"].map(confidence_band)
+    demo["priority_band"] = demo["priority_score"].map(priority_band)
+    demo["reason_snippets"] = demo.apply(
         lambda row: build_reason_snippets(row, resolved_paa_mode),
         axis=1,
     )
-    scored["reasons"] = scored["reason_snippets"].map(
+    demo["reasons"] = demo["reason_snippets"].map(
         lambda values: " | ".join(values) if values else "sin señales fuertes visibles"
     )
 
-    ranking = scored[scored["demo_scope"]].copy().sort_values(
+    scored = demo
+    ranking = scored.copy().sort_values(
         ["priority_score", "confidence_score"],
         ascending=[False, False],
     )

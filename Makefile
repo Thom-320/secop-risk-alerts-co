@@ -115,8 +115,12 @@ validate-academic:
 
 academic-validate: validate-academic
 
+sync-product-to-academic:
+	$(PYTHON) python -m etl.sync_product_to_academic
+
 validate-final:
 	$(MAKE) product-pipeline
+	$(MAKE) sync-product-to-academic
 	$(MAKE) validate-product
 	$(MAKE) validate-academic
 

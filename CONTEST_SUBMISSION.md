@@ -18,7 +18,7 @@ IA explicable que **prioriza revisión humana** de la contratación pública col
 2. **Diapositivas** — [slides/contratia_abierta_deck_v3.pdf](slides/contratia_abierta_deck_v3.pdf) (13 slides, ES).
 3. **Tesis ética** — [docs/ethics-note.md](docs/ethics-note.md) (1 página).
 4. **Score y límites** — [docs/model-card.md](docs/model-card.md).
-5. **Evidencia técnica** — [docs/testing_evidence.md](docs/testing_evidence.md) — 71 tests pasan, 17.229 procesos cargados.
+5. **Evidencia técnica** — [docs/testing_evidence.md](docs/testing_evidence.md) — 71 tests pasan, 90.431 procesos con scoring real de IA.
 
 ---
 
@@ -56,7 +56,7 @@ make validate-final        # exige PG + Mongo + healthchecks vivos
 |---|---|
 | **Uso de datos abiertos** | 4 datasets oficiales SECOP/PAA/AGR vía Socrata. Ver [docs/data-cards/](docs/data-cards/). |
 | **IA aplicada** | Score híbrido: reglas + desviación contra pares + IsolationForest + confianza. Matching semántico TF-IDF (embeddings activables). [docs/model-card.md](docs/model-card.md). |
-| **Rigor técnico** | PostgreSQL 33 objetos, MongoDB 5 colecciones, 71 tests, 3 servicios FastAPI, validación reproducible. |
+| **Rigor técnico** | PostgreSQL 100.903 procesos, MongoDB 10 colecciones, 71 tests, 3 servicios FastAPI, validación reproducible. |
 | **Impacto y escalabilidad** | Demo Meta+Casanare; pipeline horizontal escalable por departamento. Costo marginal mínimo. |
 | **Ética y trazabilidad** | Disclaimers persistentes, model card, contexto fiscal no entra al modelo, exports auditable. |
 | **Reproducibilidad** | `make product-pipeline && make validate-product` desde clone limpio. |
@@ -128,12 +128,15 @@ Resultado: `https://contratia-api.onrender.com/health` + `https://contratia-dash
 
 **Listo:**
 - ✓ 71 tests pasan, lint estable
-- ✓ ETL reproducible con fixtures versionables
-- ✓ 17.229 procesos cargados en demo (Meta + Casanare)
+- ✓ ETL reproducible con datos reales de Socrata (4 datasets oficiales)
+- ✓ 90.431 procesos con scoring real de IA (IsolationForest + PAA + reglas)
+- ✓ 56.717 matches PAA (62.5% cobertura fuerte)
+- ✓ 6.003 comparables semánticos
 - ✓ Schema PostgreSQL con triggers, CTE, window functions, vistas
 - ✓ 3 microservicios FastAPI con `/health` 200
+- ✓ MongoDB 10 colecciones con 90.431 eventos de riesgo
 - ✓ UI Dash oficial + API lean
-- ✓ Documentación: model card, data cards, ethics note, validación
+- ✓ Documentación: model card, data cards, ethics note, CRISP-ML, fairness territorial
 - ✓ Dockerfile + render.yaml para deploy público
 
 **Pendiente (parte del roadmap, no oculto):**

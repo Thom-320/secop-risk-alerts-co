@@ -26,8 +26,8 @@
 
 ## Señal y compuertas
 
-- Top-1 aceptable PAA observado: 0.00%
-- Cobertura de match PAA en alcance demo: 0.00%
-- Procesos con comparables semánticos válidos en alcance demo: 99.05%
-- Modo PAA resuelto para el score provisional: `visible_only`
+- Top-1 aceptable PAA observado: 81.51%
+- Cobertura de match PAA en alcance demo: 75.72%
+- Procesos con comparables semánticos válidos en alcance demo: 99.75%
+- Modo PAA resuelto para el score provisional: `full`
 
