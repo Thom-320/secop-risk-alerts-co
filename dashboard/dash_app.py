@@ -72,6 +72,30 @@ PLAN_COLS = [
 ]
 CONC_COLS = ["entity_name", "provider_name", "awarded_value"]
 
+# ── MongoDB project context ───────────────────────────────────
+
+
+def load_project_context() -> list[dict]:
+    """Load project context from MongoDB."""
+    try:
+        import pymongo
+        mongo_uri = os.getenv("MONGO_URL", "mongodb://localhost:27018/contratia")
+        client = pymongo.MongoClient(mongo_uri, serverSelectionTimeoutMS=2000)
+        db = client.get_default_database()
+        docs = list(db.project_context.find({}, {"_id": 0}).sort("order", 1))
+        return docs if docs else _default_context()
+    except Exception:
+        return _default_context()
+
+
+def _default_context() -> list[dict]:
+    return [
+        {"key": "what_is_it", "title": "Qué es ContratIA Abierta",
+         "content": "Sistema de priorización de revisión contractual usando datos abiertos SECOP."},
+        {"key": "problem", "title": "Problema",
+         "content": "En Colombia se publican más de 2M procesos/año. Las oficinas de control no pueden revisarlos todos."},
+    ]
+
 
 # ── Data helpers ──────────────────────────────────────────────
 
@@ -413,12 +437,12 @@ def cola_table(ranking: pd.DataFrame) -> pd.DataFrame:
         lambda r: action_text(r.get("priority_score"), r.get("confidence_score")),
         axis=1,
     )
-    top["Razon"] = top["explanation"].map(lambda v: reason_short(v, 50))
+    top["Razon"] = top["explanation"].map(lambda v: reason_short(v, 55))
     if "base_price" in top:
         top["base_price"] = pd.to_numeric(top["base_price"], errors="coerce").fillna(0)
         top["base_price"] = top["base_price"].map(lambda v: f"${v:,.0f}")
     out = top[[
-        "process_reference", "entity_name", "department",
+        "process_reference", "entity_name", "department", "modality",
         "base_price", "priority_score", "confidence_score", "Razon", "Accion",
     ]].copy()
     out.insert(0, "#", range(1, len(out) + 1))
@@ -426,7 +450,8 @@ def cola_table(ranking: pd.DataFrame) -> pd.DataFrame:
         "process_reference": "Referencia",
         "entity_name": "Entidad",
         "department": "Depto",
-        "base_price": "Valor",
+        "modality": "Modalidad",
+        "base_price": "Valor base",
         "priority_score": "Score",
         "confidence_score": "Conf",
         "Razon": "Razon principal",
@@ -507,33 +532,43 @@ def score_breakdown(detail: dict) -> Any:
     peer = float(detail.get("peer_deviation_score", 0) or 0)
     rule = float(detail.get("rule_score", 0) or 0)
     total = float(detail.get("priority_score", 0) or 0)
+    conf = float(detail.get("confidence_score", 0) or 0)
     return html.Section(
         [
             html.H3("Componentes del score"),
             html.Div(
                 [
                     html.Div([
-                        html.Span("Anomalia", className="breakdown-label"),
+                        html.Span("ANOMALIA (45%)", className="breakdown-label"),
                         html.Strong(f"{anomaly:.0f}", className="breakdown-value"),
-                        html.Span("IsolationForest", className="breakdown-note"),
+                        html.Span("IsolationForest: detecta procesos estructuralmente raros", className="breakdown-note"),
                     ], className="breakdown-item"),
                     html.Div([
-                        html.Span("Desviacion pares", className="breakdown-label"),
+                        html.Span("DESVIACION PARES (35%)", className="breakdown-label"),
                         html.Strong(f"{peer:.0f}", className="breakdown-value"),
-                        html.Span("vs grupo comparable", className="breakdown-note"),
+                        html.Span("Valor, duracion y competencia vs procesos similares", className="breakdown-note"),
                     ], className="breakdown-item"),
                     html.Div([
-                        html.Span("Reglas", className="breakdown-label"),
+                        html.Span("REGLAS (20%)", className="breakdown-label"),
                         html.Strong(f"{rule:.0f}", className="breakdown-value"),
-                        html.Span("umbrales explicables", className="breakdown-note"),
+                        html.Span("Thresholds explicables: valor >2.5x, duracion >2.5x, etc.", className="breakdown-note"),
                     ], className="breakdown-item"),
                     html.Div([
-                        html.Span("Total", className="breakdown-label"),
+                        html.Span("SCORE TOTAL", className="breakdown-label"),
                         html.Strong(f"{total:.0f}", className="breakdown-value breakdown-total"),
-                        html.Span("score de prioridad", className="breakdown-note"),
+                        html.Span(f"Confianza: {conf:.0f} (soporte de datos)", className="breakdown-note"),
                     ], className="breakdown-item"),
                 ],
                 className="breakdown-grid",
+            ),
+            html.Div(
+                [
+                    html.P(
+                        f"Score {total:.0f} = {anomaly:.0f} x 0.45 + {peer:.0f} x 0.35 + {rule:.0f} x 0.20",
+                        className="formula-text",
+                    ),
+                ],
+                className="formula-strip",
             ),
         ],
         className="breakdown-section",
@@ -552,12 +587,28 @@ def paa_badge(status: str | None) -> Any:
 def detail_panel(detail: dict, comps: pd.DataFrame) -> list[Any]:
     if detail is None:
         return [empty_state("Sin proceso seleccionado")]
+
+    # Parse explanation into individual reasons
+    explanation = str(detail.get("explanation", ""))
+    reasons = [r.strip() for r in explanation.split("|") if r.strip()]
+    reason_items = [html.Li(r) for r in reasons] if reasons else [html.Li("Sin señales")]
+
+    # SECOP link
+    secop_url = detail.get("process_url") or detail.get("source_url")
+    secop_btn = []
+    if secop_url and str(secop_url).startswith("http"):
+        secop_btn = [html.A(
+            "Abrir en SECOP",
+            href=str(secop_url), target="_blank",
+            className="secop-link",
+        )]
+
     return [
         html.Section(
             [
                 html.Span("Ficha ejecutiva", className="card-label"),
                 html.H2(str(detail.get("process_key", ""))),
-                html.P(str(detail.get("explanation", "Sin explicacion."))),
+                html.P(str(detail.get("process_reference", ""))),
             ],
             className="detail-card",
         ),
@@ -572,10 +623,20 @@ def detail_panel(detail: dict, comps: pd.DataFrame) -> list[Any]:
             className="metric-grid detail-metrics",
         ),
         html.Div(
-            paa_badge(detail.get("paa_match_status")),
+            [
+                paa_badge(detail.get("paa_match_status")),
+                *secop_btn,
+            ],
             className="detail-badges",
         ),
         score_breakdown(detail),
+        html.Section(
+            [
+                html.H3("Razones de priorizacion"),
+                html.Ul(reason_items, className="reasons-list"),
+            ],
+            className="review-checklist",
+        ),
         html.Section(
             [
                 html.H3("Que revisar manualmente"),
@@ -587,7 +648,7 @@ def detail_panel(detail: dict, comps: pd.DataFrame) -> list[Any]:
             ],
             className="review-checklist",
         ),
-        html.H3("Comparables", className="comps-heading"),
+        html.H3("Comparables semanticos", className="comps-heading"),
         comps_table(comps),
     ]
 
@@ -1094,6 +1155,73 @@ def create_app() -> Any:
         ],
     )
 
+    # ── Load project context ─────────────────────────────
+    project_ctx = load_project_context()
+
+    # ── Tab: Proyecto ────────────────────────────────────
+    tab_project = dcc.Tab(
+        label="Proyecto", className="app-tab",
+        selected_className="app-tab app-tab--selected",
+        children=[
+            html.Article(
+                [
+                    html.Div(
+                        [
+                            html.Div(
+                                [
+                                    html.Span("SOBRE EL PROYECTO", className="section-eyebrow"),
+                                    html.H2("ContratIA Abierta"),
+                                    html.P(
+                                        "IA explicable que prioriza revision humana de la "
+                                        "contratacion publica colombiana. Convierte miles de "
+                                        "procesos SECOP en una cola priorizada y auditable.",
+                                        className="project-tagline",
+                                    ),
+                                ],
+                                className="project-header-text",
+                            ),
+                            html.Div(
+                                [
+                                    html.Span("DATOS", className="section-eyebrow"),
+                                    html.Div(
+                                        [
+                                            html.Div([
+                                                html.Strong(f"{total_proc:,}"),
+                                                html.Span("Procesos analizados"),
+                                            ], className="project-stat"),
+                                            html.Div([
+                                                html.Strong("4"),
+                                                html.Span("Datasets oficiales"),
+                                            ], className="project-stat"),
+                                            html.Div([
+                                                html.Strong(f"{high_share:.1%}"),
+                                                html.Span("Alerta prioritaria"),
+                                            ], className="project-stat"),
+                                        ],
+                                        className="project-stats",
+                                    ),
+                                ],
+                                className="project-header-stats",
+                            ),
+                        ],
+                        className="project-hero",
+                    ),
+                    *[
+                        html.Section(
+                            [
+                                html.H3(doc.get("title", "")),
+                                html.P(doc.get("content", "")),
+                            ],
+                            className="project-section",
+                        )
+                        for doc in project_ctx
+                    ],
+                ],
+                className="project-page",
+            ),
+        ],
+    )
+
     # ── Layout ────────────────────────────────────────────
     app.layout = html.Div([
         html.Header(
@@ -1105,15 +1233,17 @@ def create_app() -> Any:
                 ),
                 html.H1("ContratIA Abierta"),
                 html.P(
-                    "Herramienta para ordenar procesos SECOP, abrir evidencia y "
-                    "decidir que revisar primero."
+                    "Sistema de priorizacion de revision contractual. "
+                    "Ordena procesos SECOP por nivel de riesgo estadistico "
+                    "para decidir que revisar primero. No acusa ni prueba "
+                    "corrupcion."
                 ),
                 html.P(DISCLAIMER, className="ethics-note"),
             ],
             className="app-header",
         ),
         dcc.Tabs(
-            [tab_cola, tab_ranking, tab_detail, tab_dist,
+            [tab_project, tab_cola, tab_ranking, tab_detail, tab_dist,
              tab_conc, tab_method, tab_data, tab_review],
             parent_className="app-tabs",
             className="app-tabs-container",
@@ -1182,6 +1312,16 @@ def _detail_payload(ranking: pd.DataFrame, pid: int | None) -> dict | None:
     svc = svc_frame(CONTRACTS_URL, f"/processes/{pid}")
     if not svc.empty:
         d = {**d, **svc.iloc[0].to_dict()}
+    # Fetch score components from risk service
+    try:
+        risk = svc_json(RISK_URL, f"/risk/process/{pid}")
+        if risk:
+            d["anomaly_score"] = risk.get("anomaly_score", 0)
+            d["peer_deviation_score"] = risk.get("peer_deviation_score", 0)
+            d["rule_score"] = risk.get("rule_score", 0)
+            d["paa_match_status"] = risk.get("paa_match_status", d.get("paa_match_status"))
+    except Exception:
+        pass
     return d
 
 

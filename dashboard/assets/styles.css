@@ -731,6 +731,141 @@ html, body {
 
 .detail-badges {
   padding: 0 48px 16px;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+/* ── SECOP link ─────────────────────────────────────────── */
+
+.secop-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  background: var(--ink);
+  color: white;
+  border-radius: var(--radius-s);
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 600;
+  text-decoration: none;
+  letter-spacing: 0.02em;
+  transition: background 0.12s ease;
+}
+
+.secop-link:hover { background: var(--coral); }
+
+/* ── Reasons list ───────────────────────────────────────── */
+
+.reasons-list li {
+  padding: 8px 0;
+  border-bottom: 1px solid var(--rule);
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--ink-2);
+}
+
+.reasons-list li:last-child { border-bottom: 0; }
+
+/* ── Formula strip ──────────────────────────────────────── */
+
+.formula-strip {
+  margin: 0 48px;
+  padding: 16px 0;
+  border-top: 1px solid var(--rule);
+}
+
+.formula-text {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--muted);
+  letter-spacing: 0.02em;
+  margin: 0;
+}
+
+/* ── Project page ───────────────────────────────────────── */
+
+.project-page {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 0 48px 60px;
+}
+
+.project-hero {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 48px;
+  padding: 40px 0;
+  border-bottom: 1px solid var(--rule);
+  margin-bottom: 32px;
+}
+
+.project-header-text h2 {
+  font-family: var(--font-display);
+  font-size: 32px;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  color: var(--ink);
+  margin: 0 0 16px;
+}
+
+.project-tagline {
+  font-size: 16px;
+  line-height: 1.6;
+  color: var(--ink-2);
+  max-width: 52ch;
+  margin: 0;
+}
+
+.project-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.project-stat strong {
+  display: block;
+  font-family: var(--font-display);
+  font-size: 36px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums lining-nums;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+  line-height: 1;
+}
+
+.project-stat span {
+  display: block;
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 4px;
+  font-weight: 500;
+}
+
+.project-section {
+  padding: 24px 0;
+  border-bottom: 1px solid var(--rule);
+}
+
+.project-section:last-child { border-bottom: 0; }
+
+.project-section h3 {
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--ink);
+  margin: 0 0 10px;
+  letter-spacing: -0.01em;
+}
+
+.project-section p {
+  font-size: 14.5px;
+  line-height: 1.65;
+  color: var(--ink-2);
+  max-width: 72ch;
+  margin: 0;
 }
 
 /* ── Comparables heading ────────────────────────────────── */
@@ -822,4 +957,9 @@ html, body {
   .breakdown-grid { grid-template-columns: 1fr; }
   .breakdown-item { border-left: 0; border-top: 1px solid var(--rule); padding: 16px 0 0; }
   .breakdown-item:first-child { border-top: 0; }
+
+  .project-page { padding: 0 24px 40px; }
+  .project-hero { grid-template-columns: 1fr; gap: 24px; }
+  .project-stats { flex-direction: row; gap: 24px; }
+  .formula-strip { margin: 0 24px; }
 }

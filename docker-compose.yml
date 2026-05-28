@@ -134,6 +134,7 @@ services:
       - .:/app
     environment:
       DATABASE_URL: postgresql://contratia:contratia@postgres:5432/contratia
+      MONGO_URL: mongodb://mongo:27017/contratia
       CONTRACTS_SERVICE_URL: http://contracts_service:8001
       RISK_SERVICE_URL: http://risk_service:8002
       ANALYTICS_SERVICE_URL: http://analytics_service:8003
@@ -161,6 +162,8 @@ services:
       - fastapi
       - --with
       - psycopg[binary]
+      - --with
+      - pymongo
       - python
       - -m
       - dashboard.dash_app
@@ -172,6 +175,8 @@ services:
       risk_service:
         condition: service_started
       analytics_service:
+        condition: service_started
+      mongo:
         condition: service_started
 
 volumes:
