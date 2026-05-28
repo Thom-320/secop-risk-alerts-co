@@ -1,798 +1,2060 @@
 <!doctype html>
-<html lang="es">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>ContratIA Abierta / Transparencia360</title>
-    <style>
-      :root {
-        color-scheme: light;
-        --canvas: oklch(0.978 0.005 252);
-        --paper: oklch(0.995 0.003 252);
-        --ink: oklch(0.22 0.015 252);
-        --ink-soft: oklch(0.32 0.015 252);
-        --muted: oklch(0.48 0.016 252);
-        --faint: oklch(0.90 0.008 252);
-        --rule: oklch(0.87 0.010 252);
-        --accent: oklch(0.44 0.120 245);
-        --accent-deep: oklch(0.34 0.110 245);
-        --accent-soft: oklch(0.945 0.028 245);
-        --accent-wash: oklch(0.975 0.012 245);
-        --green: oklch(0.52 0.130 155);
-        --green-soft: oklch(0.94 0.030 155);
-        --amber: oklch(0.63 0.125 78);
-        --amber-soft: oklch(0.95 0.030 78);
-        --rose: oklch(0.56 0.125 18);
-        --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
-        --ease-smooth: cubic-bezier(0.25, 0.1, 0.25, 1);
-        font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
-      }
+<html lang="es-CO">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>ContratIA Abierta — Datos al Ecosistema 2026</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,600;0,6..72,700;0,6..72,800;1,6..72,400;1,6..72,600&family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&family=Caveat:wght@500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#0B1E33;
+    --ink-2:#1F2C40;
+    --muted:#5A6478;
+    --faint:#8893A8;
+    --rule:#E3E8F0;
+    --canvas:#F7F8FB;
+    --surface:#FFFFFF;
+    --panel:#F1F4F9;
+    --navy:#103A5C;
+    --navy-strong:#0B2A45;
+    --coral:#E35A4B;
+    --coral-soft:#FCEAE5;
+    --teal:#1F827C;
+    --teal-soft:#DDF1EF;
+    --amber:#C28832;
+    --amber-soft:#FBF1DC;
+    --code-bg:#0E1B2E;
+    --code-fg:#DDE5F0;
+    --sand:#F5EAD2;
+    --cloud:#DDE5F0;
 
-      *, *::before, *::after { box-sizing: border-box; margin: 0; }
+    --font-display:'Newsreader',Georgia,'Times New Roman',serif;
+    --font-sans:'Inter',system-ui,-apple-system,sans-serif;
+    --font-mono:'JetBrains Mono','SF Mono',ui-monospace,Consolas,monospace;
+    --font-hand:'Caveat',cursive;
 
-      body {
-        min-height: 100vh;
-        overflow: hidden;
-        background: var(--canvas);
-        color: var(--ink);
-        -webkit-font-smoothing: antialiased;
-      }
+    /* type scale tuned for 1280×720 */
+    --t-eyebrow:11px;
+    --t-title:34px;
+    --t-subtitle:17px;
+    --t-body:14px;
+    --t-small:12px;
+    --t-micro:10.5px;
+    --t-display:128px;
+    --t-hero:88px;
 
-      .deck {
-        height: 100vh;
-        display: grid;
-        place-items: center;
-        padding: clamp(16px, 3vh, 32px);
-      }
+    --pad-x:48px;
+    --pad-y:40px;
+    --gap-block:24px;
+  }
 
-      .viewport {
-        position: relative;
-        width: min(96vw, calc(96vh * 16 / 9));
-        aspect-ratio: 16 / 9;
-        border-radius: 18px;
-        overflow: hidden;
-        background: var(--paper);
-        box-shadow:
-          0 1px 2px oklch(0.22 0.015 252 / 0.04),
-          0 8px 32px oklch(0.22 0.015 252 / 0.06),
-          0 24px 64px oklch(0.34 0.110 245 / 0.05);
-      }
+  *,*::before,*::after{box-sizing:border-box;}
+  html,body{margin:0;padding:0;background:#0a0d12;color:var(--ink);}
+  body{font-family:var(--font-sans);font-feature-settings:"cv11","ss01","ss03","ss07";text-rendering:optimizeLegibility;-webkit-font-smoothing:antialiased;}
+  .serif{font-family:var(--font-display);font-feature-settings:"liga","kern";}
 
-      .slide {
-        position: absolute;
-        inset: 0;
-        opacity: 0;
-        visibility: hidden;
-        transition: opacity 350ms var(--ease-out), visibility 0s linear 350ms;
-        overflow: hidden;
-      }
+  deck-stage:not(:defined){visibility:hidden}
 
-      .slide.active {
-        opacity: 1;
-        visibility: visible;
-        transition: opacity 350ms var(--ease-out), visibility 0s;
-      }
+  /* ====== slide chrome ====== */
+  .slide{
+    position:absolute;inset:0;background:var(--canvas);
+    font-size:var(--t-body);line-height:1.45;color:var(--ink);
+    overflow:hidden;
+  }
+  .slide .band{position:absolute;top:0;left:0;right:0;height:6px;background:var(--navy);}
+  .slide .band-accent{position:absolute;top:0;left:0;height:6px;width:144px;background:var(--coral);}
+  .slide .frame{position:absolute;inset:0;padding:36px var(--pad-x) 0;display:flex;flex-direction:column;}
+  .slide .header{display:flex;flex-direction:column;gap:6px;padding-top:8px;}
+  .slide .eyebrow{font-size:var(--t-eyebrow);letter-spacing:.14em;font-weight:600;color:var(--coral);text-transform:uppercase;}
+  .slide h1.title{margin:0;font-family:var(--font-display);font-size:var(--t-title);font-weight:700;letter-spacing:-.012em;color:var(--ink);line-height:1.08;}
+  .slide h1.title .sub{font-family:var(--font-sans);font-weight:500;color:var(--muted);font-size:17px;display:block;margin-top:6px;letter-spacing:-.005em;line-height:1.4;}
+  .slide .eyebrow.italic{font-style:italic;font-family:var(--font-display);text-transform:none;letter-spacing:0;font-size:14px;font-weight:400;color:var(--coral);}
+  .slide .rule{width:60px;height:2px;background:var(--coral);margin-top:8px;}
+  .slide .body{flex:1;display:flex;flex-direction:column;padding-top:18px;padding-bottom:36px;min-height:0;}
+  .slide .footer{
+    position:absolute;left:var(--pad-x);right:var(--pad-x);bottom:14px;height:18px;
+    display:flex;align-items:center;justify-content:space-between;
+    font-size:var(--t-small);color:var(--faint);
+    background:linear-gradient(to top, var(--canvas) 70%, rgba(247,248,251,0));
+    padding-top:6px;
+  }
+  .slide .footer .disclaimer{font-style:italic;}
+  .slide .footer .counter{font-variant-numeric:tabular-nums;font-weight:500;}
 
-      .slide.active .slide-inner > * {
-        animation: content-in 420ms var(--ease-out) both;
-      }
+  /* ====== type helpers ====== */
+  .mono{font-family:var(--font-mono);font-feature-settings:"zero" 1;}
+  .hand{font-family:var(--font-hand);font-weight:500;}
+  .num{font-variant-numeric:tabular-nums;}
+  .uppercase-eyebrow{font-size:10.5px;letter-spacing:.14em;font-weight:600;text-transform:uppercase;}
 
-      @keyframes content-in {
-        from { opacity: 0; transform: translateY(6px); }
-        to { opacity: 1; transform: translateY(0); }
-      }
+  /* ====== reusable cards ====== */
+  .card{background:var(--surface);border:1px solid var(--rule);border-radius:12px;padding:18px;box-shadow:0 4px 14px rgba(11,30,51,.04);}
+  .card .label{font-size:10.5px;letter-spacing:.12em;font-weight:600;text-transform:uppercase;color:var(--muted);}
+  .card .value{font-size:34px;font-weight:800;color:var(--ink);font-variant-numeric:tabular-nums;line-height:1;margin-top:6px;}
+  .card .hint{font-size:12px;color:var(--muted);margin-top:8px;}
+  .card.left-bar{position:relative;padding-left:22px;}
+  .card.left-bar::before{content:"";position:absolute;left:0;top:14px;bottom:14px;width:4px;border-radius:2px;background:var(--navy);}
+  .card.left-bar.coral::before{background:var(--coral);}
+  .card.left-bar.teal::before{background:var(--teal);}
+  .card.left-bar.amber::before{background:var(--amber);}
+  .card.left-bar.muted::before{background:var(--faint);}
 
-      .slide-inner {
-        height: 100%;
-        padding: 5vh 5.5vw 4.5vh;
-        display: flex;
-        flex-direction: column;
-      }
+  .pill{display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border-radius:999px;border:1px solid var(--rule);background:var(--surface);font-size:11px;color:var(--ink-2);font-weight:500;}
+  .pill .dot{width:6px;height:6px;border-radius:50%;background:var(--coral);}
+  .pill.navy{background:var(--navy);color:#fff;border-color:var(--navy);}
+  .pill.teal{background:var(--teal-soft);color:var(--teal);border-color:#bfe1de;}
+  .pill.coral{background:var(--coral-soft);color:var(--coral);border-color:#f5c9c1;}
+  .pill.amber{background:var(--amber-soft);color:var(--amber);border-color:#ead7a8;}
 
-      .accent-bar {
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        height: 4px;
-        background: var(--accent);
-        z-index: 5;
-      }
+  .codeblock{background:var(--code-bg);color:var(--code-fg);border-radius:10px;padding:14px 16px;font-family:'JetBrains Mono','SF Mono',ui-monospace,Consolas,monospace;font-size:12px;line-height:1.55;white-space:pre;overflow:hidden;}
+  .codeblock .c-kw{color:#8AB4F8;}
+  .codeblock .c-fn{color:#F8B58B;}
+  .codeblock .c-str{color:#A7D8B3;}
+  .codeblock .c-num{color:#E6C36A;}
+  .codeblock .c-cm{color:#7A8AA3;font-style:italic;}
+  .codeblock .c-id{color:#E1E8F3;}
 
-      .slide-number {
-        position: absolute;
-        top: 16px;
-        left: 24px;
-        font-size: 11px;
-        font-weight: 800;
-        color: var(--accent);
-        letter-spacing: 0.04em;
-        z-index: 4;
-      }
+  .kv{display:grid;grid-template-columns:auto 1fr;gap:10px 14px;font-size:13px;align-items:baseline;}
+  .kv dt{color:var(--muted);font-weight:500;}
+  .kv dd{margin:0;color:var(--ink);}
 
-      .slide-label {
-        position: absolute;
-        top: 16px;
-        left: 52px;
-        font-size: 11px;
-        font-weight: 700;
-        color: var(--muted);
-        letter-spacing: 0.06em;
-        text-transform: uppercase;
-        z-index: 4;
-      }
+  /* ====== chips ====== */
+  .chip{display:inline-block;padding:5px 12px;border-radius:999px;background:rgba(255,255,255,.06);color:#fff;font-size:12px;font-weight:500;border:1px solid rgba(255,255,255,.16);}
 
-      .footer-line {
-        position: absolute;
-        bottom: 12px;
-        left: 24px;
-        font-size: 9.5px;
-        color: var(--muted);
-        letter-spacing: 0.01em;
-        z-index: 4;
-      }
+  /* ====== diagram helpers ====== */
+  svg .node-fill-src{fill:var(--coral-soft);}
+  svg .node-fill-etl{fill:#E8EFF7;}
+  svg .node-fill-store{fill:var(--teal-soft);}
+  svg .node-fill-svc{fill:var(--amber-soft);}
+  svg .node-fill-ui{fill:var(--navy);}
+  svg .node-stroke-src{stroke:var(--coral);}
+  svg .node-stroke-etl{stroke:var(--navy);}
+  svg .node-stroke-store{stroke:var(--teal);}
+  svg .node-stroke-svc{stroke:var(--amber);}
+  svg .node-stroke-ui{stroke:var(--navy-strong);}
+  svg text.lbl{font-family:'Inter',sans-serif;font-size:12px;fill:var(--ink);font-weight:600;}
+  svg text.sub{font-family:'JetBrains Mono',monospace;font-size:10px;fill:var(--ink-2);font-weight:500;}
+  svg text.sub-ui{fill:#cfd9e8;}
+  svg text.lbl-ui{fill:#fff;}
+  svg .flow{stroke:var(--navy);stroke-width:1.4;fill:none;marker-end:url(#arr);}
 
-      h1 {
-        font-size: clamp(36px, 5.2vw, 58px);
-        font-weight: 850;
-        line-height: 0.94;
-        letter-spacing: -0.02em;
-        color: var(--ink);
-      }
+  /* ====== ethical strip ====== */
+  .ethics-strip{
+    margin-top:auto;background:var(--coral-soft);border:1px solid #f5c9c1;border-radius:10px;
+    padding:10px 14px;font-size:12px;color:#7c2a1d;display:flex;gap:10px;align-items:center;
+  }
+  .ethics-strip .badge{font-size:10px;font-weight:700;letter-spacing:.1em;color:#fff;background:var(--coral);padding:3px 8px;border-radius:4px;text-transform:uppercase;}
 
-      h2 {
-        font-size: clamp(26px, 3.6vw, 40px);
-        font-weight: 820;
-        line-height: 1.0;
-        letter-spacing: -0.015em;
-        color: var(--ink);
-      }
+  /* ====== dark slides (cover / closer) ====== */
+  .slide.dark{background:var(--ink);color:#fff;}
+  .slide.dark .band{background:transparent;}
+  .slide.dark .band-accent{top:0;bottom:0;height:auto;width:6px;background:var(--coral);}
+  .slide.dark .footer{color:rgba(255,255,255,.5);background:linear-gradient(to top, var(--ink) 70%, rgba(11,30,51,0));}
+  .slide.dark h1.title{color:#fff;}
+  .slide.dark .eyebrow{color:var(--sand);}
 
-      .kicker {
-        display: inline-block;
-        font-size: 11px;
-        font-weight: 800;
-        letter-spacing: 0.08em;
-        text-transform: uppercase;
-        color: var(--accent);
-        margin-bottom: 12px;
-      }
+  /* ====== slide 1 (cover) ====== */
+  .cover{padding:60px 80px;display:flex;flex-direction:column;justify-content:space-between;height:100%;}
+  .cover .top{display:flex;justify-content:space-between;align-items:flex-start;}
+  .cover .brand{font-size:11px;letter-spacing:.18em;color:var(--sand);text-transform:uppercase;}
+  .cover .meta{font-size:11px;letter-spacing:.12em;color:#a8b4cc;text-transform:uppercase;text-align:right;}
+  .cover h1.display{font-size:var(--t-display);font-weight:800;letter-spacing:-.025em;line-height:1;color:#fff;margin:0;}
+  .cover h1.display .accent{color:var(--coral);}
+  .cover .lead{font-size:20px;color:#DDE5F0;font-weight:400;line-height:1.35;max-width:760px;margin-top:24px;}
+  .cover .italic{font-style:italic;color:var(--sand);font-size:14px;margin-top:14px;max-width:760px;}
+  .cover .chips{display:flex;gap:8px;margin-top:28px;flex-wrap:wrap;}
+  .cover .bottom{font-size:11px;color:#8a96ad;letter-spacing:.12em;text-transform:uppercase;display:flex;justify-content:space-between;align-items:flex-end;}
 
-      .lead {
-        font-size: clamp(16px, 1.8vw, 21px);
-        line-height: 1.30;
-        color: var(--muted);
-        max-width: 680px;
-      }
+  /* ====== slide 2 (yes/no) ====== */
+  .yesno{display:grid;grid-template-columns:1fr 1fr;gap:18px;}
+  .yesno .col{background:var(--surface);border:1px solid var(--rule);border-radius:12px;padding:20px 22px;position:relative;}
+  .yesno .col::before{content:"";position:absolute;left:0;top:16px;bottom:16px;width:4px;border-radius:2px;}
+  .yesno .col.si::before{background:var(--teal);}
+  .yesno .col.no::before{background:var(--coral);}
+  .yesno .col h3{margin:0;font-size:11px;letter-spacing:.14em;font-weight:700;text-transform:uppercase;}
+  .yesno .col.si h3{color:var(--teal);}
+  .yesno .col.no h3{color:var(--coral);}
+  .yesno .col h2{margin:4px 0 14px;font-size:22px;font-weight:800;color:var(--ink);}
+  .yesno ul{margin:0;padding-left:0;list-style:none;display:flex;flex-direction:column;gap:10px;}
+  .yesno li{font-size:13.5px;line-height:1.45;display:grid;grid-template-columns:14px 1fr;gap:8px;color:var(--ink-2);}
+  .yesno li::before{content:"";display:block;width:6px;height:6px;border-radius:50%;margin-top:8px;}
+  .yesno .si li::before{background:var(--teal);}
+  .yesno .no li::before{background:var(--coral);}
+  .yesno li strong{color:var(--ink);font-weight:700;}
 
-      .thesis {
-        color: var(--accent-deep);
-        font-weight: 800;
-      }
+  /* ====== slide 3 cards ====== */
+  .stat-row{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;}
+  .big-stat{background:var(--surface);border:1px solid var(--rule);border-radius:12px;padding:20px;position:relative;}
+  .big-stat::before{content:"";position:absolute;left:0;top:18px;bottom:18px;width:4px;border-radius:2px;background:var(--navy);}
+  .big-stat.coral::before{background:var(--coral);}
+  .big-stat.teal::before{background:var(--teal);}
+  .big-stat .k{font-size:10.5px;letter-spacing:.14em;font-weight:700;text-transform:uppercase;color:var(--muted);}
+  .big-stat .v{font-size:36px;font-weight:800;color:var(--ink);line-height:1;margin:8px 0 4px;font-variant-numeric:tabular-nums;}
+  .big-stat .u{font-size:13px;color:var(--ink-2);font-weight:600;}
+  .big-stat .d{font-size:12.5px;color:var(--muted);margin-top:8px;line-height:1.45;}
 
-      .tag-row {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 8px;
-        margin-top: 20px;
-      }
+  /* ====== slide 6 sources 2x2 ====== */
+  .sources{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+  .src{position:relative;background:var(--surface);border:1px solid var(--rule);border-radius:12px;padding:14px 16px 14px 22px;}
+  .src::before{content:"";position:absolute;left:0;top:12px;bottom:12px;width:4px;border-radius:2px;background:var(--navy);}
+  .src.teal::before{background:var(--teal);}
+  .src.coral::before{background:var(--coral);}
+  .src.muted::before{background:var(--faint);}
+  .src .code{font-family:'JetBrains Mono',monospace;font-size:11.5px;color:var(--navy);font-weight:600;letter-spacing:.02em;}
+  .src .name{font-size:14.5px;font-weight:700;color:var(--ink);margin-top:2px;}
+  .src .desc{font-size:12px;color:var(--muted);margin-top:4px;line-height:1.4;}
+  .src .role{display:inline-block;margin-top:6px;font-size:10px;letter-spacing:.1em;text-transform:uppercase;font-weight:700;color:var(--muted);}
 
-      .tag {
-        display: inline-flex;
-        align-items: center;
-        height: 30px;
-        padding: 0 14px;
-        border-radius: 6px;
-        background: var(--accent-soft);
-        color: var(--accent-deep);
-        font-size: 12px;
-        font-weight: 780;
-      }
+  /* ====== slide 7 pipeline ====== */
+  .pipe{display:grid;grid-template-columns:repeat(5,1fr);gap:0;align-items:start;position:relative;}
+  .pipe .step{padding:0 10px;position:relative;text-align:left;}
+  .pipe .step .num{display:inline-flex;width:28px;height:28px;border-radius:50%;background:var(--navy);color:#fff;align-items:center;justify-content:center;font-size:13px;font-weight:700;font-variant-numeric:tabular-nums;}
+  .pipe .step h4{margin:10px 0 4px;font-size:13.5px;font-weight:700;color:var(--ink);}
+  .pipe .step p{margin:0;font-size:11.5px;color:var(--muted);line-height:1.45;}
+  .pipe .step:not(:last-child)::after{
+    content:"";position:absolute;right:-6px;top:13px;width:12px;height:2px;background:var(--coral);
+  }
 
-      .card {
-        padding: 16px 18px;
-        border-radius: 10px;
-        background: var(--paper);
-        border: 1px solid var(--faint);
-      }
+  /* ====== slide 8 score formula ====== */
+  .score-cards{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;}
+  .score-cards .card{padding:12px 14px;}
+  .score-cards .label{font-size:10.5px;}
+  .score-cards .name{font-size:14px;font-weight:700;color:var(--ink);margin-top:4px;}
+  .score-cards .desc{font-size:11.5px;color:var(--muted);margin-top:4px;line-height:1.4;}
+  .score-cards .w{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--coral);font-weight:600;margin-top:6px;display:block;}
 
-      .card-title {
-        font-size: clamp(13px, 1.4vw, 17px);
-        font-weight: 800;
-        color: var(--accent-deep);
-        line-height: 1.1;
-      }
+  .ranges{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:14px;}
+  .range{border:1px solid var(--rule);border-radius:10px;padding:10px 12px;background:var(--surface);}
+  .range .bar{height:4px;border-radius:2px;width:100%;}
+  .range .head{display:flex;justify-content:space-between;align-items:baseline;margin-top:8px;}
+  .range .v{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);font-weight:600;}
+  .range .lbl{font-size:13px;font-weight:700;color:var(--ink);}
+  .range .desc{font-size:11px;color:var(--muted);margin-top:4px;line-height:1.4;}
 
-      .card-desc {
-        font-size: clamp(11px, 1.1vw, 13px);
-        color: var(--muted);
-        line-height: 1.3;
-        margin-top: 6px;
-      }
+  /* ====== tables ====== */
+  table.t{width:100%;border-collapse:collapse;font-size:12.5px;}
+  table.t th,table.t td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--rule);vertical-align:top;}
+  table.t th{font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:700;background:var(--panel);}
+  table.t td.num{font-variant-numeric:tabular-nums;text-align:right;}
+  table.t td.mono{font-family:'JetBrains Mono',monospace;font-size:11.5px;}
 
-      .metric-box {
-        padding: 14px 16px;
-        border-radius: 10px;
-        background: var(--paper);
-        border: 1px solid var(--faint);
-      }
+  /* ====== checklist ====== */
+  .checks{display:flex;flex-direction:column;gap:8px;}
+  .checks li{list-style:none;display:grid;grid-template-columns:18px 1fr;gap:8px;font-size:13px;color:var(--ink-2);line-height:1.4;}
+  .checks .ok{color:var(--teal);font-weight:700;font-family:'JetBrains Mono',monospace;font-size:13px;}
+  .checks .pend{color:var(--amber);font-weight:700;font-family:'JetBrains Mono',monospace;font-size:13px;}
 
-      .metric-value {
-        font-size: clamp(28px, 3.2vw, 40px);
-        font-weight: 850;
-        line-height: 0.95;
-        color: var(--accent);
-      }
+  /* ====== roadmap timeline ====== */
+  .timeline{position:relative;display:grid;grid-template-columns:repeat(4,1fr);gap:0;margin-top:10px;}
+  .timeline::before{content:"";position:absolute;top:14px;left:24px;right:24px;height:2px;background:var(--rule);}
+  .timeline .mile{position:relative;padding:0 12px;}
+  .timeline .dot{width:14px;height:14px;border-radius:50%;background:var(--navy);border:3px solid var(--canvas);box-shadow:0 0 0 2px var(--navy);position:relative;margin:7px 0 12px;}
+  .timeline .mile:nth-child(2) .dot{background:var(--coral);box-shadow:0 0 0 2px var(--coral);}
+  .timeline .mile:nth-child(3) .dot{background:var(--teal);box-shadow:0 0 0 2px var(--teal);}
+  .timeline .mile:nth-child(4) .dot{background:var(--amber);box-shadow:0 0 0 2px var(--amber);}
+  .timeline .when{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;font-weight:700;color:var(--muted);}
+  .timeline .what{font-size:14px;font-weight:700;color:var(--ink);margin-top:4px;line-height:1.3;}
+  .timeline .why{font-size:12px;color:var(--muted);margin-top:4px;line-height:1.4;}
 
-      .metric-label {
-        font-size: 11px;
-        font-weight: 750;
-        color: var(--muted);
-        margin-top: 6px;
-      }
+  /* ====== closer ====== */
+  .closer{padding:60px 80px;display:flex;flex-direction:column;height:100%;justify-content:space-between;}
+  .closer h1{font-size:56px;font-weight:800;color:#fff;letter-spacing:-.02em;line-height:1;margin:0;}
+  .closer .sub{font-size:20px;color:#DDE5F0;margin-top:14px;max-width:760px;}
+  .closer .italic{font-style:italic;color:var(--sand);font-size:13.5px;margin-top:10px;}
+  .closer .grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:18px;margin-top:32px;}
+  .closer .grid .label{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--sand);font-weight:700;}
+  .closer .grid .val{font-size:14px;color:#fff;margin-top:4px;font-weight:500;line-height:1.4;}
+  .closer .grid .val.mono{font-family:'JetBrains Mono',monospace;font-size:12.5px;}
+  .closer .quote{margin-top:auto;background:rgba(16,58,92,.55);border-left:3px solid var(--coral);padding:14px 18px;font-style:italic;color:#fff;font-size:14px;max-width:640px;}
 
-      .proof-img {
-        width: 100%;
-        border-radius: 10px;
-        border: 1px solid var(--faint);
-        background: oklch(0.99 0.003 252);
-      }
+  /* ====== misc ====== */
+  .legend{display:flex;gap:14px;font-size:11px;color:var(--muted);}
+  .legend .sw{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:6px;vertical-align:middle;}
 
-      .proof-img.clean {
-        border: none;
-        background: transparent;
-      }
+  /* ====== print ====== */
+  @media print{
+    body{background:#fff;}
+    .slide{box-shadow:none;}
+  }
 
-      .caption {
-        font-size: 11px;
-        color: var(--muted);
-        margin-top: 8px;
-        line-height: 1.3;
-      }
+  /* ====== EDITORIAL slide 1 ====== */
+  .ed-cover{position:absolute;inset:0;background:#0B1E33;display:grid;grid-template-columns:6px 1fr 200px;padding:0;}
+  .ed-cover .coral-rail{background:var(--coral);height:100%;}
+  .ed-cover .main{padding:60px 64px 50px 56px;display:flex;flex-direction:column;justify-content:space-between;}
+  .ed-cover .topline{display:flex;align-items:baseline;gap:18px;}
+  .ed-cover .topline .num{font-family:var(--font-mono);font-size:11px;color:var(--coral);letter-spacing:.18em;font-weight:600;}
+  .ed-cover .topline .ey{font-family:var(--font-display);font-style:italic;font-size:18px;color:var(--cloud);font-weight:400;}
+  .ed-cover h1.hero{
+    margin:0;font-family:var(--font-display);font-weight:800;
+    color:var(--sand);font-size:128px;line-height:.92;letter-spacing:-.028em;
+  }
+  .ed-cover h1.hero em{font-style:italic;color:var(--coral);font-weight:700;}
+  .ed-cover .lead{font-family:var(--font-sans);font-size:22px;color:var(--cloud);font-weight:400;line-height:1.35;max-width:780px;margin-top:28px;letter-spacing:-.005em;}
+  .ed-cover .hairline{height:1px;background:rgba(245,234,210,.22);margin:18px 0 0;width:140px;}
+  .ed-cover .italic-foot{font-family:var(--font-display);font-style:italic;color:var(--sand);font-size:17px;margin-top:14px;max-width:760px;line-height:1.4;}
+  .ed-cover .pagination{font-family:var(--font-mono);font-size:11px;color:rgba(221,229,240,.5);letter-spacing:.18em;display:flex;align-items:center;gap:14px;}
+  .ed-cover .pagination::before{content:"";width:30px;height:1px;background:rgba(221,229,240,.3);}
+  .ed-cover .right{padding:48px 28px 36px 0;display:flex;flex-direction:column;justify-content:space-between;align-items:flex-end;}
+  .ed-cover .meta-block{font-family:var(--font-mono);font-size:10.5px;line-height:1.65;color:rgba(221,229,240,.65);text-align:right;letter-spacing:.04em;}
+  .ed-cover .meta-block .k{color:var(--coral);}
+  .ed-cover .ribbon{
+    writing-mode:vertical-rl;transform:rotate(180deg);
+    font-family:var(--font-mono);font-size:10.5px;letter-spacing:.32em;text-transform:uppercase;
+    color:rgba(245,234,210,.55);font-weight:600;
+  }
 
-      .data-tbl {
-        width: 100%;
-        border-collapse: collapse;
-        font-size: clamp(12px, 1.2vw, 14px);
-      }
+  /* ====== EDITORIAL slide 4 (split coral) ====== */
+  .ed-split{position:absolute;inset:0;display:grid;grid-template-columns:35% 65%;background:var(--canvas);}
+  .ed-split .label-col{background:var(--coral);color:#fff;padding:50px 40px 40px;position:relative;display:flex;flex-direction:column;justify-content:space-between;overflow:hidden;}
+  .ed-split .label-col .ey-top{font-family:var(--font-mono);font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:rgba(255,255,255,.7);font-weight:600;}
+  .ed-split .label-col .bignum{
+    font-family:var(--font-display);font-weight:800;
+    font-size:240px;line-height:.85;letter-spacing:-.04em;color:#fff;
+    margin-top:auto;margin-bottom:0;
+  }
+  .ed-split .label-col h2{
+    font-family:var(--font-display);font-weight:700;
+    font-size:54px;line-height:1;color:#fff;margin:14px 0 0;letter-spacing:-.018em;
+  }
+  .ed-split .label-col .it{
+    font-family:var(--font-display);font-style:italic;font-weight:400;
+    font-size:17px;color:#fdd9d2;margin-top:14px;line-height:1.4;max-width:300px;
+  }
+  .ed-split .label-col .foot{font-family:var(--font-mono);font-size:10.5px;color:rgba(255,255,255,.65);margin-top:18px;letter-spacing:.04em;}
+  .ed-split .label-col .corner-mark{position:absolute;top:24px;right:30px;font-family:var(--font-mono);font-size:10.5px;color:rgba(255,255,255,.55);letter-spacing:.18em;}
+  .ed-split .content-col{padding:42px 48px 40px;display:flex;flex-direction:column;min-width:0;}
+  .ed-split .content-col .head{display:flex;justify-content:space-between;align-items:baseline;border-bottom:1px solid var(--rule);padding-bottom:10px;margin-bottom:18px;}
+  .ed-split .content-col .head .ey{font-family:var(--font-display);font-style:italic;font-size:14px;color:var(--muted);}
+  .ed-split .content-col .head .right-note{font-family:var(--font-mono);font-size:10.5px;color:var(--faint);letter-spacing:.04em;}
+  .ed-split .content-col h3.lede{font-family:var(--font-display);font-weight:700;font-size:28px;line-height:1.15;color:var(--ink);margin:0 0 14px;max-width:560px;letter-spacing:-.012em;}
+  .ed-split .content-col h3.lede em{color:var(--coral);font-style:italic;font-weight:700;}
 
-      .data-tbl td {
-        padding: 10px 0;
-        border-bottom: 1px solid var(--faint);
-        vertical-align: top;
-      }
+  /* margin column for technical annotations */
+  .marginalia{
+    font-family:var(--font-mono);font-size:10px;line-height:1.7;color:var(--faint);
+    letter-spacing:.04em;
+  }
+  .marginalia .k{color:var(--coral);}
+  .marginalia b{color:var(--ink);font-weight:600;}
 
-      .data-tbl td:first-child {
-        width: 60px;
-        font-weight: 800;
-        color: var(--accent);
-      }
+  /* ====== EDITORIAL slide 8 (dark formula) ====== */
+  .ed-dark{position:absolute;inset:0;background:var(--code-bg);color:#fff;padding:54px 64px 48px;display:flex;flex-direction:column;overflow:hidden;}
+  .ed-dark .grid-overlay{
+    position:absolute;inset:0;pointer-events:none;
+    background-image:linear-gradient(rgba(255,255,255,.025) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.025) 1px,transparent 1px);
+    background-size:48px 48px;
+  }
+  .ed-dark .head{display:flex;justify-content:space-between;align-items:baseline;position:relative;z-index:1;}
+  .ed-dark .head .ey{font-family:var(--font-mono);font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--coral);font-weight:600;}
+  .ed-dark .head .right{font-family:var(--font-mono);font-size:11px;color:rgba(221,229,240,.5);letter-spacing:.1em;}
+  .ed-dark h2.lede{
+    font-family:var(--font-display);font-weight:700;font-size:44px;line-height:1.05;
+    color:var(--sand);margin:18px 0 4px;letter-spacing:-.018em;max-width:780px;position:relative;z-index:1;
+  }
+  .ed-dark h2.lede em{font-style:italic;color:#fff;font-weight:400;}
+  .ed-dark .sub-lede{font-family:var(--font-sans);font-size:15px;color:var(--cloud);max-width:680px;line-height:1.45;position:relative;z-index:1;margin-bottom:18px;}
 
-      .data-tbl td:nth-child(2) {
-        font-weight: 780;
-        color: var(--ink);
-      }
+  .ed-dark .formula{
+    position:relative;z-index:1;
+    border-top:1px solid rgba(255,255,255,.12);border-bottom:1px solid rgba(255,255,255,.12);
+    padding:24px 0 22px;margin:6px 0 22px;
+    text-align:center;
+  }
+  .ed-dark .formula .eq{font-family:var(--font-mono);font-size:46px;color:#fff;font-weight:500;letter-spacing:-.005em;line-height:1;}
+  .ed-dark .formula .eq .op{color:var(--coral);}
+  .ed-dark .formula .eq .greek{color:var(--sand);font-style:italic;}
+  .ed-dark .formula .weights{font-family:var(--font-mono);font-size:13px;color:rgba(221,229,240,.65);margin-top:14px;letter-spacing:.04em;}
+  .ed-dark .formula .weights b{color:var(--sand);font-weight:600;}
+  .ed-dark .formula .note{font-family:var(--font-display);font-style:italic;font-size:14px;color:rgba(245,234,210,.7);margin-top:8px;}
 
-      .data-tbl td:last-child {
-        text-align: right;
-        color: var(--muted);
-      }
+  .ed-dark .comp-row{display:grid;grid-template-columns:repeat(4,1fr);gap:0;position:relative;z-index:1;}
+  .ed-dark .comp{padding:0 20px;border-left:1px solid rgba(255,255,255,.1);}
+  .ed-dark .comp:first-child{border-left:0;padding-left:0;}
+  .ed-dark .comp .ix{font-family:var(--font-mono);font-size:10px;letter-spacing:.18em;color:var(--coral);text-transform:uppercase;font-weight:600;}
+  .ed-dark .comp .nm{font-family:var(--font-display);font-weight:700;font-size:20px;color:#fff;margin-top:6px;line-height:1.1;}
+  .ed-dark .comp .ds{font-family:var(--font-sans);font-size:12px;color:rgba(221,229,240,.7);margin-top:6px;line-height:1.45;}
+  .ed-dark .comp .wv{font-family:var(--font-mono);font-size:13px;color:var(--sand);margin-top:8px;font-weight:600;}
+  .ed-dark .comp.muted .wv{color:rgba(221,229,240,.5);font-weight:500;}
 
-      .flow-arrow {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: var(--accent);
-        font-size: 22px;
-        font-weight: 300;
-        padding-top: 18px;
-      }
+  .ed-dark .ranges-strip{display:grid;grid-template-columns:repeat(4,1fr);position:relative;z-index:1;margin-top:auto;border-radius:0;overflow:hidden;border:1px solid rgba(255,255,255,.1);}
+  .ed-dark .tier{padding:12px 16px;color:#fff;}
+  .ed-dark .tier .v{font-family:var(--font-mono);font-size:11px;letter-spacing:.04em;opacity:.85;}
+  .ed-dark .tier .lbl{font-family:var(--font-display);font-weight:700;font-size:18px;margin-top:2px;letter-spacing:-.01em;}
+  .ed-dark .tier .ds{font-family:var(--font-sans);font-size:11.5px;margin-top:3px;opacity:.85;line-height:1.4;}
+  .ed-dark .tier.t1{background:#155f5a;}
+  .ed-dark .tier.t2{background:#0F365A;}
+  .ed-dark .tier.t3{background:#8C621F;}
+  .ed-dark .tier.t4{background:#B83D2F;}
 
-      .hero-title {
-        font-size: clamp(42px, 5.8vw, 64px);
-        font-weight: 860;
-        line-height: 0.92;
-        letter-spacing: -0.025em;
-      }
+  .ed-dark .footer-d{position:absolute;left:64px;right:64px;bottom:18px;display:flex;justify-content:space-between;font-family:var(--font-mono);font-size:10.5px;color:rgba(221,229,240,.45);letter-spacing:.08em;z-index:1;}
 
-      .hero-sub {
-        font-size: clamp(14px, 1.5vw, 18px);
-        font-weight: 700;
-        color: var(--muted);
-        margin-top: 6px;
-      }
+  /* ====== EDITORIAL body template (slides 2,3,5,6,7,9,10,11,13,14,15) ====== */
+  .ed-page{position:absolute;inset:0;background:var(--canvas);display:flex;flex-direction:column;padding:36px 56px 30px;}
+  .ed-page .topbar{display:flex;justify-content:space-between;align-items:baseline;border-bottom:.5px solid var(--ink);padding-bottom:8px;}
+  .ed-page .topbar .ey{font-family:var(--font-display);font-style:italic;font-size:14px;color:var(--coral);}
+  .ed-page .topbar .right{font-family:var(--font-mono);font-size:10.5px;color:var(--muted);letter-spacing:.16em;text-transform:uppercase;}
+  .ed-page h1.ed-title{font-family:var(--font-display);font-weight:700;font-size:42px;line-height:1.05;color:var(--ink);letter-spacing:-.016em;margin:18px 0 6px;max-width:900px;}
+  .ed-page h1.ed-title em{font-style:italic;color:var(--coral);font-weight:700;}
+  .ed-page .ed-sub{font-family:var(--font-sans);font-size:15px;color:var(--muted);max-width:780px;line-height:1.45;}
+  .ed-page .ed-body{flex:1;display:flex;min-height:0;padding-top:18px;}
+  .ed-page .ed-foot{display:flex;justify-content:space-between;align-items:baseline;border-top:.5px solid var(--rule);padding-top:8px;margin-top:14px;}
+  .ed-page .ed-foot .disc{font-family:var(--font-display);font-style:italic;font-size:11.5px;color:var(--muted);}
+  .ed-page .ed-foot .pg{font-family:var(--font-mono);font-size:10.5px;color:var(--muted);letter-spacing:.14em;}
 
-      .number-badge {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        width: 28px;
-        height: 28px;
-        border-radius: 8px;
-        background: var(--accent-soft);
-        color: var(--accent-deep);
-        font-size: 13px;
-        font-weight: 850;
-        margin-right: 8px;
-        flex-shrink: 0;
-      }
+  /* hairline rows */
+  .ed-rows{display:flex;flex-direction:column;width:100%;}
+  .ed-rows .row{display:grid;align-items:start;padding:14px 0;border-bottom:.5px solid var(--rule);}
+  .ed-rows .row:last-child{border-bottom:0;}
 
-      .demo-label {
-        display: flex;
-        align-items: center;
-        font-size: 12px;
-        font-weight: 800;
-        color: var(--accent-deep);
-        margin-top: 10px;
-      }
+  /* hero numbers */
+  .ed-hero-num{font-family:var(--font-display);font-weight:800;line-height:.9;letter-spacing:-.03em;color:var(--ink);font-variant-numeric:tabular-nums;}
+  .ed-hero-num.coral{color:var(--coral);}
+  .ed-hero-num.italic{font-style:italic;font-weight:700;}
 
-      .controls {
-        position: fixed;
-        left: 50%;
-        bottom: 14px;
-        z-index: 20;
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        padding: 6px 10px;
-        border-radius: 999px;
-        background: oklch(0.995 0.003 252 / 0.88);
-        border: 1px solid var(--faint);
-        box-shadow: 0 8px 28px oklch(0.22 0.015 252 / 0.08);
-        backdrop-filter: blur(14px);
-        transform: translateX(-50%);
-      }
+  /* marginalia right column 100px */
+  .marg-col{flex:0 0 124px;border-left:.5px solid var(--rule);padding:0 0 0 14px;margin-left:18px;}
 
-      .controls button {
-        width: 36px;
-        height: 30px;
-        border: 0;
-        border-radius: 99px;
-        background: transparent;
-        color: var(--ink);
-        cursor: pointer;
-        font-size: 16px;
-        font-weight: 800;
-        font-family: inherit;
-      }
+  /* yesno editorial */
+  .ed-yesno{display:grid;grid-template-columns:1fr 1fr;gap:0;}
+  .ed-yesno .col{padding:0 22px;}
+  .ed-yesno .col + .col{border-left:.5px solid var(--rule);}
+  .ed-yesno .col h3{font-family:var(--font-mono);font-size:10.5px;letter-spacing:.18em;font-weight:600;text-transform:uppercase;margin:0;}
+  .ed-yesno .col.si h3{color:var(--teal);}
+  .ed-yesno .col.no h3{color:var(--coral);}
+  .ed-yesno .col h2{font-family:var(--font-display);font-weight:700;font-size:30px;color:var(--ink);margin:4px 0 14px;letter-spacing:-.014em;}
+  .ed-yesno .col h2 em{font-style:italic;}
+  .ed-yesno ul{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:0;}
+  .ed-yesno li{font-family:var(--font-sans);font-size:13.5px;line-height:1.5;color:var(--ink-2);padding:10px 0;border-top:.5px solid var(--rule);display:grid;grid-template-columns:18px 1fr;gap:6px;}
+  .ed-yesno li:first-child{border-top:0;padding-top:0;}
+  .ed-yesno li .ix{font-family:var(--font-mono);font-size:10px;color:var(--faint);font-weight:600;letter-spacing:.04em;}
+  .ed-yesno li strong{color:var(--ink);font-weight:700;}
 
-      .controls button:hover { background: var(--accent-soft); color: var(--accent-deep); }
+  /* problem hero stat */
+  .ed-hero-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:0;width:100%;}
+  .ed-hero-grid .cell{padding:0 22px;}
+  .ed-hero-grid .cell + .cell{border-left:.5px solid var(--rule);}
+  .ed-hero-grid .cell .lbl{font-family:var(--font-mono);font-size:10.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);font-weight:600;}
+  .ed-hero-grid .cell .num{font-family:var(--font-display);font-weight:800;font-size:96px;line-height:.9;letter-spacing:-.03em;color:var(--ink);margin-top:14px;font-variant-numeric:tabular-nums;}
+  .ed-hero-grid .cell .num em{font-style:italic;font-weight:700;color:var(--coral);}
+  .ed-hero-grid .cell .num sup{font-size:36px;font-weight:600;color:var(--coral);vertical-align:super;font-style:italic;}
+  .ed-hero-grid .cell .unit{font-family:var(--font-display);font-style:italic;font-size:15px;color:var(--ink-2);margin-top:6px;line-height:1.3;}
+  .ed-hero-grid .cell .desc{font-family:var(--font-sans);font-size:12px;color:var(--muted);margin-top:10px;line-height:1.45;}
 
-      .slide-ctr {
-        min-width: 60px;
-        text-align: center;
-        font-size: 12px;
-        font-weight: 800;
-        color: var(--muted);
-      }
+  /* compact data table editorial */
+  table.ed-t{width:100%;border-collapse:collapse;font-size:12.5px;font-family:var(--font-sans);}
+  table.ed-t th{font-family:var(--font-mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:600;text-align:left;padding:6px 12px 6px 0;border-bottom:.5px solid var(--ink);}
+  table.ed-t td{padding:10px 12px 10px 0;border-bottom:.5px solid var(--rule);vertical-align:top;color:var(--ink-2);}
+  table.ed-t td.num{font-family:var(--font-mono);text-align:right;font-variant-numeric:tabular-nums;font-weight:600;color:var(--ink);}
+  table.ed-t td.mono{font-family:var(--font-mono);font-size:11.5px;color:var(--ink);}
+  table.ed-t td strong{color:var(--ink);font-weight:700;}
+  table.ed-t tr.hot td{background:var(--coral-soft);}
+  .pill-tier{display:inline-flex;align-items:center;gap:6px;padding:3px 10px;border-radius:0;font-family:var(--font-mono);font-size:11px;font-weight:600;letter-spacing:.04em;}
+  .pill-tier.lo{background:#155f5a;color:#fff;}
+  .pill-tier.mid{background:#8C621F;color:#fff;}
+  .pill-tier.hi{background:#B83D2F;color:#fff;}
 
-      .progress-track {
-        position: fixed;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        height: 3px;
-        z-index: 21;
-        background: var(--faint);
-      }
+  /* sources editorial — vertical index */
+  .ed-sources{display:grid;grid-template-columns:1fr 1fr;gap:0;width:100%;}
+  .ed-sources .item{padding:14px 22px;border-bottom:.5px solid var(--rule);border-right:.5px solid var(--rule);position:relative;}
+  .ed-sources .item:nth-child(2n){border-right:0;}
+  .ed-sources .item:nth-last-child(-n+2){border-bottom:0;}
+  .ed-sources .item .ix{font-family:var(--font-mono);font-size:10.5px;color:var(--coral);font-weight:600;letter-spacing:.04em;}
+  .ed-sources .item .code{font-family:var(--font-mono);font-size:13px;color:var(--ink);font-weight:600;margin-top:2px;}
+  .ed-sources .item .nm{font-family:var(--font-display);font-weight:700;font-size:19px;color:var(--ink);line-height:1.15;margin-top:6px;letter-spacing:-.012em;}
+  .ed-sources .item .ds{font-family:var(--font-sans);font-size:12px;color:var(--muted);margin-top:6px;line-height:1.45;}
+  .ed-sources .item .role{font-family:var(--font-mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-top:6px;font-weight:600;}
 
-      .progress-fill {
-        height: 100%;
-        width: 0;
-        background: var(--accent);
-        transition: width 280ms var(--ease-out);
-      }
+  /* pipeline editorial */
+  .ed-pipe{display:grid;grid-template-columns:repeat(5,1fr);gap:0;width:100%;}
+  .ed-pipe .step{padding:0 14px;position:relative;}
+  .ed-pipe .step + .step{border-left:.5px solid var(--rule);}
+  .ed-pipe .num{font-family:var(--font-display);font-weight:800;font-size:72px;line-height:.9;color:var(--coral);letter-spacing:-.04em;font-variant-numeric:tabular-nums;font-style:italic;}
+  .ed-pipe .nm{font-family:var(--font-display);font-weight:700;font-size:17px;color:var(--ink);margin-top:6px;letter-spacing:-.01em;}
+  .ed-pipe .ds{font-family:var(--font-sans);font-size:11.5px;color:var(--muted);margin-top:6px;line-height:1.45;}
 
-      .notes-drawer {
-        position: fixed;
-        right: 18px;
-        bottom: 64px;
-        z-index: 22;
-        width: min(400px, calc(100vw - 36px));
-        max-height: 38vh;
-        overflow: auto;
-        padding: 16px 18px;
-        border-radius: 14px;
-        background: oklch(0.995 0.003 252 / 0.95);
-        border: 1px solid var(--faint);
-        box-shadow: 0 12px 40px oklch(0.22 0.015 252 / 0.10);
-        backdrop-filter: blur(14px);
-        opacity: 0;
-        pointer-events: none;
-        transform: translateY(8px);
-        transition: opacity 200ms var(--ease-out), transform 200ms var(--ease-out);
-      }
+  /* casebook — editorial rows */
+  .ed-cases{display:flex;flex-direction:column;width:100%;}
+  .ed-cases .case{display:grid;grid-template-columns:72px 1fr 100px 64px;gap:16px;align-items:start;padding:11px 0;border-bottom:.5px solid var(--rule);}
+  .ed-cases .case:first-child{border-top:.5px solid var(--ink);}
+  .ed-cases .ix{font-family:var(--font-display);font-weight:800;font-size:42px;line-height:.85;color:var(--navy);letter-spacing:-.03em;font-variant-numeric:tabular-nums;}
+  .ed-cases .meta .nm{font-family:var(--font-mono);font-size:11px;color:var(--ink);font-weight:600;letter-spacing:.02em;}
+  .ed-cases .meta .reason{font-family:var(--font-display);font-style:italic;font-weight:400;font-size:15px;color:var(--ink);margin-top:4px;line-height:1.3;letter-spacing:-.005em;}
+  .ed-cases .meta .reason em{font-style:normal;color:var(--coral);font-weight:600;}
+  .ed-cases .meta .extra{font-family:var(--font-mono);font-size:10px;color:var(--muted);margin-top:5px;letter-spacing:.04em;}
+  .ed-cases .score{font-family:var(--font-mono);font-size:10.5px;color:var(--muted);letter-spacing:.04em;text-align:right;}
+  .ed-cases .score .pill-tier{display:inline-flex;margin-left:auto;font-size:10px;padding:2px 8px;}
+  .ed-cases .score .v{display:block;font-family:var(--font-display);font-weight:800;font-size:28px;color:var(--ink);margin-top:4px;letter-spacing:-.02em;font-variant-numeric:tabular-nums;font-style:italic;line-height:1;}
+  .ed-cases .conf{font-family:var(--font-mono);font-size:10.5px;color:var(--muted);text-align:right;letter-spacing:.04em;}
+  .ed-cases .conf .v{font-family:var(--font-display);font-weight:700;font-size:20px;color:var(--ink);display:block;margin-top:4px;letter-spacing:-.014em;line-height:1;}
 
-      .notes-drawer.open {
-        opacity: 1;
-        pointer-events: auto;
-        transform: translateY(0);
-      }
+  /* timeline editorial */
+  .ed-timeline{display:grid;grid-template-columns:repeat(4,1fr);gap:0;width:100%;}
+  .ed-timeline .mile{padding:14px 16px;border-right:.5px solid var(--rule);position:relative;}
+  .ed-timeline .mile:last-child{border-right:0;}
+  .ed-timeline .when{font-family:var(--font-mono);font-size:10.5px;color:var(--coral);letter-spacing:.14em;text-transform:uppercase;font-weight:600;}
+  .ed-timeline .what{font-family:var(--font-display);font-weight:700;font-size:22px;color:var(--ink);margin-top:8px;line-height:1.1;letter-spacing:-.012em;}
+  .ed-timeline .what em{font-style:italic;color:var(--coral);}
+  .ed-timeline .why{font-family:var(--font-sans);font-size:12px;color:var(--muted);margin-top:8px;line-height:1.45;}
+  .ed-timeline .dot{position:absolute;top:0;left:16px;width:8px;height:8px;background:var(--coral);transform:translateY(-4px);}
 
-      .notes-drawer h4 {
-        font-size: 12px;
-        font-weight: 800;
-        color: var(--ink);
-        margin-bottom: 6px;
-      }
+  /* evidence — hero number grid */
+  .ed-evid{display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:1fr 1fr;gap:0;width:100%;}
+  .ed-evid .cell{padding:16px 22px;border-right:.5px solid var(--rule);border-bottom:.5px solid var(--rule);}
+  .ed-evid .cell:nth-child(3n){border-right:0;}
+  .ed-evid .cell:nth-child(n+4){border-bottom:0;}
+  .ed-evid .cell .lbl{font-family:var(--font-mono);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:600;}
+  .ed-evid .cell .num{font-family:var(--font-display);font-weight:800;font-size:64px;line-height:.9;color:var(--ink);margin-top:10px;letter-spacing:-.025em;font-variant-numeric:tabular-nums;}
+  .ed-evid .cell .num em{font-style:italic;color:var(--coral);}
+  .ed-evid .cell .hint{font-family:var(--font-sans);font-size:11.5px;color:var(--muted);margin-top:8px;line-height:1.4;}
 
-      .notes-drawer p {
-        font-size: 12px;
-        line-height: 1.5;
-        color: var(--muted);
-      }
+  /* SQL & dark page header tweak (slide 9) */
+  .ed-page.dark{background:var(--code-bg);color:#fff;}
+  .ed-page.dark .topbar{border-color:rgba(255,255,255,.18);}
+  .ed-page.dark .topbar .ey{color:var(--sand);}
+  .ed-page.dark .topbar .right{color:rgba(221,229,240,.55);}
+  .ed-page.dark h1.ed-title{color:var(--sand);}
+  .ed-page.dark h1.ed-title em{color:#fff;font-style:italic;font-weight:400;}
+  .ed-page.dark .ed-sub{color:var(--cloud);}
+  .ed-page.dark .ed-foot{border-color:rgba(255,255,255,.16);}
+  .ed-page.dark .ed-foot .disc{color:rgba(221,229,240,.6);}
+  .ed-page.dark .ed-foot .pg{color:rgba(221,229,240,.55);}
+  .ed-page.dark .marg-col{border-color:rgba(255,255,255,.16);}
 
-      .help-hint {
-        position: fixed;
-        top: 14px;
-        right: 16px;
-        z-index: 20;
-        font-size: 10.5px;
-        font-weight: 750;
-        color: var(--muted);
-      }
+  /* SQL code block — invert in dark */
+  .ed-page.dark .codeblock{background:transparent;color:var(--cloud);padding:0;font-size:13px;line-height:1.6;}
 
-      .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-      .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
-      .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
-      .grid-5 { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; }
-      .grid-2x4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+  /* microservices editorial rows */
+  .ed-svc{display:flex;flex-direction:column;width:100%;}
+  .ed-svc .row{display:grid;grid-template-columns:60px 1.1fr 70px 2.5fr 80px;gap:18px;align-items:center;padding:16px 0;border-bottom:.5px solid var(--rule);}
+  .ed-svc .row:first-child{border-top:.5px solid var(--ink);}
+  .ed-svc .ix{font-family:var(--font-display);font-weight:800;font-size:36px;line-height:.9;color:var(--coral);letter-spacing:-.02em;font-style:italic;}
+  .ed-svc .nm{font-family:var(--font-mono);font-size:14px;color:var(--ink);font-weight:600;letter-spacing:.02em;}
+  .ed-svc .port{font-family:var(--font-mono);font-size:13px;color:var(--coral);font-weight:600;}
+  .ed-svc .resp{font-family:var(--font-sans);font-size:13px;color:var(--ink-2);line-height:1.45;}
+  .ed-svc .resp em{color:var(--ink);font-style:normal;font-weight:600;}
+  .ed-svc .health{font-family:var(--font-mono);font-size:11px;color:var(--teal);font-weight:700;letter-spacing:.06em;text-align:right;}
 
-      .split-55-45 { display: grid; grid-template-columns: 55fr 45fr; gap: 28px; align-items: center; }
-      .split-45-55 { display: grid; grid-template-columns: 45fr 55fr; gap: 28px; align-items: center; }
-      .split-60-40 { display: grid; grid-template-columns: 60fr 40fr; gap: 28px; align-items: center; }
+  /* closer slide 17 */
+  .ed-closer{position:absolute;inset:0;background:#0B1E33;color:#fff;padding:54px 64px 40px;display:flex;flex-direction:column;justify-content:space-between;}
+  .ed-closer .top{display:flex;justify-content:space-between;align-items:baseline;}
+  .ed-closer .top .ey{font-family:var(--font-display);font-style:italic;color:var(--sand);font-size:16px;}
+  .ed-closer .top .pg{font-family:var(--font-mono);font-size:11px;color:rgba(221,229,240,.55);letter-spacing:.18em;}
+  .ed-closer h1.mega{
+    font-family:var(--font-display);font-style:italic;font-weight:400;
+    font-size:84px;line-height:1.02;color:var(--sand);letter-spacing:-.018em;
+    max-width:1080px;margin:0;
+  }
+  .ed-closer h1.mega em{font-style:normal;font-weight:800;color:#fff;}
+  .ed-closer .sub{font-family:var(--font-sans);font-size:16px;color:var(--cloud);max-width:780px;line-height:1.45;margin-top:18px;}
+  .ed-closer .meta-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:0;border-top:.5px solid rgba(255,255,255,.22);padding-top:18px;}
+  .ed-closer .meta-grid .col{padding:0 18px 0 0;border-right:.5px solid rgba(255,255,255,.16);}
+  .ed-closer .meta-grid .col:last-child{border-right:0;}
+  .ed-closer .meta-grid .k{font-family:var(--font-mono);font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--coral);font-weight:600;}
+  .ed-closer .meta-grid .v{font-family:var(--font-sans);font-size:14px;color:#fff;margin-top:6px;line-height:1.4;}
+  .ed-closer .meta-grid .v.mono{font-family:var(--font-mono);font-size:12.5px;color:var(--cloud);}
+  .ed-closer .bottom{display:flex;justify-content:space-between;align-items:flex-end;}
+  .ed-closer .disc{font-family:var(--font-display);font-style:italic;font-size:13px;color:rgba(245,234,210,.7);max-width:540px;}
+  .ed-closer .hand-note{
+    font-family:var(--font-hand);font-size:42px;color:var(--coral);
+    transform:rotate(-6deg);transform-origin:bottom right;line-height:1;
+    display:inline-block;
+  }
+  .ed-closer .hand-note::before{content:"";display:inline-block;width:60px;height:1px;background:var(--coral);margin:0 8px 8px 0;vertical-align:middle;}
 
-      .flex-grow { flex: 1; }
-      .mt-auto { margin-top: auto; }
-      .mt-8 { margin-top: 8px; }
-      .mt-12 { margin-top: 12px; }
-      .mt-16 { margin-top: 16px; }
-      .mt-20 { margin-top: 20px; }
-      .mt-24 { margin-top: 24px; }
-      .mt-28 { margin-top: 28px; }
-      .mt-32 { margin-top: 32px; }
+  /* ====== ERD editorial slide 5 ====== */
+  .erd-table{fill:#fff;stroke:#0B1E33;stroke-width:.6;}
+  .erd-table.dim{stroke:#8893A8;stroke-width:.5;}
+  .erd-table.hot{stroke:#E35A4B;stroke-width:1.8;}
+  .erd-head{fill:#0B1E33;}
+  .erd-head.dim{fill:#8893A8;}
+  .erd-head.hot{fill:#E35A4B;}
+  .erd-nm{fill:#fff;font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:600;}
+  .erd-rw{fill:#1F2C40;font-family:'JetBrains Mono',monospace;font-size:9px;}
+  .erd-rw.dim{fill:#8893A8;}
+  .erd-rw.hot{fill:#E35A4B;font-weight:700;}
+  .erd-edge{stroke:#8893A8;stroke-width:.6;fill:none;}
+  .erd-edge.hot{stroke:#E35A4B;stroke-width:1.4;}
+  .erd-card{fill:#5A6478;font-family:Inter,sans-serif;font-size:9px;font-style:italic;}
 
-      @media (prefers-reduced-motion: reduce) {
-        .slide, .progress-fill, .notes-drawer { transition: none; }
-      }
+  /* ====== validation chart (slide 13) ====== */
+  .vbars{display:flex;flex-direction:column;gap:10px;}
+  .vbar{display:grid;grid-template-columns:140px 1fr 60px;align-items:center;gap:10px;font-size:12px;}
+  .vbar .vlabel{color:var(--ink-2);font-weight:500;}
+  .vbar .vtrack{height:14px;background:var(--panel);border-radius:7px;overflow:hidden;}
+  .vbar .vfill{height:100%;border-radius:7px;}
+  .vbar .vval{font-family:'JetBrains Mono',monospace;font-size:12px;text-align:right;font-weight:600;color:var(--ink);}
 
-      @media print {
-        body { background: var(--paper); overflow: visible; }
-        .deck { display: block; height: auto; padding: 0; }
-        .viewport { width: 100vw; aspect-ratio: auto; border-radius: 0; box-shadow: none; overflow: visible; }
-        .slide { position: relative; visibility: visible; opacity: 1; width: 100vw; height: 56.25vw; page-break-after: always; }
-        .controls, .progress-track, .notes-drawer, .help-hint { display: none; }
-      }
-    </style>
-  </head>
-  <body>
-    <div class="accent-bar" style="position:fixed;top:0;left:0;right:0;z-index:30;"></div>
+  /* ====== microservice table ====== */
+  .svc-row{display:grid;grid-template-columns:1.1fr .55fr 2.2fr;align-items:center;gap:14px;padding:12px 16px;border:1px solid var(--rule);border-radius:10px;background:var(--surface);position:relative;}
+  .svc-row::before{content:"";position:absolute;left:0;top:12px;bottom:12px;width:4px;border-radius:2px;background:var(--navy);}
+  .svc-row.coral::before{background:var(--coral);}
+  .svc-row.teal::before{background:var(--teal);}
+  .svc-row .name{font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:600;color:var(--ink);padding-left:12px;}
+  .svc-row .port{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--muted);font-weight:600;}
+  .svc-row .resp{font-size:12.5px;color:var(--ink-2);line-height:1.4;}
+  .led{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--teal);box-shadow:0 0 0 3px rgba(31,130,124,.18);margin-right:6px;vertical-align:middle;}
+</style>
+</head>
+<body>
 
-    <main class="deck">
-      <div class="viewport" id="viewport">
+<script type="application/json" id="speaker-notes">
+[
+  "ContratIA Abierta. IA explicable que prioriza revisión humana de la contratación pública en Colombia. No detectamos corrupción. Ordenamos qué revisar primero, con evidencia trazable. Demo en Meta y Casanare. Datos abiertos oficiales del ecosistema datos.gov.co.",
+  "El producto se define por lo que sí hace y por lo que no hace. Sí: ranking explicable, comparables semánticos, alineación plan contra ejecución, razones legibles, trazabilidad. No: no declara corrupción, no reemplaza auditoría, no usa contexto fiscal como etiqueta. Un score alto significa revísalo primero con evidencia, no es corrupción.",
+  "El problema operativo es de triage, no de detección. Hay cientos de miles de procesos al año en SECOP — la cifra exacta está por confirmar con Colombia Compra Eficiente, por eso aparece con asterisco. La capacidad humana es de decenas de revisores con tiempo limitado. La decisión real es semanal: qué revisamos primero. El sistema convierte ese océano en una cola priorizada y auditable.",
+  "Arquitectura end-to-end: extracción Socrata con Polars y Parquet versionado. Transformación con build process master y auditoría de joins. Score híbrido como pieza protagonista — destacada en coral en el diagrama. Almacenamiento dual: Postgres como fuente de verdad, Mongo para documentos y logs. Tres servicios FastAPI. Dashboard Dash. Todo orquestado con Make y Docker Compose.",
+  "Modelo de datos: 33 objetos públicos en Postgres. Las 8 tablas centrales modelan entidad, proceso, contrato, plan anual, scoring, comparables, razones y auditoría. Dos piezas marcadas con estrella: risk_assessment y paa_process_match — son los componentes que ningún otro proyecto del concurso va a tener. Constraints CHECK garantizan score entre 0 y 100 y confidence entre 0 y 1.",
+  "Cuatro datasets oficiales. SECOP II procesos como canónico — marcado con estrella. SECOP Integrado como baseline histórico. Plan Anual de Adquisiciones como ancla de planeación. Resultados AGR como contexto fiscal visible — no es etiqueta del modelo. Métricas: 90.431 procesos scoreados, 4.494 items PAA, 68.916 razones explicables generadas. Atribución 100% datos abiertos oficiales.",
+  "Pipeline reproducible en cinco pasos. Extracción Socrata con paginación y fallback Parquet. Limpieza y dedup por process_key. Matching plan-ejecución con TF-IDF y backend opcional de embeddings. Scoring híbrido. Evidencia trazable: cada paso deja artefacto auditable en data marts. Tres comandos reproducen el sistema completo: product-pipeline, demo-full, validate-final.",
+  "El score combina cuatro componentes auditables. Reglas heurísticas, desviación contra pares UNSPSC, anomalía estadística por IsolationForest, y confianza por cobertura de datos. Pesos visibles: rules 0.45, peer 0.35, anomaly 0.20. Fórmula: 100 por sigmoide de la suma ponderada. Confidence aparte, entre cero y uno. Cuatro tiers de interpretación: típico, leve, notable, alta prioridad.",
+  "SQL de ingeniería real, no almacenamiento básico. Triggers para audit log e historial. Window functions para concentración por entidad y proveedor. CTE recursiva para jerarquía territorial. Transacciones atómicas para score más evento de auditoría. Dos ejemplos en pantalla: window function con CTE para top-5 proveedores, y transacción atómica con trigger para scoring + auditoría.",
+  "Tres microservicios FastAPI separados por dominio. Contracts en 8001 para procesos y revisión humana. Risk en 8002 para scoring y comparables. Analytics en 8003 para agregados. Health 200 en los tres. Docker Compose, make academic-services-up, y validate-final exige los tres vivos. Si Docker no está activo, la ruta lean (Parquet + DuckDB) sigue funcionando.",
+  "Almacenamiento dual: PostgreSQL para datos transaccionales y relaciones, MongoDB para logs y eventos. 5 colecciones Mongo: project_context, etl_logs, risk_events, report_snapshots, user_actions. Tabla comparativa muestra cuándo usar cada uno. Schema flexible de Mongo permite evolucionar logs sin migraciones.",
+  "Evidencia de ingeniería con números duros. 90.431 procesos reales scoreados. 33 objetos Postgres. 5 de 5 colecciones Mongo con documentos. 3 APIs vivas. 71 tests pytest pasan. 21 documentos técnicos. Columna lateral: validaciones cubiertas incluyendo schema integrity, join audit, compuerta PAA y bounds del scoring.",
+  "Dashboard de tres zonas: DECIDIR (KPIs + cola de revisión), ENTENDER (ficha del proceso con score desglosado y contexto AGR), CONFIAR (validación + metodología). Filtro territorial global persistente entre zonas. Score como percentil nacional calculado con percent_rank() en PostgreSQL.",
+  "Casebook del demo. Cinco procesos representativos con score, razón principal y comparable. Los datos exactos son placeholders — entran desde data/marts/ranking.parquet. Caso 5 es crítico: muestra cómo el sistema reporta 'evidencia insuficiente' en lugar de forzar un score cuando hay pocos pares. Esa es la honestidad operativa del producto.",
+  "Cómo cruzamos datos. Plan contra ejecución con TF-IDF coseno mayor a 0.55 más filtros de entidad y año. Entidad contra contratos baseline vía crosswalk de códigos. Cobertura típica documentada por cruce. Cuando no hay match fuerte el sistema lo dice — no fuerza un enlace.",
+  "Validación y límites honestos. Software: 71 tests, lint estable, validate-final ok. Datos: 90.431 procesos reales scoreados (Meta + Casanare). Validación independiente vs control fiscal AGR: 2.46x de enriquecimiento; caso real Puerto Gaitán 3.1x. Compuerta PAA top-1 con confianza ≥ 0.75. Pendientes reconocidos: validación humana de 100 casos, benchmark embeddings contra TF-IDF, despliegue público read-only. Honesto mejor que teatro.",
+  "Roadmap de escalado. Mes uno: pilotos con dos oficinas de control en Orinoquía más validación humana de 100 casos. Mes dos y tres: backend de embeddings activable y despliegue read-only. Mes cuatro y cinco: escalado por departamento. Mes seis: cobertura nacional con cuotas Socrata. Costo marginal por departamento ≈ infra de un Postgres pequeño.",
+  "Riesgos identificados con probabilidad e impacto y mitigaciones concretas. Volumen Socrata: scope demo de 24 meses más Parquet partitioned. Joins imperfectos: NIT primero más crosswalk mantenido. Misinterpretación como detector — fila destacada en coral: disclaimer persistente. Sesgo a entidades pequeñas: mínimo de pares y evidencia insuficiente en lugar de score forzado.",
+  "Cierre. Una revisión manual imposible se convierte en una cola priorizada y auditable. ContratIA Abierta. Thomas Chisica. Ingeniería de Datos. Universidad del Rosario. Categoría Gobernanza y Transparencia. Región Meta y Casanare. Gracias."
+]
+</script>
 
-        <section class="slide active" data-notes="Presentamos Transparencia360 / ContratIA Abierta. La tesis: los datos abiertos de contratación ya existen, pero la capacidad humana para revisarlos es limitada. El sistema ordena procesos para decidir qué revisar primero, con evidencia trazable. No prueba conductas indebidas.">
-          <div class="slide-inner" style="justify-content:center;">
-            <div class="split-55-45" style="height:100%;align-items:center;">
-              <div>
-                <div class="kicker">Proyecto final &middot; Ingeniería de Datos</div>
-                <h1 class="hero-title">Transparencia360</h1>
-                <p class="hero-sub">ContratIA Abierta</p>
-                <p class="lead thesis mt-20">Ordenar miles de procesos SECOP para decidir qué revisar primero.</p>
-                <div class="tag-row">
-                  <span class="tag">Revisión humana</span>
-                  <span class="tag">Datos abiertos</span>
-                  <span class="tag">Trazabilidad</span>
-                </div>
-                <p class="mt-24" style="font-size:12px;color:var(--muted);font-weight:700;">Universidad del Rosario &middot; 2026</p>
-              </div>
-              <div style="display:flex;align-items:center;justify-content:center;">
-                <img class="proof-img clean" src="../assets/architecture.png" alt="Arquitectura del sistema" style="max-height:360px;width:auto;opacity:0.92;" />
-              </div>
-            </div>
+<deck-stage width="1280" height="720">
+
+  <!-- ====================== SLIDE 1 — PORTADA ====================== -->
+  <section data-label="01 Portada">
+    <div class="ed-cover">
+      <div class="coral-rail"></div>
+      <div class="main">
+        <div>
+          <div class="topline">
+            <span class="num">01 / 16</span>
+            <span class="ey">Concurso Datos al Ecosistema 2026 — IA para Colombia</span>
           </div>
-          <span class="slide-number">01</span>
-          <span class="slide-label">ContratIA Abierta</span>
-        </section>
-
-        <section class="slide" data-notes="El problema no es la ausencia de datos. Colombia tiene fuentes abiertas de contratación. El problema práctico es que veedurías, control interno y periodistas no pueden revisar miles de procesos con el mismo detalle. La decisión es semanal: en qué invertir tiempo humano primero.">
-          <div class="slide-inner">
-            <div class="kicker">Problema</div>
-            <h2>No faltan datos de contratación.<br/>Falta atención humana bien dirigida.</h2>
-            <p class="lead mt-16">La decisión práctica no es emitir veredictos. Es escoger qué procesos revisar primero, con evidencia trazable.</p>
-            <div class="grid-3 mt-32" style="grid-template-columns: 1fr auto 1fr auto 1fr; align-items: stretch;">
-              <div class="card">
-                <div class="card-title">Miles de procesos</div>
-                <div class="card-desc">SECOP, PAA y contexto fiscal abierto.</div>
-              </div>
-              <div class="flow-arrow">&rarr;</div>
-              <div class="card">
-                <div class="card-title">Ranking explicable</div>
-                <div class="card-desc">Score, confianza, razones y comparables.</div>
-              </div>
-              <div class="flow-arrow">&rarr;</div>
-              <div class="card">
-                <div class="card-title">Revisión humana</div>
-                <div class="card-desc">Decisión documentada, no automatizada.</div>
-              </div>
-            </div>
-          </div>
-          <span class="slide-number">02</span>
-          <span class="slide-label">Problema</span>
-          <span class="footer-line">Priorización de revisión humana; no prueba conductas indebidas.</span>
-        </section>
-
-        <section class="slide" data-notes="Los usuarios son veedurías ciudadanas, oficinas de control interno y periodistas de datos. Comparten una restricción: tiempo limitado y necesidad de justificar por qué revisan un proceso antes que otro. La salida es un ranking con razones, no una acusación.">
-          <div class="slide-inner">
-            <div class="kicker">Stakeholder</div>
-            <h2>Una decisión semanal: qué revisar primero y por qué.</h2>
-            <div class="grid-3 mt-28">
-              <div class="card">
-                <div class="card-title">Veeduría ciudadana</div>
-                <div class="card-desc">Seguimiento al gasto público con capacidad limitada.</div>
-              </div>
-              <div class="card">
-                <div class="card-title">Control interno</div>
-                <div class="card-desc">Focalización de revisión institucional con trazabilidad.</div>
-              </div>
-              <div class="card">
-                <div class="card-title">Periodismo de datos</div>
-                <div class="card-desc">Priorización de hallazgos verificables para publicación.</div>
-              </div>
-            </div>
-            <p class="lead mt-auto" style="margin-top:auto;padding-top:24px;"><span class="thesis">El sistema produce una cola de revisión, no una acusación.</span></p>
-          </div>
-          <span class="slide-number">03</span>
-          <span class="slide-label">Stakeholder</span>
-          <span class="footer-line">Priorización de revisión humana; no prueba conductas indebidas.</span>
-        </section>
-
-        <section class="slide" data-notes="La guía de clase pedía arquitectura de ingeniería de datos completa: base relacional, NoSQL, microservicios, ETL, pruebas y documentación. La validación final confirma cada punto con evidencia verificable.">
-          <div class="slide-inner">
-            <div class="kicker">Cumplimiento</div>
-            <h2>Requisitos de Ingeniería de Datos cubiertos con evidencia.</h2>
-            <div class="grid-2x4 mt-24">
-              <div class="card"><div class="card-title">PostgreSQL</div><div class="card-desc">27 tablas relacionales y 33 objetos públicos.</div></div>
-              <div class="card"><div class="card-title">MongoDB</div><div class="card-desc">5 colecciones con documentos trazables.</div></div>
-              <div class="card"><div class="card-title">FastAPI</div><div class="card-desc">3 servicios, health checks en 200.</div></div>
-              <div class="card"><div class="card-title">Dash</div><div class="card-desc">Interfaz oficial del dashboard.</div></div>
-              <div class="card"><div class="card-title">ETL</div><div class="card-desc">17.229 procesos en la carga demo.</div></div>
-              <div class="card"><div class="card-title">SQL avanzado</div><div class="card-desc">Triggers, CTE recursiva, window functions.</div></div>
-              <div class="card"><div class="card-title">Pruebas</div><div class="card-desc">66 pytest pasan correctamente.</div></div>
-              <div class="card"><div class="card-title">Documentación</div><div class="card-desc">21 archivos requeridos por la guía.</div></div>
-            </div>
-          </div>
-          <span class="slide-number">04</span>
-          <span class="slide-label">Cumplimiento</span>
-          <span class="footer-line">Priorización de revisión humana; no prueba conductas indebidas.</span>
-        </section>
-
-        <section class="slide" data-notes="Las fuentes son datasets oficiales abiertos de Colombia. SECOP II aporta la unidad analítica principal. PAA y SECOP Integrado dan contexto de planeación y ejecución. El contexto fiscal es visible pero no entra al score. La demo valida 17.229 procesos con métricas verificables.">
-          <div class="slide-inner split-55-45">
-            <div>
-              <div class="kicker">Datos oficiales</div>
-              <h2>Fuentes reales, volumen verificable.</h2>
-              <table class="data-tbl mt-20">
-                <tr><td>p6dx</td><td>SECOP II Procesos</td><td>unidad analítica</td></tr>
-                <tr><td>rpmr</td><td>SECOP Integrado</td><td>contexto ejecución</td></tr>
-                <tr><td>9sue</td><td>PAA Detalle</td><td>planeación</td></tr>
-                <tr><td>wasc</td><td>Control fiscal</td><td>contexto visible</td></tr>
-              </table>
-            </div>
-            <div class="grid-2" style="gap:12px;">
-              <div class="metric-box"><div class="metric-value">17.229</div><div class="metric-label">procesos</div></div>
-              <div class="metric-box"><div class="metric-value" style="color:var(--green);">68.916</div><div class="metric-label">razones</div></div>
-              <div class="metric-box"><div class="metric-value" style="color:var(--amber);">4.494</div><div class="metric-label">PAA items</div></div>
-              <div class="metric-box"><div class="metric-value">41.996</div><div class="metric-label">eventos auditoría</div></div>
-            </div>
-          </div>
-          <span class="slide-number">05</span>
-          <span class="slide-label">Datos oficiales</span>
-          <span class="footer-line">Priorización de revisión humana; no prueba conductas indebidas.</span>
-        </section>
-
-        <section class="slide" data-notes="La arquitectura separa ingestión, persistencia, servicios y presentación. Socrata alimenta el ETL. PostgreSQL es la fuente de verdad relacional. MongoDB conserva evidencia documental. FastAPI expone servicios separados. Dash presenta el flujo de demo.">
-          <div class="slide-inner">
-            <div class="kicker">Arquitectura</div>
-            <h2>Separación clara entre ETL, persistencia, servicios y dashboard.</h2>
-            <div class="flex-grow" style="display:flex;align-items:center;justify-content:center;margin-top:16px;">
-              <img class="proof-img clean" src="../assets/architecture.png" alt="Diagrama de arquitectura" style="max-height:340px;width:auto;" />
-            </div>
-            <p class="caption">Socrata &rarr; ETL &rarr; PostgreSQL + MongoDB &rarr; FastAPI &rarr; Dash</p>
-          </div>
-          <span class="slide-number">06</span>
-          <span class="slide-label">Arquitectura</span>
-          <span class="footer-line">Priorización de revisión humana; no prueba conductas indebidas.</span>
-        </section>
-
-        <section class="slide" data-notes="El modelo relacional supera el mínimo de la materia con 27 tablas y 33 objetos públicos. Lo importante no es el conteo: hay llaves primarias, foráneas, restricciones, índices, vistas analíticas y triggers de auditoría. PostgreSQL garantiza integridad.">
-          <div class="slide-inner">
-            <div class="kicker">Modelo relacional</div>
-            <h2>PostgreSQL es la fuente de verdad.</h2>
-            <div class="flex-grow" style="display:flex;align-items:center;justify-content:center;margin-top:12px;">
-              <img class="proof-img clean" src="../assets/er_model.png" alt="Modelo entidad-relación" style="max-height:320px;width:auto;" />
-            </div>
-            <p class="caption">27 tablas relacionales con PK/FK, constraints e índices; 33 objetos públicos incluyendo vistas y triggers.</p>
-          </div>
-          <span class="slide-number">07</span>
-          <span class="slide-label">Modelo relacional</span>
-          <span class="footer-line">Priorización de revisión humana; no prueba conductas indebidas.</span>
-        </section>
-
-        <section class="slide" data-notes="MongoDB no reemplaza el modelo relacional. Se usa para datos con forma documental natural: snapshots crudos, logs de ETL, eventos de prioridad, reportes generados y acciones de usuario. Un auditor puede reconstruir el origen de cualquier reporte.">
-          <div class="slide-inner split-45-55">
-            <div>
-              <div class="kicker">NoSQL</div>
-              <h2>MongoDB guarda evidencia flexible sin deformar el modelo relacional.</h2>
-              <p class="lead mt-16">Snapshots, logs, reportes y acciones se consultan como documentos trazables.</p>
-            </div>
-            <div>
-              <table class="data-tbl">
-                <tr><td style="width:auto;color:var(--accent-deep);font-weight:800;">raw_process_snapshots</td><td style="text-align:right;">100 docs</td></tr>
-                <tr><td style="width:auto;color:var(--accent-deep);font-weight:800;">etl_run_logs</td><td style="text-align:right;">1 doc</td></tr>
-                <tr><td style="width:auto;color:var(--accent-deep);font-weight:800;">risk_event_logs</td><td style="text-align:right;">1 doc</td></tr>
-                <tr><td style="width:auto;color:var(--accent-deep);font-weight:800;">report_snapshots</td><td style="text-align:right;">1 doc</td></tr>
-                <tr><td style="width:auto;color:var(--accent-deep);font-weight:800;">user_action_logs</td><td style="text-align:right;">1 doc</td></tr>
-              </table>
-            </div>
-          </div>
-          <span class="slide-number">08</span>
-          <span class="slide-label">NoSQL</span>
-          <span class="footer-line">Priorización de revisión humana; no prueba conductas indebidas.</span>
-        </section>
-
-        <section class="slide" data-notes="La solución muestra SQL avanzado concreto del temario: triggers de auditoría e historial, window functions para ranking y outliers, CTE recursiva para jerarquía territorial, y transacciones para consistencia atómica entre score y evento.">
-          <div class="slide-inner">
-            <div class="kicker">SQL engineering</div>
-            <h2>No es solo almacenamiento. Hay integridad y trazabilidad.</h2>
-            <div class="grid-2 mt-28" style="gap:14px;">
-              <div class="card"><div class="card-title">Triggers</div><div class="card-desc">audit_log, historial de estado, updated_at automático.</div></div>
-              <div class="card"><div class="card-title">Window functions</div><div class="card-desc">Concentración proveedor-entidad y outliers por grupo par.</div></div>
-              <div class="card"><div class="card-title">CTE recursiva</div><div class="card-desc">Jerarquía territorial departamento-municipio.</div></div>
-              <div class="card"><div class="card-title">Transacciones</div><div class="card-desc">Score + evento asociado de forma atómica.</div></div>
-            </div>
-            <p class="lead mt-auto" style="margin-top:auto;padding-top:20px;">Consultas analíticas reproducibles, no solo depósito de datos.</p>
-          </div>
-          <span class="slide-number">09</span>
-          <span class="slide-label">SQL engineering</span>
-          <span class="footer-line">Priorización de revisión humana; no prueba conductas indebidas.</span>
-        </section>
-
-        <section class="slide" data-notes="El score sigue una filosofía rules-first. Combina reglas explícitas, desviación frente a pares, anomalía como apoyo interpretable, confianza de datos y razones auditables. La salida ordena revisión humana; no determina responsabilidad ni sanciona.">
-          <div class="slide-inner">
-            <div class="kicker">Explicabilidad</div>
-            <h2>Score explicable, no veredicto.</h2>
-            <div class="grid-5 mt-28">
-              <div class="card"><div class="card-title">Reglas</div><div class="card-desc">Señales auditables y explícitas.</div></div>
-              <div class="card"><div class="card-title">Pares</div><div class="card-desc">Desviación contextual frente a comparables.</div></div>
-              <div class="card"><div class="card-title">Anomalía</div><div class="card-desc">Apoyo interpretable, no determinante.</div></div>
-              <div class="card"><div class="card-title">Confianza</div><div class="card-desc">Calidad y cobertura de los datos.</div></div>
-              <div class="card"><div class="card-title">Razones</div><div class="card-desc">Texto trazable hacia las fuentes.</div></div>
-            </div>
-            <p class="lead thesis mt-auto" style="margin-top:auto;padding-top:24px;font-size:clamp(16px,1.8vw,20px);">Salida: score de prioridad + confianza + razones + comparables.</p>
-          </div>
-          <span class="slide-number">10</span>
-          <span class="slide-label">Explicabilidad</span>
-          <span class="footer-line">Priorización de revisión humana; no prueba conductas indebidas.</span>
-        </section>
-
-        <section class="slide" data-notes="El flujo de demo: Panorama muestra conteos y cobertura. Ranking filtra por score y prioriza candidatos. Detalle presenta evidencia trazable con comparables. El usuario entiende el universo, escoge un candidato, revisa evidencia y decide si abre revisión humana.">
-          <div class="slide-inner">
-            <div class="kicker">Demo</div>
-            <h2>Panorama, ranking, detalle y comparables.</h2>
-            <div class="grid-3 mt-24" style="gap:18px;">
-              <div>
-                <img class="proof-img" src="../assets/screenshot_dashboard_home.png" alt="Panorama del dashboard" style="aspect-ratio:16/10;object-fit:cover;object-position:top left;" />
-                <div class="demo-label"><span class="number-badge">1</span>Panorama</div>
-              </div>
-              <div>
-                <img class="proof-img" src="../assets/screenshot_ranking.png" alt="Ranking de procesos" style="aspect-ratio:16/10;object-fit:cover;object-position:top left;" />
-                <div class="demo-label"><span class="number-badge">2</span>Ranking</div>
-              </div>
-              <div>
-                <img class="proof-img" src="../assets/screenshot_process_detail.png" alt="Detalle de proceso" style="aspect-ratio:16/10;object-fit:cover;object-position:top left;" />
-                <div class="demo-label"><span class="number-badge">3</span>Detalle y comparables</div>
-              </div>
-            </div>
-          </div>
-          <span class="slide-number">11</span>
-          <span class="slide-label">Demo</span>
-          <span class="footer-line">Priorización de revisión humana; no prueba conductas indebidas.</span>
-        </section>
-
-        <section class="slide" data-notes="La validación final cruza todos los criterios académicos. Los límites son honestos: datos ruidosos, joins imperfectos, requiere revisión humana. El siguiente paso es aplicar la encuesta real con 5 usuarios y ejecutar un piloto controlado. El aporte: convertir datos masivos en una cola trazable de revisión.">
-          <div class="slide-inner split-55-45">
-            <div style="display:flex;flex-direction:column;justify-content:center;">
-              <div class="kicker">Cierre</div>
-              <h2>Validación final: proyecto reproducible y defendible.</h2>
-              <div class="mt-24" style="display:flex;flex-direction:column;gap:12px;">
-                <div class="card" style="background:var(--green-soft);border-color:oklch(0.88 0.030 155);">
-                  <div class="card-title" style="color:var(--green);">Validación: ok</div>
-                  <div class="card-desc">Tablas, filas, Mongo, APIs, tests, docs y README verificados.</div>
-                </div>
-                <div class="card">
-                  <div class="card-title">Límites honestos</div>
-                  <div class="card-desc">Datos ruidosos, joins imperfectos, requiere revisión humana.</div>
-                </div>
-                <div class="card" style="background:var(--accent-wash);border-color:oklch(0.88 0.025 245);">
-                  <div class="card-title">Siguiente paso</div>
-                  <div class="card-desc">Encuesta real con 5 usuarios y piloto controlado.</div>
-                </div>
-              </div>
-            </div>
-            <div style="display:flex;align-items:center;justify-content:center;">
-              <img class="proof-img clean" src="../assets/validation_summary.png" alt="Resumen de validación" style="max-height:340px;width:auto;" />
-            </div>
-          </div>
-          <span class="slide-number">12</span>
-          <span class="slide-label">Cierre</span>
-          <span class="footer-line">Priorización de revisión humana; no prueba conductas indebidas.</span>
-        </section>
-
+          <div class="hairline"></div>
+        </div>
+        <div>
+          <h1 class="hero">Contrat<em>IA</em><br/>Abierta.</h1>
+          <p class="lead">IA explicable para priorizar la revisión humana de la contratación pública en Colombia.</p>
+          <p class="italic-foot">No emite juicios de corrupción. Ordena qué revisar primero, con evidencia trazable.</p>
+        </div>
+        <div class="pagination">
+          <span>Thomas Chisica · Ingeniería de Datos · Universidad del Rosario</span>
+        </div>
       </div>
-    </main>
+      <div class="right">
+        <div class="ribbon">Gobernanza · Transparencia · Meta + Casanare</div>
+        <div class="meta-block">
+          <span class="k">v3</span><br/>
+          27 · 05 · 2026<br/>
+          ·<br/>
+          <span class="k">datos</span><br/>
+          p6dx-8zbt<br/>
+          rpmr-utcd<br/>
+          9sue-ezhx<br/>
+          wasc-xi4h<br/>
+          ·<br/>
+          <span class="k">scope</span><br/>
+          24 meses<br/>
+          meta + casanare
+        </div>
+      </div>
+    </div>
+  </section>
 
-    <span class="help-hint">&larr; &rarr; navegar &middot; N notas &middot; F pantalla completa</span>
-    <nav class="controls" aria-label="Controles">
-      <button type="button" id="prevBtn" aria-label="Anterior">&lsaquo;</button>
-      <span class="slide-ctr" id="slideCtr">1 / 12</span>
-      <button type="button" id="nextBtn" aria-label="Siguiente">&rsaquo;</button>
-    </nav>
-    <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
-    <aside class="notes-drawer" id="notesDrawer" aria-live="polite">
-      <h4>Notas del expositor</h4>
-      <p id="notesContent"></p>
-    </aside>
+  <!-- ====================== SLIDE 2 — TESIS ====================== -->
+  <section data-label="02 Tesis">
+    <div class="ed-page">
+      <div class="topbar">
+        <span class="ey">Capítulo dos · tesis del producto</span>
+        <span class="right">02 / 18 · scope</span>
+      </div>
+      <h1 class="ed-title">Definir <em>qué hace</em> y <em>qué no hace</em><br/>antes de defender la solución.</h1>
+      <p class="ed-sub">Un score alto significa <strong>"revísalo primero, con evidencia"</strong> — nunca <strong>"es corrupción"</strong>. El operador humano decide.</p>
 
-    <script>
-      const slides = Array.from(document.querySelectorAll(".slide"));
-      const progressFill = document.getElementById("progressFill");
-      const slideCtr = document.getElementById("slideCtr");
-      const notesDrawer = document.getElementById("notesDrawer");
-      const notesContent = document.getElementById("notesContent");
-      let idx = Number(new URLSearchParams(location.search).get("slide") || 1) - 1;
+      <div class="ed-body">
+        <div class="ed-yesno" style="width:100%;">
+          <div class="col si">
+            <h3>Sí hace</h3>
+            <h2>Triage <em>explicable</em></h2>
+            <ul>
+              <li><span class="ix">a.</span><span><strong>Ranking 0–100</strong> auditable de procesos a revisar.</span></li>
+              <li><span class="ix">b.</span><span><strong>Comparables semánticos</strong> por categoría UNSPSC + similitud textual.</span></li>
+              <li><span class="ix">c.</span><span><strong>Alineación plan (PAA) ↔ ejecución</strong> SECOP II con compuerta de confianza.</span></li>
+              <li><span class="ix">d.</span><span><strong>Razones legibles</strong> por humano + confianza visible.</span></li>
+              <li><span class="ix">e.</span><span><strong>Trazabilidad</strong>: fuente, fecha, snapshot, hash de modelo.</span></li>
+            </ul>
+          </div>
+          <div class="col no">
+            <h3>No hace</h3>
+            <h2>Sin <em>acusación</em>, sin reemplazo</h2>
+            <ul>
+              <li><span class="ix">a.</span><span>No declara <strong>corrupción, fraude ni responsabilidad penal</strong>.</span></li>
+              <li><span class="ix">b.</span><span>No reemplaza <strong>auditoría jurídica ni fiscal</strong>.</span></li>
+              <li><span class="ix">c.</span><span>No deanonimiza más allá del <strong>dato público</strong>.</span></li>
+              <li><span class="ix">d.</span><span>No usa <strong>contexto fiscal como etiqueta</strong> del modelo.</span></li>
+              <li><span class="ix">e.</span><span>No reemplaza la <strong>decisión humana</strong> — la informa.</span></li>
+            </ul>
+          </div>
+        </div>
+      </div>
 
-      function clamp(i) { return Math.max(0, Math.min(slides.length - 1, i)); }
+      <div class="ed-foot">
+        <span class="disc">Prioriza revisión humana; no prueba conductas indebidas.</span>
+        <span class="pg">02 / 18</span>
+      </div>
+    </div>
+  </section>
 
-      function show(i, push = true) {
-        idx = clamp(i);
-        slides.forEach((s, n) => s.classList.toggle("active", n === idx));
-        slideCtr.textContent = `${idx + 1} / ${slides.length}`;
-        progressFill.style.width = `${((idx + 1) / slides.length) * 100}%`;
-        notesContent.textContent = slides[idx].dataset.notes || "";
-        if (push) {
-          const url = new URL(location.href);
-          url.searchParams.set("slide", String(idx + 1));
-          history.replaceState(null, "", url);
-        }
-      }
+  <!-- ====================== SLIDE 3 — PROBLEMA ====================== -->
+  <section data-label="03 Problema">
+    <div class="ed-page">
+      <div class="topbar">
+        <span class="ey">Capítulo tres · problema operativo</span>
+        <span class="right">03 / 18 · triage</span>
+      </div>
+      <h1 class="ed-title">Triage, <em>no detección</em>.<br/>La capacidad humana &lt; el volumen publicado.</h1>
+      <p class="ed-sub">El problema operativo no es identificar corrupción. Es decidir qué se revisa primero esta semana, con la información que está abierta.</p>
 
-      function next() { show(idx + 1); }
-      function prev() { show(idx - 1); }
+      <div class="ed-body" style="flex-direction:column;gap:24px;justify-content:space-between;">
+        <div class="ed-hero-grid">
+          <div class="cell">
+            <div class="lbl">Volumen</div>
+            <div class="num">≈900<sup>★</sup></div>
+            <div class="unit">mil procesos / año en SECOP nacional</div>
+            <div class="desc">Publicaciones anuales en SECOP II + Integrado. Inabordable a mano.</div>
+          </div>
+          <div class="cell">
+            <div class="lbl">Capacidad</div>
+            <div class="num"><em>~50</em></div>
+            <div class="unit">revisores efectivos por entidad de control</div>
+            <div class="desc">Decenas de revisores en control interno y veedurías. Cubren fragmento mínimo del flujo.</div>
+          </div>
+          <div class="cell">
+            <div class="lbl">Decisión real</div>
+            <div class="num">1</div>
+            <div class="unit">pregunta semanal de priorización</div>
+            <div class="desc">¿Qué se revisa primero, con qué evidencia, abriendo qué fuente primaria?</div>
+          </div>
+        </div>
 
-      document.getElementById("nextBtn").addEventListener("click", next);
-      document.getElementById("prevBtn").addEventListener("click", prev);
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0;border-top:.5px solid var(--ink);border-bottom:.5px solid var(--ink);">
+          <div style="padding:14px 22px 14px 0;border-right:.5px solid var(--rule);">
+            <div style="font-family:var(--font-mono);font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);font-weight:600;">Sin sistema</div>
+            <ul style="margin:8px 0 0;padding-left:0;list-style:none;font-family:var(--font-sans);font-size:13px;color:var(--ink-2);line-height:1.55;">
+              <li>— Muestreo aleatorio o reactivo por queja ciudadana.</li>
+              <li>— Sesgo hacia entidades con cobertura mediática.</li>
+              <li>— Trazabilidad débil: <em style="color:var(--ink);font-style:italic;">¿por qué se abrió este caso?</em></li>
+            </ul>
+          </div>
+          <div style="padding:14px 0 14px 22px;">
+            <div style="font-family:var(--font-mono);font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--coral);font-weight:600;">Con ContratIA Abierta</div>
+            <ul style="margin:8px 0 0;padding-left:0;list-style:none;font-family:var(--font-sans);font-size:13px;color:var(--ink-2);line-height:1.55;">
+              <li>— Cola priorizada por <strong>score + confianza visible</strong>.</li>
+              <li>— <strong>Razones explícitas</strong> por proceso, auditables.</li>
+              <li>— Acción humana registrada en <span class="mono" style="color:var(--ink);">human_review</span>.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
 
-      window.addEventListener("keydown", (e) => {
-        if (["ArrowRight", "PageDown", " "].includes(e.key)) { e.preventDefault(); next(); }
-        if (["ArrowLeft", "PageUp", "Backspace"].includes(e.key)) { e.preventDefault(); prev(); }
-        if (e.key === "Home") { e.preventDefault(); show(0); }
-        if (e.key === "End") { e.preventDefault(); show(slides.length - 1); }
-        if (e.key.toLowerCase() === "n") { notesDrawer.classList.toggle("open"); }
-        if (e.key.toLowerCase() === "f") {
-          if (!document.fullscreenElement) document.documentElement.requestFullscreen?.();
-          else document.exitFullscreen?.();
-        }
-      });
+      <div class="ed-foot">
+        <span class="disc"><sup style="color:var(--coral);">★</sup> Estimación orden-de-magnitud SECOP nacional anual. Cifra exacta por confirmar con Colombia Compra Eficiente.</span>
+        <span class="pg">03 / 18</span>
+      </div>
+    </div>
+  </section>
 
-      let touchStartX = 0;
-      document.addEventListener("touchstart", (e) => { touchStartX = e.changedTouches[0].screenX; });
-      document.addEventListener("touchend", (e) => {
-        const dx = e.changedTouches[0].screenX - touchStartX;
-        if (Math.abs(dx) > 50) { dx < 0 ? next() : prev(); }
-      });
+  <!-- ====================== SLIDE 4 — ARQUITECTURA ====================== -->
+  <section data-label="04 Arquitectura">
+    <div class="ed-split">
+      <div class="label-col">
+        <div class="corner-mark">04 / 18</div>
+        <div class="ey-top">Capítulo cuatro</div>
+        <div>
+          <div class="bignum">04</div>
+          <h2>Arquitectura</h2>
+          <p class="it">De Socrata a la cola priorizada, sin caja negra entre capas. Score Engine es el corazón.</p>
+        </div>
+        <div class="foot">stack · python 3.11 · uv · polars<br/>postgres · mongo · fastapi · dash</div>
+      </div>
+      <div class="content-col">
+        <div class="head">
+          <span class="ey">Pipeline end-to-end, reproducible</span>
+          <span class="right-note">artefactos versionados → data/marts/</span>
+        </div>
+        <h3 class="lede">Cinco capas. Una pieza importa más que las otras: el <em>Score Engine</em>.</h3>
 
-      show(idx, false);
-    </script>
-  </body>
+        <div style="flex:1;background:transparent;display:flex;align-items:stretch;gap:18px;min-height:0;">
+          <div style="flex:1;background:var(--surface);border:1px solid var(--rule);border-radius:0;padding:14px;">
+            <svg viewBox="0 0 700 360" width="100%" height="100%" preserveAspectRatio="xMidYMid meet">
+              <defs>
+                <marker id="arr-dim" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+                  <path d="M0,0 L10,5 L0,10 z" fill="#8893A8"/>
+                </marker>
+                <marker id="arr-hot" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+                  <path d="M0,0 L10,5 L0,10 z" fill="#E35A4B"/>
+                </marker>
+              </defs>
+              <style>
+                .nd-dim{fill:#F1F4F9;stroke:#8893A8;stroke-width:1;}
+                .nd-mid{fill:#fff;stroke:#5A6478;stroke-width:1;}
+                .nd-hero{fill:#0B1E33;stroke:#E35A4B;stroke-width:3;}
+                .nd-store{fill:#fff;stroke:#103A5C;stroke-width:1;}
+                .lbl-d{font-family:Inter,sans-serif;font-size:12px;fill:#5A6478;font-weight:600;}
+                .lbl-m{font-family:Inter,sans-serif;font-size:12px;fill:#0B1E33;font-weight:600;}
+                .lbl-h{font-family:Inter,sans-serif;font-size:14px;fill:#fff;font-weight:800;}
+                .sub-d{font-family:'JetBrains Mono',monospace;font-size:9.5px;fill:#8893A8;}
+                .sub-m{font-family:'JetBrains Mono',monospace;font-size:9.5px;fill:#5A6478;}
+                .sub-h{font-family:'JetBrains Mono',monospace;font-size:9.5px;fill:#F5EAD2;}
+                .flow-dim{stroke:#8893A8;stroke-width:1.2;fill:none;marker-end:url(#arr-dim);}
+                .flow-hot{stroke:#E35A4B;stroke-width:2.2;fill:none;marker-end:url(#arr-hot);}
+                .hairline-d{stroke:#E3E8F0;stroke-width:1;}
+              </style>
+
+              <!-- Section divider -->
+              <line class="hairline-d" x1="10" y1="40" x2="690" y2="40"/>
+              <text x="10" y="28" class="sub-d" style="font-size:9.5px;letter-spacing:.18em;text-transform:uppercase;font-weight:600;">flow</text>
+              <text x="690" y="28" class="sub-d" text-anchor="end" style="font-size:9.5px;letter-spacing:.04em;">extract → transform → score → serve</text>
+
+              <!-- Sources -->
+              <rect x="10" y="80" width="110" height="60" class="nd-dim" rx="2"/>
+              <text x="65" y="104" text-anchor="middle" class="lbl-d">Socrata</text>
+              <text x="65" y="120" text-anchor="middle" class="sub-d">SECOP · PAA · AGR</text>
+
+              <rect x="10" y="160" width="110" height="60" class="nd-dim" rx="2"/>
+              <text x="65" y="184" text-anchor="middle" class="lbl-d">Parquet local</text>
+              <text x="65" y="200" text-anchor="middle" class="sub-d">fallback / sample</text>
+
+              <!-- Extract -->
+              <rect x="150" y="120" width="110" height="60" class="nd-mid" rx="2"/>
+              <text x="205" y="144" text-anchor="middle" class="lbl-m">Extract</text>
+              <text x="205" y="160" text-anchor="middle" class="sub-m">polars + manifest</text>
+
+              <!-- Transform -->
+              <rect x="290" y="120" width="110" height="60" class="nd-mid" rx="2"/>
+              <text x="345" y="144" text-anchor="middle" class="lbl-m">Transform</text>
+              <text x="345" y="160" text-anchor="middle" class="sub-m">process_master</text>
+
+              <!-- HERO: Score Engine -->
+              <rect x="430" y="100" width="170" height="100" class="nd-hero" rx="3"/>
+              <text x="515" y="130" text-anchor="middle" class="lbl-h">SCORE ENGINE</text>
+              <text x="515" y="151" text-anchor="middle" class="sub-h">rules · peer · isoforest</text>
+              <text x="515" y="166" text-anchor="middle" class="sub-h">+ confidence</text>
+              <text x="515" y="187" text-anchor="middle" class="sub-h" style="fill:#E35A4B;font-weight:700;letter-spacing:.1em;">↳ EVIDENCIA TRAZABLE</text>
+
+              <!-- Stores -->
+              <rect x="430" y="230" width="80" height="50" class="nd-store" rx="2"/>
+              <text x="470" y="252" text-anchor="middle" class="lbl-m">Postgres</text>
+              <text x="470" y="266" text-anchor="middle" class="sub-m">33 objetos</text>
+
+              <rect x="520" y="230" width="80" height="50" class="nd-store" rx="2"/>
+              <text x="560" y="252" text-anchor="middle" class="lbl-m">Mongo</text>
+              <text x="560" y="266" text-anchor="middle" class="sub-m">5 colecciones</text>
+
+              <!-- Serve -->
+              <rect x="630" y="120" width="60" height="60" class="nd-mid" rx="2"/>
+              <text x="660" y="142" text-anchor="middle" class="lbl-m">FastAPI</text>
+              <text x="660" y="158" text-anchor="middle" class="sub-m">×3</text>
+
+              <rect x="630" y="230" width="60" height="50" class="nd-mid" rx="2"/>
+              <text x="660" y="252" text-anchor="middle" class="lbl-m">Dash</text>
+              <text x="660" y="266" text-anchor="middle" class="sub-m">UI</text>
+
+              <!-- Flows -->
+              <path class="flow-dim" d="M120 110 L150 140"/>
+              <path class="flow-dim" d="M120 190 L150 165"/>
+              <path class="flow-dim" d="M260 150 L290 150"/>
+              <path class="flow-hot" d="M400 150 L430 150"/>
+              <path class="flow-hot" d="M470 200 L470 230"/>
+              <path class="flow-hot" d="M560 200 L560 230"/>
+              <path class="flow-dim" d="M600 150 L630 150"/>
+              <path class="flow-dim" d="M690 180 L690 230"/>
+
+              <!-- bottom labels -->
+              <line class="hairline-d" x1="10" y1="310" x2="690" y2="310"/>
+              <g transform="translate(10,325)">
+                <text class="sub-d" style="font-size:9.5px;">▣ pieza destacada — <tspan style="fill:#E35A4B;font-weight:700;">Score Engine</tspan>: el componente diferenciador del sistema.</text>
+              </g>
+              <g transform="translate(10,345)">
+                <text class="sub-d" style="font-size:9.5px;">▢ resto del pipeline — extract, store, serve. Ingeniería convencional bien hecha.</text>
+              </g>
+            </svg>
+          </div>
+
+          <div style="flex:0 0 130px;border-left:1px solid var(--rule);padding-left:14px;display:flex;flex-direction:column;justify-content:space-between;">
+            <div class="marginalia">
+              <span class="k">stack</span><br/>
+              <b>extract</b><br/>socrata soda<br/>polars + parquet<br/><br/>
+              <b>store</b><br/>postgres 16<br/>mongo 7<br/><br/>
+              <b>compute</b><br/>python 3.11<br/>uv · isoforest<br/><br/>
+              <b>serve</b><br/>fastapi ×3<br/>dash + plotly<br/><br/>
+              <b>orquesta</b><br/>make + docker<br/>compose
+            </div>
+            <div class="marginalia" style="border-top:1px solid var(--rule);padding-top:10px;">
+              <span class="k">repro</span><br/>
+              make product-<br/>pipeline<br/>
+              make validate-<br/>product
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ====================== SLIDE 5 — MODELO DE DATOS ====================== -->
+  <section data-label="05 Modelo de datos">
+    <div class="ed-split" style="grid-template-columns:65% 35%;">
+      <div class="content-col" style="padding:42px 40px 32px 56px;">
+        <div class="head">
+          <span class="ey">Capítulo cinco · modelo relacional</span>
+          <span class="right-note">PK · FK · CHECK · triggers</span>
+        </div>
+        <h3 class="lede">8 tablas centrales. <em>Dos piezas</em> que ningún otro sistema del concurso va a tener:<br/><span style="font-family:var(--font-mono);font-style:normal;font-size:16px;color:var(--coral);font-weight:600;letter-spacing:0;">risk_assessment</span> &nbsp;·&nbsp; <span style="font-family:var(--font-mono);font-style:normal;font-size:16px;color:var(--coral);font-weight:600;letter-spacing:0;">paa_process_match</span></h3>
+
+        <div style="flex:1;background:var(--surface);border:.5px solid var(--rule);padding:8px;min-height:0;">
+          <svg viewBox="0 0 780 380" width="100%" height="100%" preserveAspectRatio="xMidYMid meet">
+            <defs>
+              <marker id="er-end" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#8893A8"/></marker>
+              <marker id="er-end-hot" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#E35A4B"/></marker>
+            </defs>
+
+            <!-- public_entity (dim) -->
+            <g transform="translate(10,30)">
+              <rect class="erd-table dim" width="150" height="64"/>
+              <rect class="erd-head dim" width="150" height="18"/>
+              <text class="erd-nm" x="8" y="13">public_entity</text>
+              <text class="erd-rw dim" x="8" y="32">PK entity_code</text>
+              <text class="erd-rw dim" x="8" y="45">entity_name</text>
+              <text class="erd-rw dim" x="8" y="58">department</text>
+            </g>
+
+            <!-- procurement_process -->
+            <g transform="translate(200,10)">
+              <rect class="erd-table" width="200" height="110"/>
+              <rect class="erd-head" width="200" height="18"/>
+              <text class="erd-nm" x="8" y="13">procurement_process</text>
+              <text class="erd-rw" x="8" y="32">PK process_key</text>
+              <text class="erd-rw" x="8" y="45">id_proceso · reference</text>
+              <text class="erd-rw" x="8" y="58">FK entity_code</text>
+              <text class="erd-rw" x="8" y="71">base_price · modality</text>
+              <text class="erd-rw" x="8" y="84">status · publication_date</text>
+              <text class="erd-rw" x="8" y="97">CHECK base_price ≥ 0</text>
+              <text class="erd-rw" x="8" y="108" style="font-style:italic;fill:#8893A8;">unique(entity, ref)</text>
+            </g>
+
+            <!-- provider (dim) -->
+            <g transform="translate(440,10)">
+              <rect class="erd-table dim" width="140" height="60"/>
+              <rect class="erd-head dim" width="140" height="18"/>
+              <text class="erd-nm" x="8" y="13">provider</text>
+              <text class="erd-rw dim" x="8" y="32">PK provider_nit</text>
+              <text class="erd-rw dim" x="8" y="45">provider_name</text>
+              <text class="erd-rw dim" x="8" y="56">unique(nit)</text>
+            </g>
+
+            <!-- ★ risk_assessment (HOT) -->
+            <g transform="translate(605,10)">
+              <rect class="erd-table hot" width="160" height="100"/>
+              <rect class="erd-head hot" width="160" height="18"/>
+              <text class="erd-nm" x="8" y="13">★ risk_assessment</text>
+              <text class="erd-rw hot" x="8" y="32">PK·FK process_key</text>
+              <text class="erd-rw hot" x="8" y="45">priority_score</text>
+              <text class="erd-rw" x="8" y="58">  CHECK 0..100</text>
+              <text class="erd-rw hot" x="8" y="71">confidence_score</text>
+              <text class="erd-rw" x="8" y="84">  CHECK 0..1</text>
+              <text class="erd-rw" x="8" y="97">computed_at · model_hash</text>
+            </g>
+
+            <!-- paa_item -->
+            <g transform="translate(10,160)">
+              <rect class="erd-table dim" width="150" height="62"/>
+              <rect class="erd-head dim" width="150" height="18"/>
+              <text class="erd-nm" x="8" y="13">paa_item</text>
+              <text class="erd-rw dim" x="8" y="32">PK paa_item_key</text>
+              <text class="erd-rw dim" x="8" y="45">descripcion</text>
+              <text class="erd-rw dim" x="8" y="58">valor_total_esperado</text>
+            </g>
+
+            <!-- ★ paa_process_match (HOT) -->
+            <g transform="translate(200,160)">
+              <rect class="erd-table hot" width="200" height="90"/>
+              <rect class="erd-head hot" width="200" height="18"/>
+              <text class="erd-nm" x="8" y="13">★ paa_process_match</text>
+              <text class="erd-rw hot" x="8" y="32">FK process_key</text>
+              <text class="erd-rw hot" x="8" y="45">FK paa_item_key</text>
+              <text class="erd-rw" x="8" y="58">similarity · confidence</text>
+              <text class="erd-rw" x="8" y="71">match_method</text>
+              <text class="erd-rw" x="8" y="84">  tfidf | embeddings</text>
+            </g>
+
+            <!-- semantic_comparable -->
+            <g transform="translate(440,160)">
+              <rect class="erd-table" width="150" height="62"/>
+              <rect class="erd-head" width="150" height="18"/>
+              <text class="erd-nm" x="8" y="13">semantic_comparable</text>
+              <text class="erd-rw" x="8" y="32">FK process_key</text>
+              <text class="erd-rw" x="8" y="45">FK peer_process_key</text>
+              <text class="erd-rw" x="8" y="58">similarity (TF-IDF)</text>
+            </g>
+
+            <!-- risk_reason -->
+            <g transform="translate(620,160)">
+              <rect class="erd-table" width="140" height="62"/>
+              <rect class="erd-head" width="140" height="18"/>
+              <text class="erd-nm" x="8" y="13">risk_reason</text>
+              <text class="erd-rw" x="8" y="32">FK process_key</text>
+              <text class="erd-rw" x="8" y="45">code · weight</text>
+              <text class="erd-rw" x="8" y="58">human_text</text>
+            </g>
+
+            <!-- audit_log -->
+            <g transform="translate(10,270)">
+              <rect class="erd-table dim" width="150" height="62"/>
+              <rect class="erd-head dim" width="150" height="18"/>
+              <text class="erd-nm" x="8" y="13">audit_log</text>
+              <text class="erd-rw dim" x="8" y="32">FK process_key</text>
+              <text class="erd-rw dim" x="8" y="45">action · actor</text>
+              <text class="erd-rw dim" x="8" y="58">created_at (trigger)</text>
+            </g>
+
+            <!-- human_review -->
+            <g transform="translate(200,270)">
+              <rect class="erd-table dim" width="200" height="60"/>
+              <rect class="erd-head dim" width="200" height="18"/>
+              <text class="erd-nm" x="8" y="13">human_review</text>
+              <text class="erd-rw dim" x="8" y="32">FK process_key · actor</text>
+              <text class="erd-rw dim" x="8" y="45">decision · notes</text>
+              <text class="erd-rw dim" x="8" y="58">reviewed_at</text>
+            </g>
+
+            <!-- Edges -->
+            <path class="erd-edge" d="M160 50 L200 50" marker-end="url(#er-end)"/>
+            <path class="erd-edge" d="M400 40 L440 40" marker-end="url(#er-end)"/>
+            <path class="erd-edge hot" d="M400 60 L605 60" marker-end="url(#er-end-hot)"/>
+            <text class="erd-card" x="500" y="54" style="fill:#E35A4B;">evaluado_por</text>
+            <path class="erd-edge" d="M160 188 L200 188" marker-end="url(#er-end)"/>
+            <path class="erd-edge hot" d="M300 120 L300 160" marker-end="url(#er-end-hot)"/>
+            <text class="erd-card" x="306" y="142" style="fill:#E35A4B;">alineado_con</text>
+            <path class="erd-edge" d="M400 188 L440 188" marker-end="url(#er-end)"/>
+            <path class="erd-edge" d="M400 90 L620 175" marker-end="url(#er-end)"/>
+            <text class="erd-card" x="500" y="122">explicado_por</text>
+            <path class="erd-edge" d="M300 250 L90 270" marker-end="url(#er-end)"/>
+            <text class="erd-card" x="170" y="245">trace</text>
+            <path class="erd-edge" d="M685 110 L300 270" marker-end="url(#er-end)"/>
+            <text class="erd-card" x="450" y="218">revisado_por</text>
+          </svg>
+        </div>
+      </div>
+
+      <div class="label-col" style="background:var(--navy);padding:46px 36px 32px;">
+        <div class="corner-mark">05 / 18</div>
+        <div class="ey-top" style="color:rgba(255,255,255,.65);">Capítulo cinco</div>
+        <div>
+          <div class="bignum">05</div>
+          <h2>Modelo<br/>relacional</h2>
+          <p class="it" style="color:#cfdaec;max-width:280px;">33 objetos públicos en PostgreSQL. <span style="color:var(--coral);font-style:normal;font-weight:600;">★</span> = piezas distintivas del sistema.</p>
+        </div>
+        <div class="marginalia" style="color:rgba(255,255,255,.65);font-size:10px;line-height:1.7;border-top:.5px solid rgba(255,255,255,.18);padding-top:14px;">
+          <span style="color:var(--coral);">garantías</span><br/>
+          score CHECK 0..100<br/>
+          conf CHECK 0..1<br/>
+          process_key UNIQUE<br/>
+          FK ON DELETE RESTRICT<br/>
+          triggers audit_log<br/><br/>
+          <span style="color:var(--coral);">vistas</span><br/>
+          v_ranking_priority<br/>
+          v_provider_concentr<br/>
+          v_paa_execution_gap<br/><br/>
+          <span style="color:var(--coral);">archivo</span><br/>
+          sql/001_schema.sql
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ====================== SLIDE 6 — FUENTES DE DATOS ====================== -->
+  <section data-label="06 Fuentes">
+    <div class="ed-page">
+      <div class="topbar">
+        <span class="ey">Capítulo seis · fuentes oficiales</span>
+        <span class="right">06 / 18 · datos.gov.co</span>
+      </div>
+      <h1 class="ed-title">Cuatro datasets abiertos.<br/><em>Un solo pipeline.</em></h1>
+      <p class="ed-sub">Atribución a la fuente conservada en cada paso. Contexto fiscal visible, nunca etiqueta del modelo.</p>
+
+      <div class="ed-body" style="flex-direction:column;gap:18px;">
+        <div class="ed-sources" style="border-top:.5px solid var(--ink);border-bottom:.5px solid var(--ink);">
+          <div class="item">
+            <div class="ix">01</div>
+            <div class="code">p6dx-8zbt</div>
+            <div class="nm">SECOP II · <em>Procesos de Contratación</em></div>
+            <div class="ds">Fuente canónica de procesos publicados. Alimenta ranking, detalle, features y comparables.</div>
+            <div class="role" style="color:var(--coral);">★ Canónico</div>
+          </div>
+          <div class="item">
+            <div class="ix">02</div>
+            <div class="code">rpmr-utcd</div>
+            <div class="nm">SECOP Integrado</div>
+            <div class="ds">Histórico de contratos cerrados. Baseline de valor adjudicado y enlace de alta confianza.</div>
+            <div class="role">Baseline</div>
+          </div>
+          <div class="item">
+            <div class="ix">03</div>
+            <div class="code">9sue-ezhx</div>
+            <div class="nm">Plan Anual de Adquisiciones</div>
+            <div class="ds">Lo que la entidad planeó comprar. Ancla plan↔ejecución, sujeto a compuerta de confianza.</div>
+            <div class="role">Plan</div>
+          </div>
+          <div class="item">
+            <div class="ix">04</div>
+            <div class="code">wasc-xi4h</div>
+            <div class="nm">Resultados Control Fiscal (AGR)</div>
+            <div class="ds">Contexto fiscal visible. <strong>No</strong> es feature del scoring ni etiqueta de entrenamiento.</div>
+            <div class="role">Contexto</div>
+          </div>
+        </div>
+
+        <div class="ed-hero-grid" style="grid-template-columns:repeat(4,1fr);">
+          <div class="cell">
+            <div class="lbl">Procesos scoreados</div>
+            <div class="num" style="font-size:54px;">90.431</div>
+            <div class="unit">reales · Meta + Casanare</div>
+          </div>
+          <div class="cell">
+            <div class="lbl">PAA items</div>
+            <div class="num" style="font-size:54px;">4.494</div>
+            <div class="unit">candidatos plan↔ejecución</div>
+          </div>
+          <div class="cell">
+            <div class="lbl">Razones explicables</div>
+            <div class="num" style="font-size:54px;"><em>68.916</em></div>
+            <div class="unit">filas en risk_reason</div>
+          </div>
+          <div class="cell">
+            <div class="lbl">Atribución</div>
+            <div class="num" style="font-size:54px;">100<span style="font-size:32px;color:var(--muted);">%</span></div>
+            <div class="unit">datos abiertos oficiales</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="ed-foot">
+        <span class="disc">Contexto fiscal es evidencia visible — no etiqueta del modelo.</span>
+        <span class="pg">06 / 18</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ====================== SLIDE 7 — PIPELINE ====================== -->
+  <section data-label="07 Pipeline">
+    <div class="ed-page">
+      <div class="topbar">
+        <span class="ey">Capítulo siete · pipeline reproducible</span>
+        <span class="right">07 / 18 · data/marts/</span>
+      </div>
+      <h1 class="ed-title">Cinco pasos.<br/><em>Cada uno deja artefacto auditable.</em></h1>
+      <p class="ed-sub">De Socrata a evidencia exportable. <span class="mono" style="color:var(--ink);">data/marts/</span> es el contrato. <span class="mono" style="color:var(--ink);">make validate-product</span> lo verifica.</p>
+
+      <div class="ed-body" style="flex-direction:column;gap:20px;">
+        <div style="border-top:.5px solid var(--ink);padding-top:18px;">
+          <div class="ed-pipe">
+            <div class="step">
+              <div class="num">01</div>
+              <div class="nm">Extracción</div>
+              <div class="ds">Socrata SODA con paginación <span class="mono" style="color:var(--ink);">$limit/$offset</span>. Manifest versionado. Fallback Parquet local.</div>
+            </div>
+            <div class="step">
+              <div class="num">02</div>
+              <div class="nm">Limpieza</div>
+              <div class="ds">Normalización entidad/proveedor. Dedup por <span class="mono" style="color:var(--ink);">process_key</span>. Join audit con fill-rates.</div>
+            </div>
+            <div class="step">
+              <div class="num">03</div>
+              <div class="nm">Matching</div>
+              <div class="ds">TF-IDF + cosine sobre <span class="mono" style="color:var(--ink);">descripcion</span>. Backend <span class="mono" style="color:var(--ink);">MiniLM-L12</span> activable vía env.</div>
+            </div>
+            <div class="step">
+              <div class="num">04</div>
+              <div class="nm">Scoring</div>
+              <div class="ds">Reglas + pares UNSPSC + IsolationForest + componente de confianza explícito.</div>
+            </div>
+            <div class="step">
+              <div class="num">05</div>
+              <div class="nm">Evidencia</div>
+              <div class="ds">risk_assessment, semantic_comparable, paa_process_match, risk_reason · export CSV + HTML.</div>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1.1fr 1fr;gap:0;border-top:.5px solid var(--ink);border-bottom:.5px solid var(--ink);">
+          <div style="padding:14px 22px 14px 0;border-right:.5px solid var(--rule);">
+            <div style="font-family:var(--font-mono);font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--coral);font-weight:600;">comandos reproducibles</div>
+            <div class="codeblock" style="margin-top:8px;font-size:11.5px;line-height:1.65;padding:12px 14px;">
+<span class="c-cm"># ruta lean (sin Docker)</span>
+<span class="c-fn">make</span> <span class="c-id">product-pipeline</span> &amp;&amp; <span class="c-fn">make</span> <span class="c-id">validate-product</span>
+
+<span class="c-cm"># datos abiertos reales (Socrata)</span>
+<span class="c-fn">make</span> <span class="c-id">product-pipeline</span> <span class="c-kw">PRODUCT_SOURCE_MODE</span>=<span class="c-str">download</span>
+
+<span class="c-cm"># stack académico full-stack</span>
+<span class="c-fn">make</span> <span class="c-id">demo-full</span> &amp;&amp; <span class="c-fn">make</span> <span class="c-id">validate-final</span>
+            </div>
+          </div>
+          <div style="padding:14px 0 14px 22px;">
+            <div style="font-family:var(--font-mono);font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--coral);font-weight:600;">artefactos por etapa</div>
+            <dl class="kv" style="margin-top:10px;font-size:12px;">
+              <dt class="mono" style="color:var(--coral);">data/raw/</dt><dd>parquets crudos + manifest</dd>
+              <dt class="mono" style="color:var(--coral);">data/interim/</dt><dd>process_master + join audit</dd>
+              <dt class="mono" style="color:var(--coral);">data/marts/</dt><dd>overview · ranking · detail · comparables</dd>
+              <dt class="mono" style="color:var(--coral);">validation/</dt><dd>product_validation.json · table_counts.csv</dd>
+              <dt class="mono" style="color:var(--coral);">reports/</dt><dd>HTML por proceso (reproducible)</dd>
+            </dl>
+          </div>
+        </div>
+      </div>
+
+      <div class="ed-foot">
+        <span class="disc">Cada paso versionado. Sin pasos manuales no documentados.</span>
+        <span class="pg">07 / 18</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ====================== SLIDE 8 — SCORE FÓRMULA ====================== -->
+  <section data-label="08 Score">
+    <div class="ed-dark">
+      <div class="grid-overlay"></div>
+      <div class="head">
+        <span class="ey">Capítulo ocho · score explicable</span>
+        <span class="right">08 / 18 · contrat-ia · scoring v1</span>
+      </div>
+      <h2 class="lede">Cuatro componentes auditables<br/><em>→ un número entre 0 y 100.</em></h2>
+      <p class="sub-lede">El score es la suma ponderada de señales interpretables, comprimida con una sigmoide. La confianza es visible aparte — nunca se mezcla con el score.</p>
+
+      <div class="formula">
+        <div class="eq">score = <span class="op">round</span>( 100 <span class="op">·</span> <span class="greek">σ</span>( <span class="greek">Σ</span> w<span style="font-size:30px;vertical-align:-2px;">ᵢ</span> <span class="op">·</span> s<span style="font-size:30px;vertical-align:-2px;">ᵢ</span> ) )</div>
+        <div class="weights">pesos: <b>w_rules = 0.45</b> · <b>w_peer = 0.35</b> · <b>w_anomaly = 0.20</b></div>
+        <div class="note">confidence ∈ [0, 1] — visible aparte, nunca sumada al score.</div>
+      </div>
+
+      <div class="comp-row">
+        <div class="comp">
+          <div class="ix">i = 1 · reglas</div>
+          <div class="nm">Heurísticas verificables</div>
+          <div class="ds">Modalidad, unicidad de proveedor, plazos, plan-vs-valor.</div>
+          <div class="wv">w = 0.45</div>
+        </div>
+        <div class="comp">
+          <div class="ix">i = 2 · pares</div>
+          <div class="nm">Desviación contra UNSPSC</div>
+          <div class="ds">Procesos del mismo segmento — mínimo N ≥ 5 pares.</div>
+          <div class="wv">w = 0.35</div>
+        </div>
+        <div class="comp">
+          <div class="ix">i = 3 · anomalía</div>
+          <div class="nm">IsolationForest</div>
+          <div class="ds">Componente estadístico sobre vector de features numéricas.</div>
+          <div class="wv">w = 0.20</div>
+        </div>
+        <div class="comp muted">
+          <div class="ix">métrica aparte</div>
+          <div class="nm">Confianza</div>
+          <div class="ds">Cobertura PAA, valor, modalidad, longitud descripción.</div>
+          <div class="wv">∈ [0,1] · no entra</div>
+        </div>
+      </div>
+
+      <div class="ranges-strip">
+        <div class="tier t1">
+          <div class="v">0–20</div>
+          <div class="lbl">Típico</div>
+          <div class="ds">Sin desviaciones relevantes.</div>
+        </div>
+        <div class="tier t2">
+          <div class="v">21–40</div>
+          <div class="lbl">Leve</div>
+          <div class="ds">Revisar solo con contexto sensible.</div>
+        </div>
+        <div class="tier t3">
+          <div class="v">41–70</div>
+          <div class="lbl">Notable</div>
+          <div class="ds">Revisión recomendada con evidencia.</div>
+        </div>
+        <div class="tier t4">
+          <div class="v">71–100</div>
+          <div class="lbl">Alta prioridad</div>
+          <div class="ds">Multi-señal. Revisar primero.</div>
+        </div>
+      </div>
+
+      <div class="footer-d">
+        <span>prioriza revisión humana — no prueba conductas indebidas</span>
+        <span>scoring/engine.py · scoring/explain.py</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ====================== SLIDE 9 — SQL ====================== -->
+  <section data-label="09 SQL">
+    <div class="ed-page dark">
+      <div class="topbar">
+        <span class="ey">Capítulo nueve · SQL engineering</span>
+        <span class="right">09 / 18 · postgres 16</span>
+      </div>
+      <h1 class="ed-title">No es solo almacenamiento.<br/><em>Triggers, window functions, CTE recursivas, transacciones atómicas.</em></h1>
+      <p class="ed-sub">Integridad, trazabilidad y consultas analíticas reproducibles — ingeniería relacional clásica bien hecha.</p>
+
+      <div class="ed-body" style="gap:24px;">
+        <div style="flex:0 0 32%;display:flex;flex-direction:column;gap:0;border-top:.5px solid rgba(255,255,255,.18);border-bottom:.5px solid rgba(255,255,255,.18);">
+          <div style="padding:12px 0;border-bottom:.5px solid rgba(255,255,255,.1);">
+            <div style="font-family:var(--font-mono);font-size:10px;letter-spacing:.16em;color:var(--coral);text-transform:uppercase;font-weight:600;">i · triggers</div>
+            <div style="font-family:var(--font-display);font-size:18px;color:#fff;margin-top:4px;font-weight:700;letter-spacing:-.01em;">audit_log automático</div>
+            <div style="font-family:var(--font-sans);font-size:11.5px;color:rgba(221,229,240,.7);margin-top:4px;line-height:1.45;">process_state_history, updated_at en tablas mutables.</div>
+          </div>
+          <div style="padding:12px 0;border-bottom:.5px solid rgba(255,255,255,.1);">
+            <div style="font-family:var(--font-mono);font-size:10px;letter-spacing:.16em;color:var(--coral);text-transform:uppercase;font-weight:600;">ii · window functions</div>
+            <div style="font-family:var(--font-display);font-size:18px;color:#fff;margin-top:4px;font-weight:700;letter-spacing:-.01em;">Concentración + outliers</div>
+            <div style="font-family:var(--font-sans);font-size:11.5px;color:rgba(221,229,240,.7);margin-top:4px;line-height:1.45;">PARTITION BY entidad/proveedor. Outliers por UNSPSC.</div>
+          </div>
+          <div style="padding:12px 0;border-bottom:.5px solid rgba(255,255,255,.1);">
+            <div style="font-family:var(--font-mono);font-size:10px;letter-spacing:.16em;color:var(--coral);text-transform:uppercase;font-weight:600;">iii · CTE recursiva</div>
+            <div style="font-family:var(--font-display);font-size:18px;color:#fff;margin-top:4px;font-weight:700;letter-spacing:-.01em;">Jerarquía territorial</div>
+            <div style="font-family:var(--font-sans);font-size:11.5px;color:rgba(221,229,240,.7);margin-top:4px;line-height:1.45;">departamento → municipio → entidad.</div>
+          </div>
+          <div style="padding:12px 0;">
+            <div style="font-family:var(--font-mono);font-size:10px;letter-spacing:.16em;color:var(--coral);text-transform:uppercase;font-weight:600;">iv · transacciones</div>
+            <div style="font-family:var(--font-display);font-size:18px;color:#fff;margin-top:4px;font-weight:700;letter-spacing:-.01em;">Atómicas score + auditoría</div>
+            <div style="font-family:var(--font-sans);font-size:11.5px;color:rgba(221,229,240,.7);margin-top:4px;line-height:1.45;">Score y evento auditoría en una sola TX.</div>
+          </div>
+        </div>
+
+        <div style="flex:1;display:flex;flex-direction:column;min-width:0;">
+          <div style="font-family:var(--font-mono);font-size:10.5px;letter-spacing:.14em;color:var(--coral);text-transform:uppercase;font-weight:600;margin-bottom:10px;">ejemplo 1 · window function — concentración proveedor por entidad</div>
+          <div class="codeblock" style="flex:1;font-size:12.5px;line-height:1.6;background:rgba(0,0,0,.25);padding:16px 18px;border:.5px solid rgba(255,255,255,.1);">
+<span class="c-cm">-- Top-5 proveedores por entidad + share del total adjudicado.</span>
+<span class="c-kw">WITH</span> <span class="c-id">base</span> <span class="c-kw">AS</span> (
+  <span class="c-kw">SELECT</span>
+    e.entity_name,
+    p.provider_name,
+    <span class="c-fn">SUM</span>(c.awarded_value) <span class="c-kw">AS</span> awarded
+  <span class="c-kw">FROM</span> contract c
+  <span class="c-kw">JOIN</span> public_entity e <span class="c-kw">USING</span> (entity_code)
+  <span class="c-kw">JOIN</span> provider     p <span class="c-kw">ON</span> p.nit = c.provider_nit
+  <span class="c-kw">GROUP BY</span> e.entity_name, p.provider_name
+)
+<span class="c-kw">SELECT</span>
+  entity_name,
+  provider_name,
+  awarded,
+  awarded / <span class="c-fn">SUM</span>(awarded) <span class="c-kw">OVER</span> (<span class="c-kw">PARTITION BY</span> entity_name)         <span class="c-kw">AS</span> share,
+  <span class="c-fn">RANK</span>() <span class="c-kw">OVER</span> (<span class="c-kw">PARTITION BY</span> entity_name <span class="c-kw">ORDER BY</span> awarded <span class="c-kw">DESC</span>) <span class="c-kw">AS</span> rk
+<span class="c-kw">FROM</span> base
+<span class="c-kw">WHERE</span> rk <span class="c-kw">&lt;=</span> <span class="c-num">5</span>;
+          </div>
+        </div>
+
+        <div style="flex:1;display:flex;flex-direction:column;min-width:0;margin-top:18px;">
+          <div style="font-family:var(--font-mono);font-size:10.5px;letter-spacing:.14em;color:var(--coral);text-transform:uppercase;font-weight:600;margin-bottom:10px;">ejemplo 2 · trigger + transacción atómica — scoring con auditoría</div>
+          <div class="codeblock" style="flex:1;font-size:12.5px;line-height:1.6;background:rgba(0,0,0,.25);padding:16px 18px;border:.5px solid rgba(255,255,255,.1);">
+<span class="c-cm">-- Transacción atómica: score + evento de auditoría en una sola TX.</span>
+<span class="c-kw">BEGIN</span>;
+
+<span class="c-kw">INSERT INTO</span> <span class="c-id">risk_assessment</span> (
+  process_key, priority_score, confidence_score,
+  anomaly_score, peer_deviation_score, rule_score,
+  explanation, model_version
+) <span class="c-kw">VALUES</span> (
+  <span class="c-str">'CO1.REQ.9932456'</span>, <span class="c-num">75.0</span>, <span class="c-num">0.82</span>,
+  <span class="c-num">0.20</span>, <span class="c-num">0.35</span>, <span class="c-num">0.45</span>,
+  <span class="c-str">'Valor 3.2x sobre mediana de pares'</span>,
+  <span class="c-str">'v3-2026-05'</span>
+);
+
+<span class="c-cm">-- Trigger genera audit_log automáticamente</span>
+<span class="c-cm">-- via write_audit_log() AFTER INSERT OR UPDATE</span>
+
+<span class="c-kw">COMMIT</span>;
+          </div>
+        </div>
+      </div>
+
+      <div class="ed-foot">
+        <span class="disc">sql/001_schema.sql · sql/003_views.sql · db/migrations/</span>
+        <span class="pg">09 / 18</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ====================== SLIDE 10 — MICROSERVICIOS ====================== -->
+  <section data-label="10 Microservicios">
+    <div class="ed-page">
+      <div class="topbar">
+        <span class="ey">Capítulo diez · microservicios FastAPI</span>
+        <span class="right">10 / 18 · docker compose</span>
+      </div>
+      <h1 class="ed-title">Tres servicios, <em>tres dominios</em>.<br/>Healthchecks vivos exigidos por <span style="font-family:var(--font-mono);font-style:normal;font-size:30px;font-weight:600;color:var(--coral);letter-spacing:0;">validate-final</span>.</h1>
+      <p class="ed-sub">Si Docker no está activo, la ruta lean (Parquet + DuckDB) sigue funcionando end-to-end.</p>
+
+      <div class="ed-body" style="flex-direction:column;gap:20px;">
+        <div class="ed-svc">
+          <div class="row">
+            <div class="ix">01</div>
+            <div class="nm">contracts_service</div>
+            <div class="port">:8001</div>
+            <div class="resp">Procesos, ranking y revisión humana. <em>POST /reviews</em> persiste decisión + actor en <span class="mono" style="color:var(--ink);font-style:normal;">human_review</span>.</div>
+            <div class="health">● 200 OK</div>
+          </div>
+          <div class="row">
+            <div class="ix">02</div>
+            <div class="nm">risk_service</div>
+            <div class="port">:8002</div>
+            <div class="resp">Scoring on-demand, recomputes, evidencia de <em>comparables</em> y <em>razones</em> por proceso.</div>
+            <div class="health">● 200 OK</div>
+          </div>
+          <div class="row">
+            <div class="ix">03</div>
+            <div class="nm">analytics_service</div>
+            <div class="port">:8003</div>
+            <div class="resp">Concentración entidad/proveedor, plan-vs-execution, agregados por departamento.</div>
+            <div class="health">● 200 OK</div>
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1.2fr 1fr;gap:0;border-top:.5px solid var(--ink);border-bottom:.5px solid var(--ink);">
+          <div style="padding:14px 22px 14px 0;border-right:.5px solid var(--rule);">
+            <div style="font-family:var(--font-mono);font-size:10.5px;letter-spacing:.14em;color:var(--coral);text-transform:uppercase;font-weight:600;">arranque académico</div>
+            <div class="codeblock" style="margin-top:10px;font-size:11.5px;line-height:1.6;padding:12px 14px;">
+<span class="c-fn">make</span> <span class="c-id">academic-db-up</span>     <span class="c-cm"># PG + Mongo</span>
+<span class="c-fn">make</span> <span class="c-id">academic-services-up</span> <span class="c-cm"># 3 APIs</span>
+<span class="c-fn">make</span> <span class="c-id">validate-final</span>     <span class="c-cm"># exige health 200</span>
+            </div>
+          </div>
+          <div style="padding:14px 0 14px 22px;">
+            <div style="font-family:var(--font-mono);font-size:10.5px;letter-spacing:.14em;color:var(--coral);text-transform:uppercase;font-weight:600;">contratos cumplidos</div>
+            <ul style="margin:8px 0 0;padding:0;list-style:none;font-family:var(--font-sans);font-size:12.5px;color:var(--ink-2);line-height:1.6;">
+              <li>— Aislamiento por dominio (sin acoplar contracts a risk).</li>
+              <li>— <span class="mono" style="color:var(--ink);">POST /reviews</span> idempotente, persistente, auditable.</li>
+              <li>— Healthchecks exigidos en CI — no es teatro.</li>
+              <li>— Ruta lean sin Docker sigue funcionando end-to-end.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="ed-foot">
+        <span class="disc">services/contracts · services/risk · services/analytics</span>
+        <span class="pg">10 / 18</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ====================== SLIDE 11 — MONGODB ====================== -->
+  <section data-label="11 MongoDB">
+    <div class="ed-page dark">
+      <div class="topbar">
+        <span class="ey">Capítulo once · almacenamiento documental</span>
+        <span class="right">11 / 18 · mongo 7</span>
+      </div>
+      <h1 class="ed-title">PostgreSQL para <em>estructura</em>.<br/>MongoDB para <em>flexibilidad</em>.</h1>
+      <p class="ed-sub">Las colecciones documentales almacenan logs de ETL, contexto de proyecto, eventos de riesgo y acciones de usuario — datos semi-estructurados que evolucionan sin migración de schema.</p>
+
+      <div class="ed-body" style="gap:24px;">
+        <div style="flex:0 0 32%;display:flex;flex-direction:column;gap:0;border-top:.5px solid rgba(255,255,255,.18);border-bottom:.5px solid rgba(255,255,255,.18);">
+          <div style="padding:12px 0;border-bottom:.5px solid rgba(255,255,255,.1);">
+            <div style="font-family:var(--font-mono);font-size:10px;letter-spacing:.16em;color:var(--coral);text-transform:uppercase;font-weight:600;">i · project_context</div>
+            <div style="font-family:var(--display);font-size:18px;color:#fff;margin-top:4px;font-weight:700;letter-spacing:-.01em;">Contexto del proyecto</div>
+            <div style="font-family:var(--font-sans);font-size:11.5px;color:rgba(221,229,240,.7);margin-top:4px;line-height:1.45;">Secciones editables de "Qué es", "Problema", "Metodología" para el dashboard.</div>
+          </div>
+          <div style="padding:12px 0;border-bottom:.5px solid rgba(255,255,255,.1);">
+            <div style="font-family:var(--font-mono);font-size:10px;letter-spacing:.16em;color:var(--coral);text-transform:uppercase;font-weight:600;">ii · etl_logs</div>
+            <div style="font-family:var(--display);font-size:18px;color:#fff;margin-top:4px;font-weight:700;letter-spacing:-.01em;">Logs de pipeline</div>
+            <div style="font-family:var(--font-sans);font-size:11.5px;color:rgba(221,229,240,.7);margin-top:4px;line-height:1.45;">Timestamp, dataset, filas extraídas, errores, duración. Trazabilidad completa.</div>
+          </div>
+          <div style="padding:12px 0;border-bottom:.5px solid rgba(255,255,255,.1);">
+            <div style="font-family:var(--font-mono);font-size:10px;letter-spacing:.16em;color:var(--coral);text-transform:uppercase;font-weight:600;">iii · risk_events</div>
+            <div style="font-family:var(--display);font-size:18px;color:#fff;margin-top:4px;font-weight:700;letter-spacing:-.01em;">Eventos de scoring</div>
+            <div style="font-family:var(--font-sans);font-size:11.5px;color:rgba(221,229,240,.7);margin-top:4px;line-height:1.45;">Cambios de score, recomputes, decisiones humanas. Serie temporal por proceso.</div>
+          </div>
+          <div style="padding:12px 0;">
+            <div style="font-family:var(--font-mono);font-size:10px;letter-spacing:.16em;color:var(--coral);text-transform:uppercase;font-weight:600;">iv · user_actions</div>
+            <div style="font-family:var(--display);font-size:18px;color:#fff;margin-top:4px;font-weight:700;letter-spacing:-.01em;">Telemetría de uso</div>
+            <div style="font-family:var(--font-sans);font-size:11.5px;color:rgba(221,229,240,.7);margin-top:4px;line-height:1.45;">Clicks, filtros, descargas. Para encuesta de usabilidad y mejora de UX.</div>
+          </div>
+        </div>
+
+        <div style="flex:1;display:flex;flex-direction:column;min-width:0;">
+          <div style="font-family:var(--font-mono);font-size:10.5px;letter-spacing:.14em;color:var(--coral);text-transform:uppercase;font-weight:600;margin-bottom:10px;">ejemplo · documento de evento de scoring</div>
+          <div class="codeblock" style="flex:1;font-size:12.5px;line-height:1.6;background:rgba(0,0,0,.25);padding:16px 18px;border:.5px solid rgba(255,255,255,.1);">
+{
+  <span class="c-id">"event_type"</span>: <span class="c-str">"score_recomputed"</span>,
+  <span class="c-id">"process_id"</span>: <span class="c-str">"CO1.REQ.9932456"</span>,
+  <span class="c-id">"timestamp"</span>: <span class="c-str">"2026-05-27T14:32:11Z"</span>,
+  <span class="c-id">"scores"</span>: {
+    <span class="c-id">"priority"</span>: <span class="c-num">75.0</span>,
+    <span class="c-id">"confidence"</span>: <span class="c-num">0.82</span>,
+    <span class="c-id">"components"</span>: {
+      <span class="c-id">"rules"</span>: <span class="c-num">0.45</span>,
+      <span class="c-id">"peer"</span>: <span class="c-num">0.35</span>,
+      <span class="c-id">"anomaly"</span>: <span class="c-num">0.20</span>
+    }
+  },
+  <span class="c-id">"reasons"</span>: [
+    <span class="c-str">"Valor 3.2x sobre mediana de pares"</span>,
+    <span class="c-str">"Proveedor único en ventana 90 días"</span>
+  ],
+  <span class="c-id">"model_version"</span>: <span class="c-str">"v3-2026-05"</span>,
+  <span class="c-id">"actor"</span>: <span class="c-str">"risk_service"</span>
+}
+          </div>
+
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:0;border-top:.5px solid rgba(255,255,255,.18);margin-top:14px;padding-top:12px;">
+            <div style="padding-right:16px;border-right:.5px solid rgba(255,255,255,.1);">
+              <div style="font-family:var(--font-mono);font-size:10px;letter-spacing:.14em;color:var(--sand);text-transform:uppercase;font-weight:600;">por qué mongodb</div>
+              <ul style="margin:8px 0 0;padding:0;list-style:none;font-family:var(--font-sans);font-size:12px;color:rgba(221,229,240,.7);line-height:1.55;">
+                <li>— Schema flexible para logs sin migraciones.</li>
+                <li>— Arrays anidados nativos (razones, comparables).</li>
+                <li>— Series temporales eficientes con TTL.</li>
+                <li>— Replica set para tolerancia a fallos.</li>
+              </ul>
+            </div>
+            <div style="padding-left:16px;">
+              <div style="font-family:var(--font-mono);font-size:10px;letter-spacing:.14em;color:var(--sand);text-transform:uppercase;font-weight:600;">dual storage</div>
+              <ul style="margin:8px 0 0;padding:0;list-style:none;font-family:var(--font-sans);font-size:12px;color:rgba(221,229,240,.7);line-height:1.55;">
+                <li>— <strong>Postgres</strong>: datos transaccionales, relaciones, ACID.</li>
+                <li>— <strong>MongoDB</strong>: eventos, logs, contexto, telemetría.</li>
+                <li>— <span class="mono" style="color:var(--sand);">services/</span> leen de ambos según dominio.</li>
+              </ul>
+            </div>
+          </div>
+
+          <!-- Tabla comparativa PostgreSQL vs MongoDB -->
+          <div style="margin-top:18px;border-top:.5px solid rgba(255,255,255,.18);padding-top:14px;">
+            <div style="font-family:var(--font-mono);font-size:10px;letter-spacing:.14em;color:var(--coral);text-transform:uppercase;font-weight:600;margin-bottom:10px;">comparativa · cuándo usar cada uno</div>
+            <table style="width:100%;border-collapse:collapse;font-size:11.5px;font-family:var(--font-sans);">
+              <thead>
+                <tr style="border-bottom:1px solid rgba(255,255,255,.15);">
+                  <th style="text-align:left;padding:6px 8px;color:var(--sand);font-weight:600;font-family:var(--font-mono);font-size:10px;">Criterio</th>
+                  <th style="text-align:left;padding:6px 8px;color:var(--sand);font-weight:600;font-family:var(--font-mono);font-size:10px;">PostgreSQL 16</th>
+                  <th style="text-align:left;padding:6px 8px;color:var(--sand);font-weight:600;font-family:var(--font-mono);font-size:10px;">MongoDB 7</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr style="border-bottom:1px solid rgba(255,255,255,.08);">
+                  <td style="padding:5px 8px;color:rgba(221,229,240,.7);">Modelo</td>
+                  <td style="padding:5px 8px;color:rgba(221,229,240,.7);">Relacional (tablas, filas)</td>
+                  <td style="padding:5px 8px;color:rgba(221,229,240,.7);">Documental (JSON/BSON)</td>
+                </tr>
+                <tr style="border-bottom:1px solid rgba(255,255,255,.08);">
+                  <td style="padding:5px 8px;color:rgba(221,229,240,.7);">Schema</td>
+                  <td style="padding:5px 8px;color:rgba(221,229,240,.7);">Rígido (ALTER TABLE)</td>
+                  <td style="padding:5px 8px;color:rgba(221,229,240,.7);">Flexible (sin migración)</td>
+                </tr>
+                <tr style="border-bottom:1px solid rgba(255,255,255,.08);">
+                  <td style="padding:5px 8px;color:rgba(221,229,240,.7);">Transacciones</td>
+                  <td style="padding:5px 8px;color:rgba(221,229,240,.7);">ACID completo</td>
+                  <td style="padding:5px 8px;color:rgba(221,229,240,.7);">Multi-doc desde 4.0</td>
+                </tr>
+                <tr style="border-bottom:1px solid rgba(255,255,255,.08);">
+                  <td style="padding:5px 8px;color:rgba(221,229,240,.7);">Joins</td>
+                  <td style="padding:5px 8px;color:rgba(221,229,240,.7);">Nativos (JOIN, FK)</td>
+                  <td style="padding:5px 8px;color:rgba(221,229,240,.7);">$lookup (limitado)</td>
+                </tr>
+                <tr style="border-bottom:1px solid rgba(255,255,255,.08);">
+                  <td style="padding:5px 8px;color:rgba(221,229,240,.7);">Uso en ContratIA</td>
+                  <td style="padding:5px 8px;color:rgba(221,229,240,.7);">33 objetos · procesos, scoring, auditoría</td>
+                  <td style="padding:5px 8px;color:rgba(221,229,240,.7);">5 colecciones · logs, eventos, telemetría</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div class="ed-foot">
+        <span class="disc">mongo/ · docker-compose.yml · 5 colecciones con documentos validados</span>
+        <span class="pg">11 / 18</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ====================== SLIDE 12 — EVIDENCIA ====================== -->
+  <section data-label="12 Evidencia">
+    <div class="ed-page">
+      <div class="topbar">
+        <span class="ey">Capítulo doce · evidencia de ingeniería</span>
+        <span class="right">12 / 18 · snapshot 2026-05-27</span>
+      </div>
+      <h1 class="ed-title">Números duros,<br/><em>no afirmaciones.</em></h1>
+      <p class="ed-sub">Salida de <span class="mono" style="color:var(--ink);">make validate-final</span>. Cada cifra reproducible desde el repositorio en menos de cinco minutos.</p>
+
+      <div class="ed-body" style="gap:24px;">
+        <div class="ed-evid" style="flex:1;border-top:.5px solid var(--ink);border-bottom:.5px solid var(--ink);">
+          <div class="cell">
+            <div class="lbl">Procesos scoreados</div>
+            <div class="num">90.431</div>
+            <div class="hint">reales · Meta + Casanare</div>
+          </div>
+          <div class="cell">
+            <div class="lbl">Objetos PostgreSQL</div>
+            <div class="num">33</div>
+            <div class="hint">tablas + vistas + materialized</div>
+          </div>
+          <div class="cell">
+            <div class="lbl">Colecciones Mongo</div>
+            <div class="num">5<span style="color:var(--muted);">/5</span></div>
+            <div class="hint">todas con documentos</div>
+          </div>
+          <div class="cell">
+            <div class="lbl">Servicios FastAPI</div>
+            <div class="num">3 <em>· 200</em></div>
+            <div class="hint">healthcheck OK en las tres APIs</div>
+          </div>
+          <div class="cell">
+            <div class="lbl">Tests pytest</div>
+            <div class="num">71</div>
+            <div class="hint">0 fallos · 2 warnings</div>
+          </div>
+          <div class="cell">
+            <div class="lbl">Documentos técnicos</div>
+            <div class="num">21<span style="font-size:38px;color:var(--muted);">+</span></div>
+            <div class="hint">model-card · ethics-note · data cards</div>
+          </div>
+        </div>
+
+        <div class="marg-col" style="flex:0 0 200px;border-left:.5px solid var(--rule);padding-left:18px;margin-left:0;">
+          <div style="font-family:var(--font-mono);font-size:10.5px;letter-spacing:.14em;color:var(--coral);text-transform:uppercase;font-weight:600;">validaciones cubiertas</div>
+          <ul style="margin:10px 0 0;padding:0;list-style:none;font-family:var(--font-sans);font-size:11.5px;color:var(--ink-2);line-height:1.55;display:flex;flex-direction:column;gap:6px;">
+            <li><span class="mono" style="color:var(--teal);font-weight:700;">✓</span> &nbsp;Schema integrity PK/FK/CHECK</li>
+            <li><span class="mono" style="color:var(--teal);font-weight:700;">✓</span> &nbsp;Join audit fill rates</li>
+            <li><span class="mono" style="color:var(--teal);font-weight:700;">✓</span> &nbsp;Compuerta PAA ≥ 0.75</li>
+            <li><span class="mono" style="color:var(--teal);font-weight:700;">✓</span> &nbsp;process_key UNIQUE NOT NULL</li>
+            <li><span class="mono" style="color:var(--teal);font-weight:700;">✓</span> &nbsp;Scoring bounds 0..100 / 0..1</li>
+            <li><span class="mono" style="color:var(--teal);font-weight:700;">✓</span> &nbsp;Reporte HTML reproducible</li>
+            <li><span class="mono" style="color:var(--teal);font-weight:700;">✓</span> &nbsp;ruff lint estable</li>
+            <li><span class="mono" style="color:var(--teal);font-weight:700;">✓</span> &nbsp;Lenguaje prohibido: 0</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="ed-foot">
+        <span class="disc">validation/final_validation.json · testing_evidence.md · ruff check ok</span>
+        <span class="pg">12 / 18</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ====================== SLIDE 13 — DASHBOARD EN ACCIÓN ====================== -->
+  <section data-label="13 Dashboard">
+    <div class="ed-page">
+      <div class="topbar">
+        <span class="ey">Capítulo trece · interfaz de tres zonas</span>
+        <span class="right">13 / 18 · dash + plotly</span>
+      </div>
+      <h1 class="ed-title">DECIDIR · ENTENDER · <em>CONFIAR</em>.<br/>Un dashboard que no acusa; prioriza.</h1>
+      <p class="ed-sub">Filtro territorial global, score como percentil nacional, y contexto fiscal AGR integrado. Cada zona responde a una pregunta diferente del revisor.</p>
+
+      <div class="ed-body" style="flex-direction:column;gap:18px;">
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:0;border-top:.5px solid var(--ink);border-bottom:.5px solid var(--ink);">
+          <div style="padding:16px 18px;border-right:.5px solid var(--rule);">
+            <div style="font-family:var(--font-mono);font-size:10.5px;letter-spacing:.18em;color:var(--coral);text-transform:uppercase;font-weight:600;">zona 1 · decidir</div>
+            <div style="font-family:var(--font-display);font-size:22px;color:var(--ink);margin-top:8px;font-weight:700;letter-spacing:-.012em;line-height:1.15;">KPIs + Cola de revisión</div>
+            <ul style="margin:10px 0 0;padding:0;list-style:none;font-family:var(--font-sans);font-size:12.5px;color:var(--ink-2);line-height:1.55;">
+              <li>— Procesos, entidades, % alta prioridad filtrado por departamento.</li>
+              <li>— Top 20 con score como <strong>percentil</strong> ("top 0.5%").</li>
+              <li>— Ranking completo con filtros y export CSV.</li>
+            </ul>
+          </div>
+          <div style="padding:16px 18px;border-right:.5px solid var(--rule);">
+            <div style="font-family:var(--font-mono);font-size:10.5px;letter-spacing:.18em;color:var(--coral);text-transform:uppercase;font-weight:600;">zona 2 · entender</div>
+            <div style="font-family:var(--font-display);font-size:22px;color:var(--ink);margin-top:8px;font-weight:700;letter-spacing:-.012em;line-height:1.15;">Ficha del proceso</div>
+            <ul style="margin:10px 0 0;padding:0;list-style:none;font-family:var(--font-sans);font-size:12.5px;color:var(--ink-2);line-height:1.55;">
+              <li>— Score desglosado en 3 componentes + posición nacional.</li>
+              <li>— Contexto fiscal AGR de la entidad (hallazgos históricos).</li>
+              <li>— Concentración proveedor-entidad como contexto, no acusación.</li>
+            </ul>
+          </div>
+          <div style="padding:16px 18px;">
+            <div style="font-family:var(--font-mono);font-size:10.5px;letter-spacing:.18em;color:var(--coral);text-transform:uppercase;font-weight:600;">zona 3 · confiar</div>
+            <div style="font-family:var(--font-display);font-size:22px;color:var(--ink);margin-top:8px;font-weight:700;letter-spacing:-.012em;line-height:1.15;">Validación + Metodología</div>
+            <ul style="margin:10px 0 0;padding:0;list-style:none;font-family:var(--font-sans);font-size:12.5px;color:var(--ink-2);line-height:1.55;">
+              <li>— Enriquecimiento AGR: ¿el score coincide con control fiscal?</li>
+              <li>— Histograma de distribución (forma de triage).</li>
+              <li>— Metodología, calidad de datos, límites honestos.</li>
+            </ul>
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1.2fr 1fr;gap:0;border-bottom:.5px solid var(--ink);padding-bottom:18px;">
+          <div style="padding:14px 22px 14px 0;border-right:.5px solid var(--rule);">
+            <div style="font-family:var(--font-mono);font-size:10.5px;letter-spacing:.14em;color:var(--coral);text-transform:uppercase;font-weight:600;">diseño de interacción</div>
+            <ul style="margin:10px 0 0;padding:0;list-style:none;font-family:var(--font-sans);font-size:12.5px;color:var(--ink-2);line-height:1.55;">
+              <li>— <strong>Filtro territorial global</strong> (dropdown sticky) persiste entre zonas vía <span class="mono" style="color:var(--ink);">dcc.Store</span>.</li>
+              <li>— Score como <strong>percentil</strong> calculado con <span class="mono" style="color:var(--ink);">percent_rank()</span> en PostgreSQL, no en cliente.</li>
+              <li>— Color coding: teal (típico) → navy (leve) → amber (notable) → coral (alta prioridad).</li>
+              <li>— Disclaimer ético persistente en cada zona.</li>
+            </ul>
+          </div>
+          <div style="padding:14px 0 14px 22px;">
+            <div style="font-family:var(--font-mono);font-size:10.5px;letter-spacing:.14em;color:var(--coral);text-transform:uppercase;font-weight:600;">stack frontend</div>
+            <div class="codeblock" style="margin-top:8px;font-size:11.5px;line-height:1.6;padding:12px 14px;">
+<span class="c-cm"># dependencias del dashboard</span>
+<span class="c-kw">dash</span> <span class="c-id">>= 2.18</span>      <span class="c-cm"># framework UI</span>
+<span class="c-kw">plotly</span> <span class="c-id">>= 6.0</span>     <span class="c-cm"># gráficos interactivos</span>
+<span class="c-kw">pandas</span> <span class="c-id">>= 2.2</span>     <span class="c-cm"># manipulación de datos</span>
+<span class="c-kw">httpx</span> <span class="c-id">>= 0.28</span>    <span class="c-cm"># cliente API a microservicios</span>
+<span class="c-kw">pymongo</span> <span class="c-id">>= 4.10</span>  <span class="c-cm"># lectura de contexto proyectual</span>
+            </div>
+          </div>
+        </div>
+
+        <div style="font-family:var(--font-sans);font-size:12px;color:var(--muted);line-height:1.5;text-align:center;">
+          Screenshots del dashboard disponibles en <span class="mono" style="color:var(--ink);">dashboard/assets/screenshots/</span> · Navegación: Proyecto | DECIDIR | ENTENDER | CONFIAR
+        </div>
+      </div>
+
+      <div class="ed-foot">
+        <span class="disc">dashboard/dash_app.py · 3 zonas · filtro territorial · score como percentil</span>
+        <span class="pg">13 / 18</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ====================== SLIDE 14 — CASEBOOK ====================== -->
+  <section data-label="14 Caso real">
+    <div class="ed-page">
+      <div class="topbar">
+        <span class="ey">Capítulo catorce · caso real · prueba retrospectiva ciega</span>
+        <span class="right">14 / 19 · puerto gaitán</span>
+      </div>
+      <h1 class="ed-title">El sistema prioriza donde la Contraloría <em>ya halló señal</em>.<br/><span style="font-size:24px;color:var(--muted);font-style:italic;font-weight:400;">Puerto Gaitán: irregularidades públicas vigentes vs nuestro score — sin entrenar contra esa etiqueta.</span></h1>
+
+      <div class="ed-body" style="gap:24px;padding-top:8px;">
+        <div style="flex:1;display:flex;flex-direction:column;gap:16px;">
+          <div class="card left-bar coral">
+            <div class="label" style="color:var(--coral);">Registro público · Contraloría / Procuraduría</div>
+            <div style="font-size:13px;color:var(--ink-2);margin-top:8px;line-height:1.55;">Irregularidades <strong>vigentes</strong> en Puerto Gaitán: contratos de agua/acueducto (hallazgo <strong>&gt; $14.700 millones</strong>), sistemas fotovoltaicos (<strong>$8.901 millones</strong>, 2025) y manejo de regalías.</div>
+          </div>
+          <div class="card left-bar teal">
+            <div class="label" style="color:var(--teal);">Nuestro sistema · a ciegas</div>
+            <div style="font-size:13px;color:var(--ink-2);margin-top:8px;line-height:1.55;">Marca Puerto Gaitán <strong>3.1× sobre la tasa nacional</strong>. Su proceso top priorizado es una <strong>construcción de acueducto de $42.408 millones</strong> (score 87) — misma entidad y categoría que señaló la Contraloría.</div>
+          </div>
+        </div>
+
+        <div style="flex:0 0 44%;display:flex;flex-direction:column;gap:14px;">
+          <div class="card" style="text-align:center;padding:18px;">
+            <div class="label">Puerto Gaitán vs tasa nacional de alta prioridad</div>
+            <div class="value serif" style="font-size:72px;color:var(--coral);">3.1×</div>
+          </div>
+          <div>
+            <div style="font-family:var(--font-mono);font-size:10px;letter-spacing:.16em;color:var(--navy);text-transform:uppercase;font-weight:600;margin-bottom:8px;">El contraejemplo que da credibilidad</div>
+            <table class="ed-t" style="width:100%;">
+              <tbody>
+                <tr><td>Municipio de Puerto Gaitán</td><td class="num" style="text-align:right;color:var(--coral);font-weight:700;">3.1×</td></tr>
+                <tr><td>Departamento del Meta</td><td class="num" style="text-align:right;color:var(--coral);font-weight:700;">2.9×</td></tr>
+                <tr><td>Gobernación de Casanare</td><td class="num" style="text-align:right;color:var(--muted);font-weight:700;">1.0× (promedio)</td></tr>
+                <tr><td>Alcaldía de Villavicencio</td><td class="num" style="text-align:right;color:var(--muted);font-weight:700;">0.7× (debajo)</td></tr>
+              </tbody>
+            </table>
+            <div style="font-size:11px;color:var(--muted);font-style:italic;margin-top:8px;line-height:1.45;">Casanare (escándalos de hace 10+ años) puntúa en el promedio: el sistema detecta estructura del proceso actual, no reputación histórica. No es una lista negra.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="ed-foot">
+        <span class="disc">Auditoría AGR ≠ conducta indebida probada. Corroboración retrospectiva a nivel entidad + categoría.</span>
+        <span class="pg">14 / 19</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ====================== SLIDE 13 — MATCHING ====================== -->
+  <section data-label="13 Matching">
+    <div class="ed-page">
+      <div class="topbar">
+        <span class="ey">Capítulo trece · estrategia de cruces</span>
+        <span class="right">13 / 17 · plan · ejecución · baseline</span>
+      </div>
+      <h1 class="ed-title">Cómo enlazamos plan, ejecución y baseline.<br/><em>Cuando no hay match fuerte, el sistema lo dice.</em></h1>
+      <p class="ed-sub">No forzamos enlaces. Reportamos cobertura por entidad y modalidad en <span class="mono" style="color:var(--ink);">testing_evidence.md</span>.</p>
+
+      <div class="ed-body" style="flex-direction:column;gap:18px;">
+        <div style="border-top:.5px solid var(--ink);padding:18px 0 0;">
+          <div style="display:grid;grid-template-columns:1fr 200px 1fr;gap:18px;align-items:center;">
+            <div style="padding:14px 20px;background:var(--coral-soft);border-left:3px solid var(--coral);">
+              <div style="font-family:var(--font-mono);font-size:10px;letter-spacing:.18em;color:var(--coral);text-transform:uppercase;font-weight:600;">PAA item</div>
+              <div class="mono" style="font-size:11.5px;color:var(--ink-2);margin-top:8px;line-height:1.7;">descripcion<br/>valor_total_esperado<br/>fecha_esperada_de_inicio</div>
+            </div>
+            <div style="text-align:center;">
+              <div style="font-family:var(--font-display);font-style:italic;font-size:21px;color:var(--ink);font-weight:700;letter-spacing:-.014em;">Embeddings MiniLM</div>
+              <div style="font-family:var(--font-mono);font-size:13px;color:var(--coral);margin-top:4px;font-weight:600;">cosine ≥ 0.55</div>
+              <div style="font-family:var(--font-sans);font-size:11px;color:var(--muted);margin-top:6px;line-height:1.4;">multilingüe · funcionando<br/>fallback TF-IDF robusto</div>
+            </div>
+            <div style="padding:14px 20px;background:var(--teal-soft);border-left:3px solid var(--teal);">
+              <div style="font-family:var(--font-mono);font-size:10px;letter-spacing:.18em;color:var(--teal);text-transform:uppercase;font-weight:600;">SECOP II proceso</div>
+              <div class="mono" style="font-size:11.5px;color:var(--ink-2);margin-top:8px;line-height:1.7;">nombre_del_procedimiento<br/>descripci_n_del_procedimiento<br/>valor_total · fecha_publicacion</div>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1.05fr 1fr;gap:24px;flex:1;border-top:.5px solid var(--ink);padding-top:18px;">
+          <div>
+            <div style="font-family:var(--font-mono);font-size:10.5px;letter-spacing:.14em;color:var(--coral);text-transform:uppercase;font-weight:600;">parte ii · entidad ↔ baseline</div>
+            <ul style="margin:10px 0 0;padding:0;list-style:none;font-family:var(--font-sans);font-size:13px;color:var(--ink-2);line-height:1.6;">
+              <li>— Llave principal: <span class="mono" style="color:var(--ink);">id_del_proceso</span> ↔ <span class="mono" style="color:var(--ink);">numero_de_proceso</span>.</li>
+              <li>— Crosswalk de entidad: <span class="mono" style="color:var(--ink);">codigo_entidad</span> vía <span class="mono" style="color:var(--ink);">entity_crosswalk</span>.</li>
+              <li>— Fallback: entidad + categoría UNSPSC + ventana temporal.</li>
+              <li>— AGR (control fiscal): <span class="mono" style="color:var(--ink);">sujeto_auditado = entidad</span>. Visible, nunca etiqueta.</li>
+            </ul>
+          </div>
+          <div>
+            <table class="ed-t">
+              <thead>
+                <tr><th>Cruce</th><th>Llave principal</th><th>Fallback</th><th style="text-align:right;">Cobertura</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><strong>Process ↔ Contract</strong></td><td class="mono">id_del_proceso</td><td>entity + UNSPSC + ventana</td><td class="num">~62%</td></tr>
+                <tr><td><strong>Process ↔ PAA</strong></td><td class="mono">sim ≥ 0.55 + entity</td><td>sim ≥ 0.65 sin entity</td><td class="num">~47%</td></tr>
+                <tr><td><strong>Process ↔ Audit (AGR)</strong></td><td class="mono">sujeto_auditado</td><td>—</td><td class="num" style="color:var(--muted);font-style:italic;">contexto</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div class="ed-foot">
+        <span class="disc">Cobertura típica por entidad y modalidad reportada en testing_evidence.md.</span>
+        <span class="pg">13 / 17</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ====================== SLIDE 14 — VALIDACIÓN Y LÍMITES ====================== -->
+  <section data-label="14 Validacion">
+    <div class="ed-page">
+      <div class="topbar">
+        <span class="ey">Capítulo catorce · validación y límites honestos</span>
+        <span class="right">14 / 17 · lo validado · lo pendiente</span>
+      </div>
+      <h1 class="ed-title">Lo validado y lo pendiente,<br/><em>sin teatro.</em></h1>
+      <p class="ed-sub">Universo real scoreado (scope Meta + Casanare): <strong>90.431 procesos</strong>. Distribución de triage: mediana <strong>7</strong> · p95 ≈ <strong>45</strong> · solo <strong>0.5%</strong> supera 70. Validación independiente vs control fiscal AGR: <strong>2.46× de enriquecimiento</strong>.</p>
+
+      <div class="ed-body" style="gap:24px;">
+        <div style="flex:1;border-top:.5px solid var(--ink);padding-top:16px;">
+          <div style="font-family:var(--font-mono);font-size:10.5px;letter-spacing:.14em;color:var(--coral);text-transform:uppercase;font-weight:600;margin-bottom:14px;">resultados validate-final</div>
+          <div class="vbars">
+            <div class="vbar"><div class="vlabel">Tests pytest</div><div class="vtrack"><div class="vfill" style="width:100%;background:var(--teal);"></div></div><div class="vval">71 / 71</div></div>
+            <div class="vbar"><div class="vlabel">APIs /health</div><div class="vtrack"><div class="vfill" style="width:100%;background:var(--teal);"></div></div><div class="vval">3 / 3</div></div>
+            <div class="vbar"><div class="vlabel">Objetos PG</div><div class="vtrack"><div class="vfill" style="width:100%;background:var(--navy);"></div></div><div class="vval">33</div></div>
+            <div class="vbar"><div class="vlabel">Colecciones Mongo</div><div class="vtrack"><div class="vfill" style="width:100%;background:var(--navy);"></div></div><div class="vval">5 / 5</div></div>
+            <div class="vbar"><div class="vlabel">Procesos scoreados</div><div class="vtrack"><div class="vfill" style="width:100%;background:var(--coral);"></div></div><div class="vval">90.431</div></div>
+            <div class="vbar"><div class="vlabel">Enriquecimiento AGR</div><div class="vtrack"><div class="vfill" style="width:82%;background:var(--coral);"></div></div><div class="vval">2.46×</div></div>
+            <div class="vbar"><div class="vlabel">Caso real Puerto Gaitán</div><div class="vtrack"><div class="vfill" style="width:90%;background:var(--coral);"></div></div><div class="vval">3.1×</div></div>
+            <div class="vbar"><div class="vlabel">Lenguaje prohibido</div><div class="vtrack"><div class="vfill" style="width:100%;background:var(--teal);"></div></div><div class="vval">0</div></div>
+          </div>
+        </div>
+
+        <div style="flex:0 0 38%;display:flex;flex-direction:column;gap:0;border-left:.5px solid var(--rule);padding-left:24px;">
+          <div style="padding-bottom:14px;border-bottom:.5px solid var(--rule);">
+            <div style="font-family:var(--font-mono);font-size:10.5px;letter-spacing:.14em;color:var(--teal);text-transform:uppercase;font-weight:600;">validado</div>
+            <ul class="checks" style="margin-top:8px;padding:0;">
+              <li><span class="ok">✓</span><span>Software: <span class="mono">71 tests</span> · lint estable</span></li>
+              <li><span class="ok">✓</span><span>Datos: 90.431 procesos reales scoreados</span></li>
+              <li><span class="ok">✓</span><span>Validación AGR 2.46× + caso Puerto Gaitán 3.1×</span></li>
+              <li><span class="ok">✓</span><span>Embeddings MiniLM funcionando (0.61 vs 0.14)</span></li>
+            </ul>
+          </div>
+          <div style="padding-top:14px;">
+            <div style="font-family:var(--font-mono);font-size:10.5px;letter-spacing:.14em;color:var(--amber);text-transform:uppercase;font-weight:600;">pendiente — declarado</div>
+            <ul class="checks" style="margin-top:8px;padding:0;">
+              <li><span class="pend">○</span><span>Validación humana de 100 casos (protocolo listo)</span></li>
+              <li><span class="pend">○</span><span>Benchmark embeddings vs TF-IDF en goldset</span></li>
+              <li><span class="pend">○</span><span>Despliegue público read-only (Dockerfile listo)</span></li>
+              <li><span class="pend">○</span><span>Encuesta UX con 5 usuarios reales</span></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="ed-foot">
+        <span class="disc">Honesto &gt; teatro. Los pendientes son parte del roadmap, no del pitch.</span>
+        <span class="pg">14 / 17</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ====================== SLIDE 15 — ROADMAP ====================== -->
+  <section data-label="15 Roadmap">
+    <div class="ed-page">
+      <div class="topbar">
+        <span class="ey">Capítulo quince · roadmap de escalado</span>
+        <span class="right">15 / 17 · orinoquía → nacional</span>
+      </div>
+      <h1 class="ed-title">De Orinoquía a cobertura nacional.<br/><em>Mismo pipeline, mismo costo marginal.</em></h1>
+      <p class="ed-sub">Sin reescritura. El stack es horizontal — crecer por departamento es añadir partición, no rehacer arquitectura.</p>
+
+      <div class="ed-body" style="flex-direction:column;gap:24px;">
+        <div style="border-top:.5px solid var(--ink);padding-top:24px;">
+          <div class="ed-timeline">
+            <div class="mile">
+              <div class="dot"></div>
+              <div class="when">mes 1</div>
+              <div class="what"><em>Pilotos</em> en Orinoquía</div>
+              <div class="why">2 oficinas de control (Meta + Casanare) + validación humana de 100 casos. Calibración inicial de pesos.</div>
+            </div>
+            <div class="mile">
+              <div class="dot"></div>
+              <div class="when">mes 2 – 3</div>
+              <div class="what">Embeddings + <em>despliegue</em></div>
+              <div class="why">Backend MiniLM-L12 activable y benchmark documentado. Despliegue read-only en Render/Fly.</div>
+            </div>
+            <div class="mile">
+              <div class="dot"></div>
+              <div class="when">mes 4 – 5</div>
+              <div class="what">Escalado por <em>departamento</em></div>
+              <div class="why">Mismo pipeline horizontal sobre nuevos departamentos. Data cards completas por dataset.</div>
+            </div>
+            <div class="mile">
+              <div class="dot"></div>
+              <div class="when">mes 6</div>
+              <div class="what">Cobertura <em>nacional</em></div>
+              <div class="why">Ingesta programada nightly con cuotas Socrata. Reportes agregados por categoría UNSPSC.</div>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1.4fr 1fr;gap:0;border-top:.5px solid var(--ink);border-bottom:.5px solid var(--ink);">
+          <div style="padding:16px 22px 16px 0;border-right:.5px solid var(--rule);">
+            <div style="font-family:var(--font-mono);font-size:10.5px;letter-spacing:.14em;color:var(--coral);text-transform:uppercase;font-weight:600;">costo marginal</div>
+            <div style="font-family:var(--font-display);font-size:24px;color:var(--ink);font-weight:700;margin-top:8px;letter-spacing:-.014em;line-height:1.25;">Por departamento ≈ infra de un <em style="color:var(--coral);font-style:italic;">Postgres pequeño</em> + Parquet partitioned.</div>
+            <div style="font-family:var(--font-sans);font-size:12px;color:var(--muted);margin-top:8px;line-height:1.45;">El stack es horizontal — no requiere reescritura para crecer.</div>
+          </div>
+          <div style="padding:16px 0 16px 22px;">
+            <div style="font-family:var(--font-mono);font-size:10.5px;letter-spacing:.14em;color:var(--muted);text-transform:uppercase;font-weight:600;">lo que NO se promete</div>
+            <ul style="margin:8px 0 0;padding:0;list-style:none;font-family:var(--font-sans);font-size:12.5px;color:var(--ink-2);line-height:1.55;">
+              <li>— SLA público antes del despliegue real.</li>
+              <li>— Cobertura nacional sin scope territorial.</li>
+              <li>— Scoring sin compuerta de confianza.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="ed-foot">
+        <span class="disc">Hitos sujetos a validación humana real, no fabricados.</span>
+        <span class="pg">15 / 17</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ====================== SLIDE 16 — RIESGOS ====================== -->
+  <section data-label="16 Riesgos">
+    <div class="ed-page">
+      <div class="topbar">
+        <span class="ey">Capítulo dieciséis · riesgos y mitigaciones</span>
+        <span class="right">16 / 17 · reconocimiento explícito</span>
+      </div>
+      <h1 class="ed-title">Lo que <em>puede salir mal</em>,<br/>cómo lo amortiguamos.</h1>
+      <p class="ed-sub">Reconocimiento explícito antes que sorpresa en producción. Cada mitigación existe en el repositorio, no es promesa.</p>
+
+      <div class="ed-body">
+        <table class="ed-t" style="width:100%;">
+          <thead>
+            <tr>
+              <th style="width:30%;">Riesgo</th>
+              <th style="width:9%;">Prob.</th>
+              <th style="width:9%;">Impacto</th>
+              <th>Mitigación</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Volumen Socrata excede ventana</strong></td>
+              <td><span class="pill-tier hi">alta</span></td>
+              <td><span class="pill-tier hi">alta</span></td>
+              <td>Scope demo 24 meses + top entidades. Parquet partitioned. Nightly batches con retry.</td>
+            </tr>
+            <tr>
+              <td><strong>Joins imperfectos entidad/proveedor</strong></td>
+              <td><span class="pill-tier hi">alta</span></td>
+              <td><span class="pill-tier hi">alta</span></td>
+              <td>NIT primero. <span class="mono">entity_crosswalk</span> mantenido. Fallback entidad + categoría + ventana.</td>
+            </tr>
+            <tr class="hot">
+              <td><strong>Lectura como detector de fraude</strong></td>
+              <td><span class="pill-tier hi">alta</span></td>
+              <td><span class="pill-tier hi">alta</span></td>
+              <td>Disclaimer persistente en UI, reportes y diapositivas. Vocabulario de triage. <span class="mono">ethics-note.md</span> embebido.</td>
+            </tr>
+            <tr>
+              <td><strong>Sesgo a entidades pequeñas / categorías raras</strong></td>
+              <td><span class="pill-tier mid">media</span></td>
+              <td><span class="pill-tier mid">media</span></td>
+              <td>Mínimo de pares N ≥ 5. <em style="color:var(--coral);font-weight:600;">«Evidencia insuficiente»</em> en lugar de score forzado.</td>
+            </tr>
+            <tr>
+              <td><strong>TF-IDF como modelo final</strong></td>
+              <td><span class="pill-tier hi">alta</span></td>
+              <td><span class="pill-tier mid">media</span></td>
+              <td>Backend embeddings activable vía <span class="mono">CONTRATIA_USE_TRANSFORMER_EMBEDDINGS=1</span> + fallback automático.</td>
+            </tr>
+            <tr>
+              <td><strong>Reproducibilidad sin archivos locales</strong></td>
+              <td><span class="pill-tier mid">media</span></td>
+              <td><span class="pill-tier hi">alta</span></td>
+              <td><span class="mono">data/sample/</span> versionado + script CI. Ruta lean sin Docker funciona end-to-end.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="ed-foot">
+        <span class="disc">Prioriza revisión humana; no prueba conductas indebidas.</span>
+        <span class="pg">16 / 17</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ====================== SLIDE 17 — CIERRE ====================== -->
+  <section data-label="17 Cierre">
+    <div class="ed-closer">
+      <div class="top">
+        <span class="ey">Capítulo final · cierre</span>
+        <span class="pg">18 / 18</span>
+      </div>
+
+      <h1 class="mega">Una revisión manual imposible<br/>se convierte en una <em>cola priorizada y auditable.</em></h1>
+
+      <p class="sub">ContratIA Abierta prioriza revisión humana en la contratación pública colombiana. No emite juicios de corrupción. Ordena qué revisar primero, con evidencia trazable.</p>
+
+      <div class="meta-grid">
+        <div class="col">
+          <div class="k">Equipo</div>
+          <div class="v">Thomas Chisica<br/>Ingeniería de Datos · Universidad del Rosario</div>
+        </div>
+        <div class="col">
+          <div class="k">Repositorio</div>
+          <div class="v mono">github.com/Thom-320/<br/>secop-risk-alerts-co</div>
+        </div>
+        <div class="col">
+          <div class="k">Categoría · Región</div>
+          <div class="v">Gobernanza y Transparencia<br/>Meta &amp; Casanare</div>
+        </div>
+      </div>
+
+      <div class="bottom">
+        <div class="disc">Prioriza revisión humana; no prueba conductas indebidas. Concurso Datos al Ecosistema 2026 — IA para Colombia.</div>
+        <div class="hand-note">gracias por leer hasta acá ✩</div>
+      </div>
+    </div>
+  </section>
+
+</deck-stage>
+
+<script src="deck-stage.js"></script>
+</body>
 </html>
