@@ -89,6 +89,71 @@ def build_paa_matches(processes: pd.DataFrame, paa: pd.DataFrame) -> pd.DataFram
 
     unmatched = exact[exact["paa_item_id"].isna()][processes.columns].copy()
 
+    # Phase 1.5: reference-pattern matching for unmatched processes
+    # Matches PAA items from same entity where reference shares a structural pattern
+    # (e.g., both contain "CACOM2GRUTE" even with different prefixes/suffixes)
+    pattern_rows: list[dict[str, object]] = []
+    if not unmatched.empty:
+        paa_valid = paa[
+            (paa["related_process_reference_norm"].fillna("").ne(""))
+            & (paa["related_process_reference_norm"].fillna("").str.upper() != "NODEFINIDO")
+        ].copy()
+        paa_valid = paa_valid[paa_valid["related_process_reference_norm"].str.len() >= 8]
+
+        grouped_pattern = unmatched.groupby("entity_key", dropna=False)
+        for entity_key, group in grouped_pattern:
+            entity_paa = paa_valid[paa_valid["entity_key"] == entity_key]
+            if entity_paa.empty:
+                continue
+            for _, proc_row in group.iterrows():
+                ref_norm = str(proc_row.get("process_reference_norm", ""))
+                if len(ref_norm) < 8:
+                    continue
+                # Extract core pattern: remove year suffix and leading digits
+                # e.g., "01500ECACOM2GRUTE2026" -> "CACOM2GRUTE"
+                import re
+                core = re.sub(r"^\d+", "", ref_norm)
+                core = re.sub(r"\d{4}$", "", core)
+                if len(core) < 4:
+                    continue
+                # Find PAA items whose reference contains the same core pattern
+                matches = entity_paa[
+                    entity_paa["related_process_reference_norm"].str.contains(
+                        core, na=False, regex=False,
+                    )
+                ]
+                if matches.empty:
+                    continue
+                # Take the best match (prefer same year)
+                proc_year = int(proc_row.get("process_year", 0))
+                same_year = matches[matches["paa_year"] == proc_year]
+                if not same_year.empty:
+                    best_match = same_year.iloc[0]
+                    confidence = 0.80
+                else:
+                    best_match = matches.iloc[0]
+                    confidence = 0.65
+                status = (
+                    "strong" if confidence >= 0.75
+                    else "weak" if confidence >= 0.65
+                    else "none"
+                )
+                pattern_rows.append({
+                    "process_key": proc_row["process_key"],
+                    "paa_item_id": best_match["paa_item_id"],
+                    "paa_match_method": "reference_pattern",
+                    "paa_match_similarity": confidence,
+                    "paa_match_confidence": confidence,
+                    "paa_match_status": status,
+                    "paa_text": best_match["paa_text"],
+                    "planned_value": best_match["planned_value"],
+                    "planned_start_date": best_match["planned_start_date"],
+                })
+
+    # Remove processes that got a pattern match from the semantic pool
+    pattern_keys = {r["process_key"] for r in pattern_rows}
+    unmatched = unmatched[~unmatched["process_key"].isin(pattern_keys)]
+
     # Filter PAA: exclude NODEFINIDO/empty references for semantic matching
     paa_valid = paa[
         (paa["related_process_reference_norm"].fillna("").ne(""))
@@ -148,6 +213,7 @@ def build_paa_matches(processes: pd.DataFrame, paa: pd.DataFrame) -> pd.DataFram
             )
 
     semantic = pd.DataFrame(semantic_rows)
+    pattern = pd.DataFrame(pattern_rows)
     exact_matches = exact[exact["paa_item_id"].notna()][
         [
             "process_key",
@@ -162,7 +228,7 @@ def build_paa_matches(processes: pd.DataFrame, paa: pd.DataFrame) -> pd.DataFram
     ].copy()
     exact_matches["paa_match_status"] = "strong"
 
-    combined = pd.concat([exact_matches, semantic], ignore_index=True, sort=False)
+    combined = pd.concat([exact_matches, pattern, semantic], ignore_index=True, sort=False)
     if combined.empty:
         return pd.DataFrame(columns=[
             "process_key",
