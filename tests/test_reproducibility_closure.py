@@ -82,9 +82,8 @@ def test_confidence_score_formula() -> None:
 
 def test_slide_scripts_are_portable() -> None:
     for relative in [
-        "slides/scripts/build_deck.mjs",
-        "slides/scripts/capture_screenshots.mjs",
-        "slides/html/export_interactive_deck.mjs",
+        "slides/html/contratia_abierta.html",
+        "slides/html/deck-stage.js",
         "slides/README.md",
         "presentation/README.md",
     ]:

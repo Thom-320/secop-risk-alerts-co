@@ -21,6 +21,7 @@ try:
         dash_table,
         dcc,
         html,
+        no_update,
     )
 except ImportError:
     Dash = None  # type: ignore[assignment]
@@ -59,9 +60,14 @@ OVERVIEW_COLS = [
 ]
 RANKING_COLS = [
     "process_id", "process_key", "process_reference",
-    "entity_name", "department", "modality", "base_price",
+    "process_title", "entity_name", "department", "modality", "base_price",
     "priority_score", "confidence_score", "explanation", "has_comparables",
     "score_percentile", "national_rank",
+    "anomaly_score", "peer_deviation_score", "rule_score",
+    "value_deviation_ratio", "duration_deviation_ratio",
+    "peer_price_median", "peer_duration_median",
+    "paa_match_status", "paa_match_method", "paa_match_confidence",
+    "paa_text", "planned_value",
 ]
 DISPLAY_COLS = [
     "process_reference", "entity_name", "department", "modality",
@@ -218,28 +224,78 @@ def load_ranking(limit: int = 500, department: str | None = None) -> pd.DataFram
     params: dict = {"limit": limit}
     if department:
         params["department"] = department
+    marts = _ranking_from_marts()
     f = svc_frame(RISK_URL, "/risk/ranking", params)
     if not f.empty:
         if "priority_score" not in f or f["priority_score"].notna().sum() == 0:
-            return _ranking_from_marts()
-        return ensure(f, RANKING_COLS)
-    db = ensure(db_sql("""
-        SELECT process_id, process_key, process_reference,
-               entity_name, department, modality,
-               base_price::float AS base_price,
-               priority_score::float AS priority_score,
-               confidence_score::float AS confidence_score,
-               explanation,
-               EXISTS (SELECT 1 FROM semantic_comparable sc
-                       WHERE sc.process_id = v_ranking_processes.process_id
-               ) AS has_comparables
-        FROM v_ranking_processes
-        ORDER BY has_comparables DESC,
-                 priority_score DESC NULLS LAST,
-                 confidence_score DESC NULLS LAST
-        LIMIT 500
-    """), RANKING_COLS)
-    return db if not db.empty else _ranking_from_marts()
+            return marts
+        if not marts.empty:
+            merged = marts.merge(
+                f[["process_key"] + [c for c in f.columns if c != "process_key"]],
+                on="process_key",
+                how="left",
+                suffixes=("", "_svc"),
+            )
+            for c in f.columns:
+                if c != "process_key" and c + "_svc" in merged.columns:
+                    svc_col = c + "_svc"
+                    merged[c] = merged[c].where(
+                        merged[c].notna() | merged[svc_col].isna(),
+                        merged[svc_col],
+                    )
+                    merged = merged.drop(columns=[svc_col])
+            result = ensure(merged, RANKING_COLS)
+        else:
+            result = ensure(f, RANKING_COLS)
+    else:
+        db = ensure(db_sql("""
+            SELECT process_id, process_key, process_reference,
+                   entity_name, department, modality,
+                   base_price::float AS base_price,
+                   priority_score::float AS priority_score,
+                   confidence_score::float AS confidence_score,
+                   explanation,
+                   EXISTS (SELECT 1 FROM semantic_comparable sc
+                           WHERE sc.process_id = v_ranking_processes.process_id
+                   ) AS has_comparables
+            FROM v_ranking_processes
+            ORDER BY has_comparables DESC,
+                     priority_score DESC NULLS LAST,
+                     confidence_score DESC NULLS LAST
+            LIMIT 500
+        """), RANKING_COLS)
+        result = db if not db.empty else marts
+    if result.empty:
+        return result
+    if ("score_percentile" not in result or result["score_percentile"].isna().all()) and "priority_score" in result:
+        result["score_percentile"] = (
+            result["priority_score"].rank(pct=True, na_option="bottom") * 100
+        ).round(2)
+    if ("national_rank" not in result or result["national_rank"].isna().all()) and "priority_score" in result:
+        result["national_rank"] = result["priority_score"].rank(
+            ascending=False, na_option="bottom",
+        ).astype(int)
+    # Dedupe: SECOP publica el mismo proceso como varias filas de "fase"
+    # (mismo número, distinto id_del_proceso). Para la cola de revisión
+    # mostramos UNA fila por proceso real (la de mayor score), evitando que
+    # "LP-AIM-CO-001-2026" aparezca dos veces.
+    if "process_reference" in result.columns and not result.empty:
+        result = result.copy()
+        result["_dedup_key"] = (
+            result["process_reference"].fillna(result.get("process_key", ""))
+            .astype(str).str.replace(r"\s*\(.*$", "", regex=True)
+            .str.strip().str.upper()
+        )
+        result["_ord"] = pd.to_numeric(
+            result.get("priority_score"), errors="coerce"
+        ).fillna(-1)
+        result = (
+            result.sort_values("_ord", ascending=False)
+            .drop_duplicates("_dedup_key", keep="first")
+            .drop(columns=["_dedup_key", "_ord"])
+            .reset_index(drop=True)
+        )
+    return result
 
 
 def _ranking_from_marts() -> pd.DataFrame:
@@ -247,11 +303,29 @@ def _ranking_from_marts() -> pd.DataFrame:
     if rk.empty:
         return pd.DataFrame(columns=RANKING_COLS)
     rk = rk.copy()
+    # Deduplicate: keep highest priority_score per (entity_key, core_reference)
+    # Core reference strips the SECOP stage suffix: "LP-001-2026 (Presentación...)" → "LP-001-2026"
+    if "entity_key" in rk.columns and "process_reference" in rk.columns and "priority_score" in rk.columns:
+        rk["_core_ref"] = rk["process_reference"].fillna("").astype(str).str.replace(
+            r"\s*\(.*", "", regex=True,
+        ).str.strip().str.upper()
+        rk = rk.sort_values("priority_score", ascending=False)
+        rk = rk.drop_duplicates(subset=["entity_key", "_core_ref"], keep="first")
+        rk = rk.drop(columns=["_core_ref"])
     if "process_id" not in rk:
         rk["process_id"] = range(1, len(rk) + 1)
     if "explanation" not in rk:
         rk["explanation"] = rk.get("reasons", "")
-    return ensure(rk.head(500), RANKING_COLS)
+    rk = ensure(rk.head(500), RANKING_COLS)
+    if ("score_percentile" not in rk or rk["score_percentile"].isna().all()) and "priority_score" in rk:
+        rk["score_percentile"] = (
+            rk["priority_score"].rank(pct=True, na_option="bottom") * 100
+        ).round(2)
+    if ("national_rank" not in rk or rk["national_rank"].isna().all()) and "priority_score" in rk:
+        rk["national_rank"] = rk["priority_score"].rank(
+            ascending=False, na_option="bottom",
+        ).astype(int)
+    return rk
 
 
 def load_plan() -> pd.DataFrame:
@@ -268,9 +342,24 @@ def load_plan() -> pd.DataFrame:
 
 
 def load_comparables(pid: int) -> pd.DataFrame:
+    rk = _ranking_from_marts()
+    comp = mart("comparables")
+    if not rk.empty and not comp.empty:
+        row = rk[rk["process_id"] == pid]
+        if not row.empty:
+            pk = row.iloc[0]["process_key"]
+            m = comp[comp["process_key"] == pk].copy()
+            if not m.empty:
+                m = m.drop(columns=["process_key"], errors="ignore")
+                m = m.rename(columns={
+                    "comparable_process_key": "process_key",
+                    "comparable_title": "title",
+                    "comparable_value": "base_price",
+                })
+                return _enrich_comparables(m)
     f = svc_frame(RISK_URL, f"/risk/process/{pid}/comparables")
     if not f.empty:
-        return f
+        return _enrich_comparables(f)
     db = db_sql(f"""
         SELECT sc.rank, sc.similarity::float AS similarity,
                p.process_key, p.title, p.base_price::float AS base_price
@@ -280,24 +369,61 @@ def load_comparables(pid: int) -> pd.DataFrame:
         ORDER BY sc.rank LIMIT 5
     """)
     if not db.empty:
-        return db
-    rk = _ranking_from_marts()
-    comp = mart("comparables")
-    if rk.empty or comp.empty:
-        return pd.DataFrame()
-    row = rk[rk["process_id"] == pid]
-    if row.empty:
-        return pd.DataFrame()
-    pk = row.iloc[0]["process_key"]
-    m = comp[comp["process_key"] == pk].copy()
-    if m.empty:
-        return m
-    m = m.drop(columns=["process_key"], errors="ignore")
-    return m.rename(columns={
-        "comparable_process_key": "process_key",
-        "comparable_title": "title",
-        "comparable_value": "base_price",
-    })
+        return _enrich_comparables(db)
+    return pd.DataFrame()
+    return _enrich_comparables(m)
+
+
+def _enrich_comparables(comps: pd.DataFrame) -> pd.DataFrame:
+    """Add title, reference, entity, value, and process_id from ranking/process_scores."""
+    if comps.empty or "process_key" not in comps.columns:
+        return comps
+    if not hasattr(_enrich_comparables, "_cache"):
+        rk = _ranking_from_marts()
+        ps = mart("process_scores")
+        pm = mart("../interim/process_master")
+        source = rk if not rk.empty else ps
+        if source.empty:
+            source = pm
+        cols_need = ["process_key"]
+        for c in ["process_id", "process_title", "process_reference",
+                  "entity_name", "base_price", "process_url"]:
+            if c in source.columns:
+                cols_need.append(c)
+        enrich = source[cols_need].drop_duplicates("process_key").copy()
+        if not enrich.empty and not pm.empty and "process_title" in pm.columns:
+            missing_keys = set(comps.get("process_key", pd.Series())) - set(enrich.get("process_key", pd.Series()))
+            if missing_keys:
+                pm_cols = ["process_key"]
+                for c in ["process_title", "process_reference", "entity_name", "base_price"]:
+                    if c in pm.columns:
+                        pm_cols.append(c)
+                pm_extra = pm[pm_cols][pm["process_key"].isin(missing_keys)].drop_duplicates("process_key")
+                if not pm_extra.empty:
+                    enrich = pd.concat([enrich, pm_extra], ignore_index=True)
+        if "process_title" in enrich.columns:
+            enrich = enrich.rename(columns={"process_title": "title"})
+        if "process_reference" in enrich.columns:
+            enrich = enrich.rename(columns={"process_reference": "reference"})
+        if "base_price" in enrich.columns:
+            enrich = enrich.rename(columns={"base_price": "comp_base_price"})
+        if "process_url" in enrich.columns:
+            enrich = enrich.rename(columns={"process_url": "secop_url"})
+        _enrich_comparables._cache = enrich
+    enrich = _enrich_comparables._cache
+    merged = comps.merge(enrich, on="process_key", how="left", suffixes=("", "_enr"))
+    for col in ["title", "reference", "entity_name", "process_id"]:
+        if col not in merged.columns and col + "_enr" in merged.columns:
+            merged[col] = merged[col + "_enr"]
+    if "process_id" in merged.columns:
+        max_id = int(merged["process_id"].max()) if merged["process_id"].notna().any() else 99999
+        for i, row in merged.iterrows():
+            if pd.isna(row.get("process_id")):
+                max_id += 1
+                merged.at[i, "process_id"] = max_id
+    if "base_price" not in merged.columns:
+        merged["base_price"] = merged.get("comp_base_price", 0)
+    return merged
 
 
 def load_concentration(ranking: pd.DataFrame) -> pd.DataFrame:
@@ -455,18 +581,26 @@ def ranking_table(ranking: pd.DataFrame) -> pd.DataFrame:
     f["Percentil"] = f.get("score_percentile", pd.Series(dtype=float)).map(
         _percentile_label
     )
+    f["Proceso"] = f.apply(
+        lambda r: clip(r.get("title") or r.get("process_reference")
+                       or r.get("process_key"), 52),
+        axis=1,
+    )
+    f["Razon"] = f.get("explanation", pd.Series(dtype=str)).map(
+        lambda v: reason_short(v, 58)
+    )
     out = f[[
-        "process_id", "process_key", "process_reference", "entity_name", "department", "modality",
-        "base_price", "priority_score", "Percentil", "confidence_score", "Accion",
+        "process_id", "process_key", "Proceso", "entity_name", "department",
+        "base_price", "priority_score", "Percentil", "confidence_score", "Razon",
     ]].copy()
     return out.rename(columns={
-        "process_reference": "Referencia",
         "entity_name": "Entidad",
         "department": "Depto",
-        "modality": "Modalidad",
         "base_price": "Valor base",
         "priority_score": "Score",
-        "confidence_score": "Confianza",
+        "confidence_score": "Conf",
+        "process_id": "_pid",
+        "process_key": "_pkey",
     })
 
 
@@ -479,28 +613,28 @@ def cola_table(ranking: pd.DataFrame) -> pd.DataFrame:
         lambda r: action_text(r.get("priority_score"), r.get("confidence_score")),
         axis=1,
     )
-    top["Razon"] = top["explanation"].map(lambda v: reason_short(v, 55))
+    top["Razon"] = top["explanation"].map(lambda v: reason_short(v, 60))
     top["Percentil"] = top.get("score_percentile", pd.Series(dtype=float)).map(
         _percentile_label
     )
-    if "base_price" in top:
-        top["base_price"] = pd.to_numeric(top["base_price"], errors="coerce").fillna(0)
-        top["base_price"] = top["base_price"].map(lambda v: f"${v:,.0f}")
+    top["Proceso"] = top.apply(
+        lambda r: clip(r.get("title") or r.get("process_reference")
+                       or r.get("process_key"), 46),
+        axis=1,
+    )
     out = top[[
-        "process_id", "process_key", "process_reference", "entity_name", "department", "modality",
-        "base_price", "priority_score", "Percentil", "confidence_score",
-        "Razon", "Accion",
+        "process_id", "process_key", "Proceso", "entity_name", "department",
+        "priority_score", "Percentil", "confidence_score", "Razon",
     ]].copy()
     out.insert(0, "#", range(1, len(out) + 1))
     return out.rename(columns={
-        "process_reference": "Referencia",
         "entity_name": "Entidad",
         "department": "Depto",
-        "modality": "Modalidad",
-        "base_price": "Valor base",
         "priority_score": "Score",
         "confidence_score": "Conf",
         "Razon": "Razon principal",
+        "process_id": "_pid",
+        "process_key": "_pkey",
     })
 
 
@@ -557,18 +691,59 @@ def comps_table(comps: pd.DataFrame) -> Any:
     if comps.empty:
         return empty_state(
             "Sin comparables para este proceso",
-            "Selecciona otro proceso del ranking para mostrar comparables.",
+            "Este proceso no tiene comparables semánticos suficientes en el "
+            "universo cargado. Elige otro proceso desde el buscador o la cola.",
         )
-    cols = [c for c in ["rank", "similarity", "process_key", "title"] if c in comps]
-    return html.Table(
+    f = comps.copy().head(5)
+    if "similarity" in f:
+        f["similarity"] = pd.to_numeric(f["similarity"], errors="coerce").map(
+            lambda v: f"{v:.2f}" if pd.notna(v) else "—"
+        )
+    title_col = "title" if "title" in f.columns else "comparable_label"
+    ref_col = "reference" if "reference" in f.columns else "process_key"
+    if ref_col not in f.columns and "comparable_label" in f.columns:
+        f["reference"] = f["comparable_label"].map(lambda v: str(v).split("|")[0].strip() if "|" in str(v) else str(v)[:60])
+    display = pd.DataFrame({
+        "Similitud": f.get("similarity", ""),
+        "Titulo": f.get(title_col, f.get("process_key", "")).map(
+            lambda v: clip(str(v), 60) if pd.notna(v) else ""),
+        "Entidad": f.get("entity_name", pd.Series([""] * len(f))),
+        "Referencia": f.get(ref_col, f.get("process_key", "")).map(
+            lambda v: clip(str(v), 35) if pd.notna(v) else ""),
+        "Valor base": f.get("base_price", pd.Series([0] * len(f))).map(money),
+    })
+    records = display.to_dict("records")
+    for i, row in enumerate(comps.head(5).to_dict("records")):
+        records[i]["process_id"] = row.get("process_id")
+        records[i]["secop_url"] = row.get("secop_url", "")
+    return html.Div(
         [
-            html.Thead(html.Tr([html.Th(c) for c in cols])),
-            html.Tbody([
-                html.Tr([html.Td(str(row.get(c, ""))) for c in cols])
-                for row in comps[cols].head(5).to_dict("records")
-            ]),
+            dash_table.DataTable(
+                id="comps-table",
+                columns=[
+                    {"name": "Sim.", "id": "Similitud"},
+                    {"name": "Titulo", "id": "Titulo"},
+                    {"name": "Entidad", "id": "Entidad"},
+                    {"name": "Referencia", "id": "Referencia"},
+                    {"name": "Valor", "id": "Valor base"},
+                ],
+                data=records,
+                style_as_list_view=True,
+                style_header={
+                    "backgroundColor": "#F1F4F9", "color": "#0B1E33",
+                    "fontWeight": "700", "textTransform": "uppercase",
+                    "fontSize": "10px", "letterSpacing": "0.08em",
+                    "borderBottom": "1px solid #BFC3C9",
+                },
+                style_cell={
+                    "padding": "11px 14px", "fontSize": "13px",
+                    "fontFamily": "Inter, system-ui, sans-serif",
+                    "color": "#1F2C40", "border": "0",
+                    "borderBottom": "1px solid #E6E7E3",
+                    "textAlign": "left",
+                },
+            ),
         ],
-        className="simple-table",
     )
 
 
@@ -1168,7 +1343,32 @@ def load_agr_enrichment() -> dict:
     try:
         return svc_json(ANALYTICS_URL, "/analytics/agr-enrichment")
     except Exception:
+        return _agr_from_marts()
+
+
+def _agr_from_marts() -> dict:
+    rk = mart("ranking")
+    if rk.empty or "control_badge" not in rk.columns:
         return {}
+    flagged = rk[rk["control_badge"] == "contexto fiscal"]
+    baseline = rk[rk["control_badge"] == "sin contexto"]
+    if flagged.empty or baseline.empty:
+        return {}
+    flagged_rate = float((flagged["priority_score"] >= 70).mean())
+    baseline_rate = float((baseline["priority_score"] >= 70).mean())
+    return {
+        "flagged": {
+            "pct_high_priority": float(flagged_rate * 100),
+            "median_score": float(flagged["priority_score"].median()),
+            "n_processes": int(len(flagged)),
+        },
+        "baseline": {
+            "pct_high_priority": float(baseline_rate * 100),
+            "median_score": float(baseline["priority_score"].median()),
+            "n_processes": int(len(baseline)),
+        },
+        "enrichment_lift": float(flagged_rate / max(0.001, baseline_rate)),
+    }
 
 
 def build_agr_chart(agr: dict) -> go.Figure | None:
@@ -1214,12 +1414,40 @@ def build_agr_chart(agr: dict) -> go.Figure | None:
 # ── App factory ───────────────────────────────────────────────
 
 
+def _build_dropdown_options(ranking: pd.DataFrame) -> list[dict]:
+    """Build dropdown options from ranking."""
+    source = ranking.head(1000)
+    options: list[dict] = []
+    for r in source.to_dict("records"):
+        pid = r.get("process_id")
+        if pid is None or pd.isna(pid):
+            continue
+        pid = int(pid)
+        score = r.get("priority_score") or 0
+        title = str(r.get("process_title") or r.get("process_reference") or r.get("process_key", ""))
+        ref = str(r.get("process_reference") or r.get("process_key", ""))
+        entity = str(r.get("entity_name", ""))
+        parts = [f"[{float(score):.0f}]"]
+        if title != ref:
+            parts.append(clip(title, 55))
+            parts.append(clip(ref, 30))
+        else:
+            parts.append(clip(ref, 60))
+        if entity:
+            parts.append(entity)
+        label = " · ".join(parts)
+        options.append({"label": label, "value": pid})
+    return options
+
+
 def _table_style(page_size: int = 15, with_filter: bool = False) -> dict:
     return {
         "page_size": page_size,
         "sort_action": "native",
         "filter_action": "native" if with_filter else "none",
         "style_as_list_view": True,
+        "hidden_columns": ["_pid", "_pkey"],
+        "css": [{"selector": ".show-hide", "rule": "display: none"}],
         "style_data_conditional": [
             {"if": {"filter_query": "{Score} >= 71"},
              "backgroundColor": "#FCEAE5", "color": "#E35A4B", "fontWeight": "700"},
@@ -1249,7 +1477,15 @@ def create_app() -> Any:
     if Dash is None:
         return None
 
-    app = Dash(__name__, title="ContratIA Abierta")
+    # serve_locally: bundle plotly + assets from the package, no CDN dependency.
+    # Critical for a robust demo: if the venue network is flaky, the dashboard
+    # must not hang waiting for plotly.js from a CDN.
+    app = Dash(
+        __name__,
+        title="ContratIA Abierta",
+        serve_locally=True,
+        suppress_callback_exceptions=True,
+    )
 
     overview = coerce(load_overview(), [
         "processes", "entities", "providers",
@@ -1259,16 +1495,29 @@ def create_app() -> Any:
     plan = coerce(load_plan(), ["confidence"])
     concentration = coerce(load_concentration(ranking), ["awarded_value"])
 
-    total_proc = int(overview["processes"].sum()) if not overview.empty else 0
+    proc_col = "processes_analyzed" if not overview.empty and "processes_analyzed" in overview.columns else "processes"
+    total_proc = int(overview[proc_col].sum()) if not overview.empty and proc_col in overview.columns else len(ranking)
     total_ent = int(overview["entities"].sum()) if "entities" in overview else 0
     total_prov = int(overview["providers"].sum()) if "providers" in overview else 0
-    if not overview.empty and "pct_high_priority" in overview.columns:
-        _n = pd.to_numeric(overview["processes"], errors="coerce").fillna(0)
-        _p = pd.to_numeric(overview["pct_high_priority"], errors="coerce").fillna(0)
-        high_share = float((_p * _n).sum() / _n.sum() / 100.0) if _n.sum() else 0.0
+    if not overview.empty:
+        proc_col = "processes_analyzed" if "processes_analyzed" in overview.columns else "processes"
+        _n = pd.to_numeric(overview.get(proc_col, pd.Series([0])), errors="coerce").fillna(0)
+        if "high_priority_share" in overview.columns:
+            _p = pd.to_numeric(overview["high_priority_share"], errors="coerce").fillna(0)
+            high_share = float((_p * _n).sum() / _n.sum()) if _n.sum() else 0.0
+        elif "pct_high_priority" in overview.columns:
+            _p = pd.to_numeric(overview["pct_high_priority"], errors="coerce").fillna(0)
+            high_share = float((_p * _n).sum() / _n.sum() / 100.0) if _n.sum() else 0.0
+        else:
+            high_share = float((ranking["priority_score"] >= 70).mean()) if not ranking.empty else 0.0
+        if "paa_match_share" in overview.columns:
+            _paa = pd.to_numeric(overview["paa_match_share"], errors="coerce").fillna(0)
+            paa_share = float((_paa * _n).sum() / _n.sum()) if _n.sum() else 0.0
+        else:
+            paa_share = float(plan["confidence"].fillna(0).ge(0.75).mean()) if not plan.empty else 0.0
     else:
         high_share = 0.0
-    paa_share = float(plan["confidence"].fillna(0).ge(0.75).mean()) if not plan.empty else 0.0
+        paa_share = 0.0
     top_cand = top_candidate(ranking)
     top_score = top_cand.get("priority_score")
     top_conf = top_cand.get("confidence_score")
@@ -1413,21 +1662,9 @@ def create_app() -> Any:
                     html.Label("Seleccionar proceso"),
                     dcc.Dropdown(
                         id="detail-dropdown",
-                        options=[
-                            {
-                                "label": (
-                                    f"{r['process_key']} - {r.get('process_reference', '')}"
-                                    + (f" - {r['entity_name']}" if r.get("entity_name") else "")
-                                    + (f" (top {100 - float(r.get('score_percentile', 0)):.1f}%)"
-                                       if r.get("score_percentile") and float(r.get("score_percentile", 0)) >= 90
-                                       else "")
-                                ),
-                                "value": r["process_id"],
-                            }
-                            for r in ranking.to_dict("records")
-                        ],
+                        options=_build_dropdown_options(ranking),
                         value=(int(ranking.iloc[0]["process_id"]) if not ranking.empty else None),
-                        placeholder="Buscar proceso por referencia o entidad...",
+                        placeholder="Buscar por título, entidad, referencia o llave...",
                         searchable=True,
                         clearable=False,
                     ),
@@ -1767,17 +2004,6 @@ def create_app() -> Any:
         }
 
     @app.callback(
-        Output("detail-panel", "children"),
-        Input("detail-dropdown", "value"),
-    )
-    def render_detail(pid: int | None) -> list[Any]:
-        if pid is None or ranking.empty:
-            return [empty_state("Sin proceso seleccionado")]
-        det = _detail_payload(ranking, pid)
-        comps = load_comparables(int(pid))
-        return detail_panel(det, comps)
-
-    @app.callback(
         Output("dl-detail", "data"),
         Input("dl-detail-btn", "n_clicks"),
         State("detail-dropdown", "value"),
@@ -1802,13 +2028,13 @@ def create_app() -> Any:
         row_idx = active_cell.get("row")
         if row_idx is None or row_idx >= len(data):
             return None
-        pid = data[row_idx].get("process_id")
+        pid = data[row_idx].get("_pid")
         if pid is not None:
             try:
                 return int(pid)
             except (ValueError, TypeError):
                 pass
-        pk = data[row_idx].get("process_key")
+        pk = data[row_idx].get("_pkey") or data[row_idx].get("process_key")
         if pk is not None and not ranking.empty:
             match = ranking[ranking["process_key"] == pk]
             if not match.empty:
@@ -1832,12 +2058,87 @@ def create_app() -> Any:
             return None
         trigger = callback_context.triggered[0]["prop_id"]
         if "cola-table" in trigger:
-            pid = _find_pid_from_row(cola_cell, cola_data)
+            return _find_pid_from_row(cola_cell, cola_data)
         elif "ranking-table" in trigger:
-            pid = _find_pid_from_row(rank_cell, rank_data)
+            return _find_pid_from_row(rank_cell, rank_data)
+        return None
+
+    @app.callback(
+        Output("detail-panel", "children"),
+        Input("detail-dropdown", "value"),
+    )
+    def render_detail(pid: int | None) -> list[Any]:
+        if pid is None:
+            return [empty_state("Sin proceso seleccionado")]
+        det = _detail_payload(ranking, pid)
+        if det is None:
+            return [empty_state("Proceso no encontrado",
+                                "No se pudo cargar este proceso desde los servicios.")]
+        comps = load_comparables(int(pid))
+        return detail_panel(det, comps)
+
+    @app.callback(
+        Output("detail-dropdown", "options", allow_duplicate=True),
+        Output("detail-dropdown", "value", allow_duplicate=True),
+        Input("comps-table", "active_cell"),
+        State("comps-table", "data"),
+        State("detail-dropdown", "options"),
+        prevent_initial_call=True,
+    )
+    def open_comparable(active_cell, data, options):
+        """Click a semantic comparable to open its full detail, even if it is
+        outside the top-N ranking (its option is appended on the fly)."""
+        if not active_cell or not data:
+            return no_update, no_update
+        idx = active_cell.get("row")
+        if idx is None or idx >= len(data):
+            return no_update, no_update
+        pid = data[idx].get("process_id")
+        if pid is None:
+            return no_update, no_update
+        pid = int(pid)
+        opts = options or []
+        if not any(o.get("value") == pid for o in opts):
+            label = (data[idx].get("Proceso comparable")
+                     or data[idx].get("Referencia") or str(pid))
+            opts = opts + [{"label": f"[comparable] {label}", "value": pid}]
+            return opts, pid
+        return no_update, pid
+
+    # Cache for comparables options per pid
+    _comps_cache: dict[int, list[dict]] = {}
+
+    @app.callback(
+        Output("detail-dropdown", "options"),
+        Input("detail-dropdown", "value"),
+        State("detail-dropdown", "options"),
+        prevent_initial_call=True,
+    )
+    def add_comparables_to_dropdown(pid: int | None, current_opts: list[dict]) -> list[dict]:
+        if pid is None:
+            return current_opts or []
+        pid = int(pid)
+        if pid in _comps_cache:
+            new_opts = _comps_cache[pid]
         else:
-            return None
-        return pid
+            existing_values = {opt["value"] for opt in (current_opts or [])}
+            comps = load_comparables(pid)
+            new_opts = list(current_opts or [])
+            if not comps.empty:
+                for r in comps.to_dict("records"):
+                    cpid = r.get("process_id")
+                    if cpid is None or pd.isna(cpid):
+                        continue
+                    cpid = int(cpid)
+                    if cpid in existing_values:
+                        continue
+                    existing_values.add(cpid)
+                    title = str(r.get("title") or r.get("process_key", ""))
+                    sim = float(r.get("similarity", 0))
+                    label = f"[sim {sim:.2f}] {clip(title, 55)} · {r.get('entity_name', '')}"
+                    new_opts.append({"label": label, "value": cpid})
+            _comps_cache[pid] = new_opts
+        return new_opts
 
     @app.callback(
         Output("main-tabs", "value"),
@@ -1847,33 +2148,70 @@ def create_app() -> Any:
     )
     def navigate_to_entender(pid: int | None) -> tuple[str, int | None]:
         if pid is None:
-            return "tab-decidir", None
-        return "tab-entender", pid
+            return no_update, no_update
+        return "tab-entender", int(pid)
 
     return app
 
 
 def _detail_payload(ranking: pd.DataFrame, pid: int | None) -> dict | None:
-    if pid is None or ranking.empty:
+    if pid is None:
         return None
-    row = ranking[ranking["process_id"] == pid]
-    if row.empty:
-        return None
-    d = row.iloc[0].to_dict()
-    svc = svc_frame(CONTRACTS_URL, f"/processes/{pid}")
-    if not svc.empty:
-        d = {**d, **svc.iloc[0].to_dict()}
-    # Fetch score components from risk service
-    try:
-        risk = svc_json(RISK_URL, f"/risk/process/{pid}")
-        if risk:
-            d["anomaly_score"] = risk.get("anomaly_score", 0)
-            d["peer_deviation_score"] = risk.get("peer_deviation_score", 0)
-            d["rule_score"] = risk.get("rule_score", 0)
-            d["paa_match_status"] = risk.get("paa_match_status", d.get("paa_match_status"))
-    except Exception:
-        pass
-    return d
+    pid = int(pid)
+    d: dict[str, Any] = {}
+    if not ranking.empty:
+        row = ranking[ranking["process_id"].astype(int) == pid]
+        if not row.empty:
+            d = row.iloc[0].to_dict()
+    if not d:
+        pm = mart("../interim/process_master")
+        if not pm.empty and "process_key" in pm.columns:
+            src_row = pm[pm["process_id"].astype(int) == pid] if "process_id" in pm.columns else pd.DataFrame()
+            if not src_row.empty:
+                pr = src_row.iloc[0]
+                for k in ("process_id", "process_key", "process_title", "process_reference",
+                          "entity_name", "department", "modality", "base_price",
+                          "process_description", "process_url"):
+                    d.setdefault(k, pr.get(k))
+    # Only call risk service if we're missing key score data
+    need_risk = (
+        d.get("anomaly_score") is None
+        or d.get("peer_deviation_score") is None
+        or d.get("rule_score") is None
+    )
+    if need_risk:
+        try:
+            risk = svc_json(RISK_URL, f"/risk/process/{pid}")
+            if risk:
+                d.setdefault("process_id", pid)
+                if not d.get("process_key"):
+                    d["process_key"] = risk.get("process_key")
+                for k in ("priority_score", "confidence_score", "anomaly_score",
+                          "peer_deviation_score", "rule_score", "explanation",
+                          "score_percentile", "national_rank",
+                          "value_deviation_ratio", "duration_deviation_ratio",
+                          "peer_price_median", "peer_duration_median"):
+                    if d.get(k) is None and risk.get(k) is not None:
+                        d[k] = risk.get(k)
+                paa_status = risk.get("paa_match_status")
+                if paa_status and paa_status != "none":
+                    d["paa_match_status"] = paa_status
+                for k in ("paa_match_method", "paa_match_confidence", "paa_text", "planned_value"):
+                    if d.get(k) is None and risk.get(k) is not None:
+                        d[k] = risk.get(k)
+        except Exception:
+            pass
+    if not d.get("process_url"):
+        try:
+            svc = svc_frame(CONTRACTS_URL, f"/processes/{pid}")
+            if not svc.empty:
+                svc_dict = svc.iloc[0].to_dict()
+                for k in ("process_url", "source_url", "description"):
+                    if k not in d or pd.isna(d.get(k)):
+                        d[k] = svc_dict.get(k)
+        except Exception:
+            pass
+    return d or None
 
 
 def _report_html(ranking: pd.DataFrame, pid: int | None) -> str:

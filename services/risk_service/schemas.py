@@ -12,6 +12,7 @@ class RiskRankingRow(BaseModel):
     process_id: int
     process_key: str
     process_reference: str | None = None
+    title: str | None = None
     entity_name: str
     department: str | None = None
     modality: str | None = None

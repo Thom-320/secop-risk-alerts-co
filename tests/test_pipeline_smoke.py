@@ -16,6 +16,6 @@ def test_pipeline_public_packaging_exists() -> None:
         "mongo/seed_demo.py",
         "data/sample/README.md",
         "validation/README.md",
-        "slides/outline.md",
+        "slides/html/contratia_abierta.html",
     ]:
         assert (ROOT / relative).exists()

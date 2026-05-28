@@ -1252,3 +1252,13 @@ html, body {
   .project-stats { flex-direction: row; gap: 24px; }
   .formula-strip { margin: 0 24px; }
 }
+
+/* ── Comparables hint (ENTENDER) ─────────────────────────────── */
+.comps-hint {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  color: var(--coral);
+  letter-spacing: 0.04em;
+  margin: 0 48px 8px;
+  text-transform: uppercase;
+}

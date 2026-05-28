@@ -44,6 +44,7 @@ def ranking(
         """
         WITH scored AS (
             SELECT v.*,
+                   pp.title AS title,
                    round((100.0 * percent_rank() OVER (
                        ORDER BY v.priority_score ASC NULLS FIRST
                    ))::numeric, 2) AS score_percentile,
@@ -52,10 +53,12 @@ def ranking(
                        WHERE sc.process_id = v.process_id
                    ) AS has_comparables
             FROM v_ranking_processes v
+            LEFT JOIN procurement_process pp ON pp.process_id = v.process_id
         )
         SELECT process_id,
                process_key,
                process_reference,
+               title,
                entity_name,
                department,
                modality,
@@ -181,15 +184,43 @@ def recompute(process_id: int) -> dict:
 
 @app.get("/risk/process/{process_id}/comparables")
 def comparables(process_id: int) -> list[dict]:
+    """Comparables semánticos del proceso.
+
+    Excluye gemelos: SECOP publica el mismo proceso como varias filas de fase
+    (mismo número, distinto id). Esos aparecen con similitud ~1.0 y NO son
+    comparables útiles, así que se filtran (similitud < 0.985 y referencia
+    normalizada distinta). Devuelve entidad y referencia para que la tabla
+    nunca quede con columnas vacías.
+    """
     return fetch_all(
         """
-        SELECT sc.rank, sc.similarity::float AS similarity, p.process_id, p.process_key, p.title
+        WITH target AS (
+            SELECT regexp_replace(upper(trim(process_reference)), '\\s*\\(.*$', '')
+                   AS ref_norm
+            FROM procurement_process WHERE process_id = %s
+        )
+        SELECT sc.rank,
+               sc.similarity::float AS similarity,
+               p.process_id,
+               p.process_key,
+               COALESCE(NULLIF(trim(p.title), ''), p.process_reference,
+                        p.process_key) AS title,
+               p.process_reference AS reference,
+               e.name AS entity_name,
+               p.base_price::float AS base_price
         FROM semantic_comparable sc
         JOIN procurement_process p ON p.process_id = sc.comparable_process_id
+        JOIN public_entity e ON e.entity_id = p.entity_id
+        CROSS JOIN target t
         WHERE sc.process_id = %s
-        ORDER BY sc.rank
+          AND sc.comparable_process_id <> %s
+          AND sc.similarity < 0.985
+          AND regexp_replace(upper(trim(p.process_reference)), '\\s*\\(.*$', '')
+              IS DISTINCT FROM t.ref_norm
+        ORDER BY sc.similarity DESC
+        LIMIT 5
         """,
-        (process_id,),
+        (process_id, process_id, process_id),
     )
 
 

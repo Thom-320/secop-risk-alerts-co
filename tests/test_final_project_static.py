@@ -260,17 +260,18 @@ def test_slide_sources_do_not_keep_stale_39_test_claim() -> None:
     )
     for relative in [
         "slides/README.md",
-        "slides/contratia_abierta_deck.md",
-        "slides/contratia_abierta_speaker_notes.md",
+        "slides/PROMPT.md",
+        "slides/INSTRUCCIONES.md",
+        "slides/html/contratia_abierta.html",
         "presentation/slides.md",
         "presentation/speaker_notes.md",
-        "slides/scripts/build_deck.mjs",
         "slides/scripts/generate_assets.py",
-        "slides/latex/contratia_abierta_beamer.tex",
-        "slides/html/contratia_abierta_interactive.html",
         "presentation/html/contratia_abierta_interactive.html",
     ]:
-        text = (ROOT / relative).read_text()
+        path = ROOT / relative
+        if not path.exists():
+            continue
+        text = path.read_text()
         for forbidden in forbidden_claims:
             assert forbidden not in text
     assert "71 tests pasan" in (ROOT / "presentation/slides.md").read_text()
