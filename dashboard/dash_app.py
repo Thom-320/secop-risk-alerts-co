@@ -61,10 +61,12 @@ RANKING_COLS = [
     "process_id", "process_key", "process_reference",
     "entity_name", "department", "modality", "base_price",
     "priority_score", "confidence_score", "explanation", "has_comparables",
+    "score_percentile", "national_rank",
 ]
 DISPLAY_COLS = [
     "process_reference", "entity_name", "department", "modality",
     "base_price", "priority_score", "confidence_score", "has_comparables",
+    "score_percentile",
 ]
 PLAN_COLS = [
     "item_key", "paa_description", "planned_value", "process_id",
@@ -170,8 +172,9 @@ def mart(name: str) -> pd.DataFrame:
 # ── Data loading ──────────────────────────────────────────────
 
 
-def load_overview() -> pd.DataFrame:
-    f = svc_frame(ANALYTICS_URL, "/analytics/overview")
+def load_overview(department: str | None = None) -> pd.DataFrame:
+    params = {"department": department} if department else None
+    f = svc_frame(ANALYTICS_URL, "/analytics/overview", params)
     if not f.empty:
         if "avg_priority_score" in f and f["avg_priority_score"].notna().sum() == 0:
             return _overview_from_marts()
@@ -211,8 +214,11 @@ def _overview_from_marts() -> pd.DataFrame:
     return ensure(ov, OVERVIEW_COLS)
 
 
-def load_ranking(limit: int = 500) -> pd.DataFrame:
-    f = svc_frame(RISK_URL, "/risk/ranking", {"limit": limit})
+def load_ranking(limit: int = 500, department: str | None = None) -> pd.DataFrame:
+    params: dict = {"limit": limit}
+    if department:
+        params["department"] = department
+    f = svc_frame(RISK_URL, "/risk/ranking", params)
     if not f.empty:
         if "priority_score" not in f or f["priority_score"].notna().sum() == 0:
             return _ranking_from_marts()
@@ -340,6 +346,28 @@ def load_quality() -> pd.DataFrame:
     """)
 
 
+def load_score_distribution(department: str | None = None) -> pd.DataFrame:
+    params = {"department": department} if department else None
+    f = svc_frame(ANALYTICS_URL, "/analytics/score-distribution", params)
+    if not f.empty:
+        return f
+    return pd.DataFrame()
+
+
+def load_fiscal_context(process_id: int) -> dict:
+    try:
+        return svc_json(CONTRACTS_URL, f"/processes/{process_id}/fiscal-context")
+    except Exception:
+        return {}
+
+
+def load_process_concentration(process_id: int) -> pd.DataFrame:
+    f = svc_frame(CONTRACTS_URL, f"/processes/{process_id}/concentration")
+    if not f.empty:
+        return f
+    return pd.DataFrame()
+
+
 # ── Helpers ───────────────────────────────────────────────────
 
 
@@ -399,11 +427,22 @@ def ranking_csv(ranking: pd.DataFrame, min_s: int | None) -> str:
 ranking_csv_text = ranking_csv
 
 
+def _percentile_label(score_pct: float | None) -> str:
+    if score_pct is None or pd.isna(score_pct):
+        return "—"
+    v = float(score_pct)
+    if v >= 99:
+        return f"top {100 - v:.1f}%"
+    if v >= 90:
+        return f"top {100 - v:.0f}%"
+    return f"p{v:.0f}"
+
+
 def ranking_table(ranking: pd.DataFrame) -> pd.DataFrame:
     if ranking.empty:
         return pd.DataFrame(columns=[
-            "Referencia", "Entidad", "Depto", "Modalidad",
-            "Valor base", "Score", "Confianza", "Accion",
+            "process_id", "process_key", "Referencia", "Entidad", "Depto", "Modalidad",
+            "Valor base", "Score", "Percentil", "Confianza", "Accion",
         ])
     f = ranking.copy()
     if "base_price" in f:
@@ -413,9 +452,12 @@ def ranking_table(ranking: pd.DataFrame) -> pd.DataFrame:
         lambda r: action_text(r.get("priority_score"), r.get("confidence_score")),
         axis=1,
     )
+    f["Percentil"] = f.get("score_percentile", pd.Series(dtype=float)).map(
+        _percentile_label
+    )
     out = f[[
-        "process_reference", "entity_name", "department", "modality",
-        "base_price", "priority_score", "confidence_score", "Accion",
+        "process_id", "process_key", "process_reference", "entity_name", "department", "modality",
+        "base_price", "priority_score", "Percentil", "confidence_score", "Accion",
     ]].copy()
     return out.rename(columns={
         "process_reference": "Referencia",
@@ -429,21 +471,25 @@ def ranking_table(ranking: pd.DataFrame) -> pd.DataFrame:
 
 
 def cola_table(ranking: pd.DataFrame) -> pd.DataFrame:
-    """Top 10 for weekly review queue."""
+    """Top 20 for weekly review queue."""
     if ranking.empty:
         return pd.DataFrame()
-    top = ranking.nlargest(10, "priority_score").copy()
+    top = ranking.nlargest(20, "priority_score").copy()
     top["Accion"] = top.apply(
         lambda r: action_text(r.get("priority_score"), r.get("confidence_score")),
         axis=1,
     )
     top["Razon"] = top["explanation"].map(lambda v: reason_short(v, 55))
+    top["Percentil"] = top.get("score_percentile", pd.Series(dtype=float)).map(
+        _percentile_label
+    )
     if "base_price" in top:
         top["base_price"] = pd.to_numeric(top["base_price"], errors="coerce").fillna(0)
         top["base_price"] = top["base_price"].map(lambda v: f"${v:,.0f}")
     out = top[[
-        "process_reference", "entity_name", "department", "modality",
-        "base_price", "priority_score", "confidence_score", "Razon", "Accion",
+        "process_id", "process_key", "process_reference", "entity_name", "department", "modality",
+        "base_price", "priority_score", "Percentil", "confidence_score",
+        "Razon", "Accion",
     ]].copy()
     out.insert(0, "#", range(1, len(out) + 1))
     return out.rename(columns={
@@ -584,18 +630,104 @@ def paa_badge(status: str | None) -> Any:
     return html.Span("PAA: sin match", className="score-pill score-pill--mild")
 
 
+def fiscal_context_panel(fiscal: dict) -> Any:
+    if not fiscal or not fiscal.get("entity_under_fiscal_review"):
+        return html.Section(
+            [
+                html.Span("CONTEXTO FISCAL AGR", className="section-eyebrow"),
+                html.P(
+                    "La entidad de este proceso no figura en la base de "
+                    "vigilancia del control fiscal (AGR, wasc-xi4h).",
+                    className="section-intro",
+                ),
+            ],
+            className="agr-context-panel",
+        )
+    findings = fiscal.get("findings", [])
+    rows = []
+    for f in findings[:5]:
+        rows.append(html.Tr([
+            html.Td(str(f.get("year", ""))),
+            html.Td(str(f.get("finding_type", ""))),
+            html.Td(str(f.get("description", ""))[:120]),
+        ]))
+    return html.Section(
+        [
+            html.Span("CONTEXTO FISCAL AGR", className="section-eyebrow"),
+            html.P(
+                "La entidad de este proceso figura en vigilancia del control "
+                "fiscal (AGR). Esto es CONTEXTO, no etiqueta del modelo: no "
+                "prueba conducta indebida en este proceso.",
+                className="section-intro",
+            ),
+            html.Table(
+                [
+                    html.Thead(html.Tr([
+                        html.Th("Ano"), html.Th("Tipo"), html.Th("Descripcion"),
+                    ])),
+                    html.Tbody(rows),
+                ],
+                className="simple-table agr-findings-table",
+            ) if rows else None,
+            html.P(fiscal.get("disclaimer", ""), className="agr-disclaimer"),
+        ],
+        className="agr-context-panel agr-context-panel--active",
+    )
+
+
+def concentration_panel(conc: pd.DataFrame) -> Any:
+    if conc.empty:
+        return html.Section(
+            [
+                html.Span("CONCENTRACION PROVEEDOR-ENTIDAD", className="section-eyebrow"),
+                html.P(
+                    "Sin datos de concentracion para esta entidad.",
+                    className="section-intro",
+                ),
+            ],
+            className="conc-context-panel",
+        )
+    rows = []
+    for _, r in conc.head(5).iterrows():
+        val = pd.to_numeric(r.get("awarded_value"), errors="coerce")
+        share = pd.to_numeric(r.get("entity_value_share"), errors="coerce")
+        rows.append(html.Tr([
+            html.Td(str(r.get("provider_name", ""))),
+            html.Td(f"${val:,.0f}" if not pd.isna(val) else "—"),
+            html.Td(f"{share:.1%}" if not pd.isna(share) else "—"),
+            html.Td(str(r.get("provider_rank_in_entity", ""))),
+        ]))
+    return html.Section(
+        [
+            html.Span("CONCENTRACION PROVEEDOR-ENTIDAD", className="section-eyebrow"),
+            html.P(
+                "Contexto del caso: proveedores con mayor participacion en "
+                "el valor contratado por esta entidad. No es ranking acusatorio.",
+                className="section-intro",
+            ),
+            html.Table(
+                [
+                    html.Thead(html.Tr([
+                        html.Th("Proveedor"), html.Th("Valor adjudicado"),
+                        html.Th("Participacion"), html.Th("Rank"),
+                    ])),
+                    html.Tbody(rows),
+                ],
+                className="simple-table conc-table",
+            ),
+        ],
+        className="conc-context-panel",
+    )
+
+
 def detail_panel(detail: dict, comps: pd.DataFrame) -> list[Any]:
     if detail is None:
         return [empty_state("Sin proceso seleccionado")]
 
-    # Parse explanation into individual reasons
     explanation = str(detail.get("explanation", ""))
     reasons = [r.strip() for r in explanation.split("|") if r.strip()]
-
-    # Build rich reason cards
     reason_cards = _build_reason_cards(detail, reasons)
 
-    # SECOP link
     secop_url = detail.get("process_url") or detail.get("source_url")
     secop_btn = []
     if secop_url and str(secop_url).startswith("http"):
@@ -605,13 +737,18 @@ def detail_panel(detail: dict, comps: pd.DataFrame) -> list[Any]:
             className="secop-link",
         )]
 
-    # Process description
     desc = str(detail.get("description") or detail.get("process_description") or "")
     if len(desc) > 300:
         desc = desc[:297] + "..."
 
+    pct = detail.get("score_percentile")
+    pct_text = _percentile_label(pct) if pct is not None else None
+
+    pid = detail.get("process_id")
+    fiscal = load_fiscal_context(int(pid)) if pid else {}
+    proc_conc = load_process_concentration(int(pid)) if pid else pd.DataFrame()
+
     return [
-        # Header with title and key info
         html.Section(
             [
                 html.Span("Proceso", className="card-label"),
@@ -629,7 +766,6 @@ def detail_panel(detail: dict, comps: pd.DataFrame) -> list[Any]:
             ],
             className="detail-card detail-card--hero",
         ),
-        # Key metrics
         html.Section(
             [
                 _value_metric(
@@ -644,32 +780,30 @@ def detail_panel(detail: dict, comps: pd.DataFrame) -> list[Any]:
                     "Cuanto mas caro que procesos similares",
                 ),
                 _simple_metric(detail.get("priority_score"), "Score"),
-                _simple_metric(detail.get("confidence_score"), "Confianza"),
+                _percentile_metric(pct, pct_text),
             ],
             className="metric-grid detail-metrics",
         ),
-        # PAA badge
         html.Div(
             [paa_badge(detail.get("paa_match_status"))],
             className="detail-badges",
         ),
-        # Score breakdown
         score_breakdown(detail),
-        # Why this process was flagged
         html.Section(
             [
                 html.H3("Por que este proceso fue flagged"),
                 html.P(
                     "El sistema comparo este proceso con otros similares "
                     "(misma modalidad, categoria y departamento). Estas son "
-                    "las senales que encontr:",
+                    "las senales que encontro:",
                     className="section-intro",
                 ),
                 *reason_cards,
             ],
             className="reasons-section",
         ),
-        # What to review
+        fiscal_context_panel(fiscal),
+        concentration_panel(proc_conc),
         html.Section(
             [
                 html.H3("Que revisar manualmente"),
@@ -682,7 +816,6 @@ def detail_panel(detail: dict, comps: pd.DataFrame) -> list[Any]:
             ],
             className="review-checklist",
         ),
-        # Comparables
         html.H3("Comparables semanticos", className="comps-heading"),
         comps_table(comps),
     ]
@@ -743,6 +876,29 @@ def _simple_metric(value: Any, label: str) -> Any:
             html.Strong(text, className="metric-value-main"),
         ],
         className="metric-card",
+    )
+
+
+def _percentile_metric(pct: Any, label: str | None) -> Any:
+    if pct is None or pd.isna(pct):
+        text = "Sin dato"
+        level = "neutral"
+    else:
+        v = float(pct)
+        text = label or _percentile_label(v)
+        if v >= 95:
+            level = "high"
+        elif v >= 75:
+            level = "medium"
+        else:
+            level = "low"
+    return html.Div(
+        [
+            html.Span("POSICION NACIONAL", className="card-label"),
+            html.Strong(text, className=f"metric-ratio metric-ratio--{level}"),
+            html.Span("percent_rank sobre el universo scoreado", className="metric-reference"),
+        ],
+        className="metric-card metric-card--ratio",
     )
 
 
@@ -808,17 +964,41 @@ def _duration_reason_card(detail: dict, reason: str) -> Any:
 
 
 def _paa_reason_card(detail: dict, reason: str) -> Any:
+    paa_status = str(detail.get("paa_match_status", "none"))
+    paa_method = str(detail.get("paa_match_method", ""))
+    paa_conf = pd.to_numeric(pd.Series([detail.get("paa_match_confidence")]), errors="coerce").iloc[0]
+
+    if paa_status == "strong":
+        label = "PAA: fuerte"
+        value_text = "Match fuerte"
+        explanation = (
+            f"Este proceso tiene un match fuerte con el Plan Anual de "
+            f"Adquisiciones (metodo: {paa_method}, confianza: "
+            f"{paa_conf:.0%}). Esto sugiere que la compra fue planificada."
+        )
+    elif paa_status == "weak":
+        label = "PAA: debil"
+        value_text = "Match debil"
+        explanation = (
+            f"Este proceso tiene un match debil con el PAA (metodo: "
+            f"{paa_method}, confianza: {paa_conf:.0%}). Requiere "
+            f"verificacion manual para confirmar si fue planificado."
+        )
+    else:
+        label = "PAA"
+        value_text = "Sin match"
+        explanation = (
+            "Este proceso no encontro un item correspondiente en el "
+            "Plan Anual de Adquisiciones. Esto puede indicar que fue "
+            "una compra no planificada, o que la referencia no coincide "
+            "con el PAA cargado."
+        )
+
     return html.Div(
         [
-            html.Div("PAA", className="reason-tag"),
-            html.Strong("Sin match", className="reason-value"),
-            html.P(
-                "Este proceso no encontro un item correspondiente en el "
-                "Plan Anual de Adquisiciones. Esto puede indicar que fue "
-                "una compra no planificada, o que la referencia no coincide "
-                "con el PAA cargado.",
-                className="reason-explanation",
-            ),
+            html.Div(label, className="reason-tag"),
+            html.Strong(value_text, className="reason-value"),
+            html.P(explanation, className="reason-explanation"),
         ],
         className="reason-card",
     )
@@ -1034,6 +1214,37 @@ def build_agr_chart(agr: dict) -> go.Figure | None:
 # ── App factory ───────────────────────────────────────────────
 
 
+def _table_style(page_size: int = 15, with_filter: bool = False) -> dict:
+    return {
+        "page_size": page_size,
+        "sort_action": "native",
+        "filter_action": "native" if with_filter else "none",
+        "style_as_list_view": True,
+        "style_data_conditional": [
+            {"if": {"filter_query": "{Score} >= 71"},
+             "backgroundColor": "#FCEAE5", "color": "#E35A4B", "fontWeight": "700"},
+            {"if": {"filter_query": "{Score} >= 41 && {Score} < 71"},
+             "backgroundColor": "#FBF1DC", "color": "#C28832", "fontWeight": "700"},
+            {"if": {"filter_query": "{Score} >= 21 && {Score} < 41"},
+             "backgroundColor": "#E8EFF7", "color": "#103A5C", "fontWeight": "700"},
+            {"if": {"filter_query": "{Score} < 21"},
+             "backgroundColor": "#DDF1EF", "color": "#1F827C", "fontWeight": "700"},
+        ],
+        "style_header": {
+            "backgroundColor": "#F1F4F9", "color": "#0B1E33",
+            "fontWeight": "700", "textTransform": "uppercase",
+            "fontSize": "11px", "letterSpacing": "0.06em",
+            "borderBottom": "1px solid #CCD3DF",
+        },
+        "style_cell": {
+            "padding": "10px 14px", "fontSize": "13px",
+            "fontFamily": "Inter, system-ui, sans-serif",
+            "color": "#1F2C40", "border": "0",
+            "borderBottom": "1px solid #E3E8F0",
+        },
+    }
+
+
 def create_app() -> Any:
     if Dash is None:
         return None
@@ -1044,15 +1255,13 @@ def create_app() -> Any:
         "processes", "entities", "providers",
         "avg_priority_score", "avg_confidence_score",
     ])
-    ranking = coerce(load_ranking(), ["priority_score", "confidence_score"])
+    ranking = coerce(load_ranking(), ["priority_score", "confidence_score", "score_percentile"])
     plan = coerce(load_plan(), ["confidence"])
     concentration = coerce(load_concentration(ranking), ["awarded_value"])
 
     total_proc = int(overview["processes"].sum()) if not overview.empty else 0
     total_ent = int(overview["entities"].sum()) if "entities" in overview else 0
     total_prov = int(overview["providers"].sum()) if "providers" in overview else 0
-    # High-priority share over the FULL scored universe (not the truncated
-    # top-N ranking, which would inflate it). Weighted by department size.
     if not overview.empty and "pct_high_priority" in overview.columns:
         _n = pd.to_numeric(overview["processes"], errors="coerce").fillna(0)
         _p = pd.to_numeric(overview["pct_high_priority"], errors="coerce").fillna(0)
@@ -1066,15 +1275,13 @@ def create_app() -> Any:
 
     dept_fig = build_dept_chart(overview)
     hist_fig = build_score_hist(ranking)
-    paa_fig = build_paa_pie(ranking)
     entity_fig = build_entity_bar(ranking)
 
     agr = load_agr_enrichment()
     agr_fig = build_agr_chart(agr)
     agr_lift = agr.get("enrichment_lift")
 
-    # Territorial filter options (national universe with territorial lens)
-    dept_options = [{"label": "Toda la Orinoquía (Meta + Casanare)", "value": "ALL"}]
+    dept_options = [{"label": "Toda Colombia", "value": "ALL"}]
     if not ranking.empty and "department" in ranking.columns:
         for d in sorted(x for x in ranking["department"].dropna().unique()):
             dept_options.append({"label": str(d), "value": str(d)})
@@ -1082,120 +1289,98 @@ def create_app() -> Any:
     if not concentration.empty:
         concentration = concentration.sort_values("awarded_value", ascending=False).head(12)
 
-    # ── Tab 1: Cola semanal ───────────────────────────────
-    tab_cola = dcc.Tab(
-        label="Cola semanal", className="app-tab",
+    project_ctx = load_project_context()
+
+    # ── Shared table style ────────────────────────────────
+    ts = _table_style()
+    ts_filter = _table_style(with_filter=True)
+
+    # ── KPI strip (DECIDIR) ──────────────────────────────
+    kpi_strip = html.Section(
+        [
+            metric(f"{total_proc:,}", "Procesos evaluados"),
+            metric(f"{total_ent:,}", "Entidades"),
+            metric(f"{total_prov:,}", "Proveedores"),
+            metric(f"{high_share:.1%}", "Alta prioridad"),
+            metric(f"{paa_share:.1%}", "Match PAA fuerte"),
+        ],
+        className="metric-grid",
+        id="kpi-strip",
+    )
+
+    # ── Decision strip (DECIDIR) ─────────────────────────
+    decision_strip = html.Section(
+        [
+            decision(
+                "Primer candidato a revision",
+                str(top_cand.get("process_key") or "Sin procesos"),
+                "Mayor score de prioridad con soporte de datos.",
+            ),
+            decision(
+                "Por que esta priorizado",
+                "Score alto + soporte visible",
+                "La prioridad ordena revision; la confianza indica cobertura.",
+            ),
+            decision(
+                "Accion humana siguiente",
+                action_text(top_score, top_conf),
+                "Abrir SECOP, contrastar fuente, registrar criterio.",
+            ),
+            metric(
+                f"{float(top_score):.1f}" if top_score else "Sin dato",
+                "Score del primer candidato",
+            ),
+            metric(
+                f"{float(top_conf):.1f}" if top_conf else "Sin dato",
+                "Confianza del primer candidato",
+            ),
+        ],
+        className="decision-strip",
+        id="decision-strip",
+    )
+
+    # ── Zona DECIDIR ─────────────────────────────────────
+    zona_decidir = dcc.Tab(
+        label="DECIDIR", value="tab-decidir",
+        className="app-tab app-tab--zone",
         selected_className="app-tab app-tab--selected",
         children=[
-            html.Section(
-                [
-                    decision(
-                        "Que revisar primero",
-                        str(top_cand.get("process_key") or "Sin procesos"),
-                        "Primer candidato por score y confianza.",
-                    ),
-                    decision(
-                        "Por que esta priorizado",
-                        "Score alto + soporte visible",
-                        "La prioridad ordena revision; la confianza indica cobertura.",
-                    ),
-                    decision(
-                        "Accion humana siguiente",
-                        action_text(top_score, top_conf),
-                        "Abrir SECOP, contrastar fuente, registrar criterio.",
-                    ),
-                    metric(
-                        f"{float(top_score):.1f}" if top_score else "Sin dato",
-                        "Score del primer candidato",
-                    ),
-                    metric(
-                        f"{float(top_conf):.1f}" if top_conf else "Sin dato",
-                        "Confianza del primer candidato",
-                    ),
-                ],
-                className="decision-strip",
-            ),
-            html.Section(
-                [
-                    metric(f"{total_proc:,}", "Procesos"),
-                    metric(f"{total_ent:,}", "Entidades"),
-                    metric(f"{total_prov:,}", "Proveedores"),
-                    metric(f"{high_share:.1%}", "Alerta prioritaria"),
-                    metric(f"{paa_share:.1%}", "Match PAA fuerte"),
-                ],
-                className="metric-grid",
-            ),
+            decision_strip,
+            kpi_strip,
             html.Div(DISCLAIMER, className="inline-disclaimer"),
             html.Div(
                 [
-                    html.Span("Cola semanal de revision", className="section-eyebrow"),
-                    html.H2("Top 10 procesos a revisar esta semana"),
+                    html.Span("Cola de revision", className="section-eyebrow"),
+                    html.H2("Top 20 procesos a revisar"),
                     html.P(
-                        "Procesos con mayor score de prioridad. Cada uno incluye "
-                        "razon principal y accion sugerida.",
+                        "Score como posicion percentil nacional. La cola ordena "
+                        "por prioridad; el percentil muestra que tan raro es el "
+                        "proceso en el universo scoreado.",
                         className="section-desc",
                     ),
                 ],
                 className="section-header",
             ),
-            (
-                dash_table.DataTable(
-                    id="cola-table",
-                    columns=[{"name": c, "id": c} for c in cola_table(ranking).columns],
-                    data=cola_table(ranking).to_dict("records"),
-                    page_size=10,
-                    sort_action="native",
-                    style_as_list_view=True,
-                    style_data_conditional=[
-                        {
-                            "if": {"filter_query": "{Score} >= 71"},
-                            "backgroundColor": "#FCEAE5", "color": "#E35A4B", "fontWeight": "700",
-                        },
-                        {
-                            "if": {"filter_query": "{Score} >= 41 && {Score} < 71"},
-                            "backgroundColor": "#FBF1DC", "color": "#C28832", "fontWeight": "700",
-                        },
-                        {
-                            "if": {"filter_query": "{Score} >= 21 && {Score} < 41"},
-                            "backgroundColor": "#E8EFF7", "color": "#103A5C", "fontWeight": "700",
-                        },
-                        {
-                            "if": {"filter_query": "{Score} < 21"},
-                            "backgroundColor": "#DDF1EF", "color": "#1F827C", "fontWeight": "700",
-                        },
-                    ],
-                    style_header={
-                        "backgroundColor": "#F1F4F9", "color": "#0B1E33",
-                        "fontWeight": "700", "textTransform": "uppercase",
-                        "fontSize": "11px", "letterSpacing": "0.06em",
-                        "borderBottom": "1px solid #CCD3DF",
-                    },
-                    style_cell={
-                        "padding": "10px 14px", "fontSize": "13px",
-                        "fontFamily": "Inter, system-ui, sans-serif",
-                        "color": "#1F2C40", "border": "0",
-                        "borderBottom": "1px solid #E3E8F0",
-                    },
-                )
-                if not ranking.empty
-                else empty_state("Sin procesos cargados")
-            ),
+            dash_table.DataTable(
+                id="cola-table",
+                columns=[{"name": c, "id": c} for c in cola_table(ranking).columns],
+                data=cola_table(ranking).to_dict("records"),
+                **ts,
+            ) if not ranking.empty else empty_state("Sin procesos cargados"),
             html.Div(
                 [
-                    html.Button("Descargar cola semanal CSV", id="dl-cola-btn"),
+                    html.Button("Descargar cola CSV", id="dl-cola-btn"),
                     dcc.Download(id="dl-cola"),
                 ],
                 className="filter-row",
             ),
-            plot_or(overview, dept_fig, "Panorama sin datos"),
-        ],
-    )
-
-    # ── Tab 2: Ranking ────────────────────────────────────
-    tab_ranking = dcc.Tab(
-        label="Ranking", className="app-tab",
-        selected_className="app-tab app-tab--selected",
-        children=[
+            html.Div(
+                [
+                    html.Span("Ranking completo", className="section-eyebrow"),
+                    html.H2("Explorar toda la cola priorizada"),
+                ],
+                className="section-header",
+            ),
             html.Div(DISCLAIMER, className="inline-disclaimer"),
             html.Div(
                 [
@@ -1206,202 +1391,57 @@ def create_app() -> Any:
                 ],
                 className="filter-row",
             ),
-            (
-                dash_table.DataTable(
-                    id="ranking-table",
-                    columns=[{"name": c, "id": c} for c in ranking_table(ranking).columns],
-                    data=ranking_table(ranking).to_dict("records"),
-                    page_size=15,
-                    sort_action="native",
-                    filter_action="native",
-                    style_as_list_view=True,
-                    style_data_conditional=[
-                        {
-                            "if": {"filter_query": "{Score} >= 71"},
-                            "backgroundColor": "#FCEAE5", "color": "#E35A4B", "fontWeight": "700",
-                        },
-                        {
-                            "if": {"filter_query": "{Score} >= 41 && {Score} < 71"},
-                            "backgroundColor": "#FBF1DC", "color": "#C28832", "fontWeight": "700",
-                        },
-                        {
-                            "if": {"filter_query": "{Score} >= 21 && {Score} < 41"},
-                            "backgroundColor": "#E8EFF7", "color": "#103A5C", "fontWeight": "700",
-                        },
-                        {
-                            "if": {"filter_query": "{Score} < 21"},
-                            "backgroundColor": "#DDF1EF", "color": "#1F827C", "fontWeight": "700",
-                        },
-                    ],
-                    style_header={
-                        "backgroundColor": "#F1F4F9", "color": "#0B1E33",
-                        "fontWeight": "700", "textTransform": "uppercase",
-                        "fontSize": "11px", "letterSpacing": "0.06em",
-                        "borderBottom": "1px solid #CCD3DF",
-                    },
-                    style_cell={
-                        "padding": "10px 14px", "fontSize": "13px",
-                        "fontFamily": "Inter, system-ui, sans-serif",
-                        "color": "#1F2C40", "border": "0",
-                        "borderBottom": "1px solid #E3E8F0",
-                    },
-                )
-                if not ranking.empty
-                else empty_state("Ranking sin procesos")
-            ),
+            dash_table.DataTable(
+                id="ranking-table",
+                columns=[{"name": c, "id": c} for c in ranking_table(ranking).columns],
+                data=ranking_table(ranking).to_dict("records"),
+                **ts_filter,
+            ) if not ranking.empty else empty_state("Ranking sin procesos"),
+            plot_or(overview, dept_fig, "Panorama sin datos"),
         ],
     )
 
-    # ── Tab 3: Detalle ────────────────────────────────────
-    tab_detail = dcc.Tab(
-        label="Detalle", className="app-tab",
+    # ── Zona ENTENDER ────────────────────────────────────
+    zona_entender = dcc.Tab(
+        label="ENTENDER", value="tab-entender",
+        className="app-tab app-tab--zone",
         selected_className="app-tab app-tab--selected",
         children=[
             html.Div(DISCLAIMER, className="inline-disclaimer"),
             html.Div(
                 [
-                    html.Label("Proceso"),
+                    html.Label("Seleccionar proceso"),
                     dcc.Dropdown(
                         id="detail-dropdown",
                         options=[
                             {
-                                "label": f"{r['process_key']} - {r['entity_name']}",
+                                "label": (
+                                    f"{r['process_key']} - {r.get('process_reference', '')}"
+                                    + (f" - {r['entity_name']}" if r.get("entity_name") else "")
+                                    + (f" (top {100 - float(r.get('score_percentile', 0)):.1f}%)"
+                                       if r.get("score_percentile") and float(r.get("score_percentile", 0)) >= 90
+                                       else "")
+                                ),
                                 "value": r["process_id"],
                             }
-                            for r in ranking.head(100).to_dict("records")
+                            for r in ranking.to_dict("records")
                         ],
                         value=(int(ranking.iloc[0]["process_id"]) if not ranking.empty else None),
+                        placeholder="Buscar proceso por referencia o entidad...",
+                        searchable=True,
+                        clearable=False,
                     ),
                 ],
                 className="filter-row",
             ),
             html.Div(id="detail-panel"),
-            html.Button("Descargar HTML", id="dl-detail-btn"),
-            dcc.Download(id="dl-detail"),
-        ],
-    )
-
-    # ── Tab 4: Distribucion ───────────────────────────────
-    tab_dist = dcc.Tab(
-        label="Distribucion", className="app-tab",
-        selected_className="app-tab app-tab--selected",
-        children=[
             html.Div(
                 [
-                    html.Span("Distribucion de scores", className="section-eyebrow"),
-                    html.H2("Como se distribuyen los procesos por nivel de prioridad"),
+                    html.Button("Descargar HTML", id="dl-detail-btn"),
+                    dcc.Download(id="dl-detail"),
                 ],
-                className="section-header",
+                className="filter-row",
             ),
-            plot_or(ranking, hist_fig, "Sin datos de ranking"),
-            html.Div(
-                [
-                    html.Div(
-                        [
-                            html.Span("Cobertura PAA", className="section-eyebrow"),
-                            html.H3("Match plan vs ejecucion"),
-                            plot_or(ranking, paa_fig, "Sin datos PAA"),
-                        ],
-                        className="dist-col",
-                    ),
-                    html.Div(
-                        [
-                            html.Span("Entidades con mas alertas", className="section-eyebrow"),
-                            html.H3("Top 10 por score promedio"),
-                            plot_or(ranking, entity_fig, "Sin datos de entidades"),
-                        ],
-                        className="dist-col",
-                    ),
-                ],
-                className="dist-grid",
-            ),
-        ],
-    )
-
-    # ── Tab 5: Concentracion ──────────────────────────────
-    tab_conc = dcc.Tab(
-        label="Concentracion", className="app-tab app-tab-secondary",
-        selected_className="app-tab app-tab--selected",
-        children=[
-            html.Div(
-                "Contexto secundario: no es ranking de entidades ni acusacion. "
-                "Requiere revision humana para interpretar.",
-                className="inline-disclaimer",
-            ),
-            dash_table.DataTable(
-                columns=[{"name": c, "id": c} for c in conc_table(concentration).columns],
-                data=conc_table(concentration).to_dict("records"),
-                page_size=12,
-                style_as_list_view=True,
-                style_header={
-                    "backgroundColor": "#F1F4F9", "color": "#0B1E33",
-                    "fontWeight": "700", "textTransform": "uppercase",
-                    "fontSize": "11px", "letterSpacing": "0.06em",
-                    "borderBottom": "1px solid #CCD3DF",
-                },
-                style_cell={
-                    "padding": "10px 14px", "fontSize": "13px",
-                    "fontFamily": "Inter, system-ui, sans-serif",
-                    "color": "#1F2C40", "border": "0",
-                    "borderBottom": "1px solid #E3E8F0",
-                },
-            ) if not concentration.empty else empty_state("Sin datos de concentracion"),
-        ],
-    )
-
-    # ── Tab 6: Metodologia ────────────────────────────────
-    tab_method = dcc.Tab(
-        label="Metodologia", className="app-tab",
-        selected_className="app-tab app-tab--selected",
-        children=[
-            html.Article(
-                [
-                    html.H2("Metodologia"),
-                    html.P(
-                        "El sistema combina IsolationForest para anomalias, "
-                        "desviacion frente a pares comparables, reglas explicables "
-                        "y confianza de datos para ordenar revision humana."
-                    ),
-                    html.P(
-                        "Score = 45% anomalia + 35% desviacion pares + 20% reglas. "
-                        "Confianza mide soporte de datos, no certeza del score."
-                    ),
-                    html.P(
-                        "La salida no acusa personas ni entidades. Solo ayuda a "
-                        "decidir que procesos revisar primero."
-                    ),
-                ],
-                className="methodology",
-            ),
-        ],
-    )
-
-    # ── Tab 7: Datos ──────────────────────────────────────
-    tab_data = dcc.Tab(
-        label="Datos", className="app-tab",
-        selected_className="app-tab app-tab--selected",
-        children=[
-            html.Article(
-                [
-                    html.H2("Calidad de datos"),
-                    html.P("Estado operativo de fuentes y servicios."),
-                    dash_table.DataTable(
-                        columns=[{"name": c, "id": c} for c in load_quality().columns],
-                        data=load_quality().to_dict("records"),
-                        page_size=10,
-                        style_as_list_view=True,
-                    ),
-                ],
-                className="methodology",
-            ),
-        ],
-    )
-
-    # ── Tab 8: Revision ───────────────────────────────────
-    tab_review = dcc.Tab(
-        label="Revision humana", className="app-tab",
-        selected_className="app-tab app-tab--selected",
-        children=[
             html.Article(
                 [
                     html.H2("Revision humana"),
@@ -1420,12 +1460,151 @@ def create_app() -> Any:
         ],
     )
 
-    # ── Load project context ─────────────────────────────
-    project_ctx = load_project_context()
+    # ── Zona CONFIAR ─────────────────────────────────────
+    lift_text = f"{agr_lift:.1f}x" if agr_lift else "\u2014"
+    agr_section = html.Section(
+        [
+            html.Span("Validacion independiente", className="section-eyebrow"),
+            html.H2("El score se concentra donde el control fiscal ya miro"),
+            html.P(
+                "Cruzamos las entidades que la Auditoria General (AGR, dataset "
+                "wasc-xi4h) puso bajo vigilancia fiscal contra nuestro score. "
+                "El modelo no se entrena con esa etiqueta: es una prueba ciega.",
+                className="section-desc",
+            ),
+            html.Div(
+                [
+                    metric(lift_text, "Enriquecimiento en alta prioridad"),
+                    metric(
+                        f"{(agr.get('flagged') or {}).get('median_score', 0):.0f}",
+                        "Mediana score: entidad vigilada",
+                    ),
+                    metric(
+                        f"{(agr.get('baseline') or {}).get('median_score', 0):.0f}",
+                        "Mediana score: resto",
+                    ),
+                    metric(
+                        f"{(agr.get('flagged') or {}).get('n_processes', 0):,}",
+                        "Procesos en entidades vigiladas",
+                    ),
+                ],
+                className="metric-grid",
+            ),
+            plot_or(
+                pd.DataFrame([1]) if agr_fig else pd.DataFrame(),
+                agr_fig, "Sin datos AGR disponibles",
+            ),
+            html.Div(
+                "Auditoria AGR no prueba conducta indebida: mide seleccion para "
+                "revision fiscal. Que el score enriquezca ese grupo es senal de "
+                "que el triage prioriza donde el control humano ya encontro "
+                "motivo de revision, no una etiqueta de culpabilidad.",
+                className="inline-disclaimer",
+            ),
+        ],
+        className="confiar-hero",
+    )
+
+    hist_section = html.Section(
+        [
+            html.Div(
+                [
+                    html.Span("Distribucion del score", className="section-eyebrow"),
+                    html.H2("Forma de triage: la mayoria baja, pocos arriba"),
+                    html.P(
+                        "Un triage sano concentra la mayoria de procesos en "
+                        "scores bajos. Solo una fraccion pequena supera el "
+                        "umbral de alta prioridad.",
+                        className="section-desc",
+                    ),
+                ],
+                className="section-header",
+            ),
+            plot_or(ranking, hist_fig, "Sin datos de ranking"),
+        ],
+    )
+
+    method_section = html.Article(
+        [
+            html.H2("Metodologia"),
+            html.P(
+                "El sistema combina IsolationForest para anomalias, "
+                "desviacion frente a pares comparables, reglas explicables "
+                "y confianza de datos para ordenar revision humana."
+            ),
+            html.P(
+                "Score = 45% anomalia + 35% desviacion pares + 20% reglas. "
+                "Confianza mide soporte de datos, no certeza del score."
+            ),
+            html.P(
+                "El percentil se calcula con percent_rank() sobre el universo "
+                "nacional scoreado. Un proceso en el top 0.5% esta entre los "
+                "500 mas raros de ~100.000."
+            ),
+            html.P(
+                "La salida no acusa personas ni entidades. Solo ayuda a "
+                "decidir que procesos revisar primero."
+            ),
+        ],
+        className="methodology",
+    )
+
+    conc_section = html.Section(
+        [
+            html.Div(
+                "Contexto secundario: no es ranking de entidades ni acusacion. "
+                "Requiere revision humana para interpretar.",
+                className="inline-disclaimer",
+            ),
+            dash_table.DataTable(
+                columns=[{"name": c, "id": c} for c in conc_table(concentration).columns],
+                data=conc_table(concentration).to_dict("records"),
+                **ts,
+            ) if not concentration.empty else empty_state("Sin datos de concentracion"),
+        ],
+    )
+
+    data_section = html.Article(
+        [
+            html.H2("Calidad de datos"),
+            html.P("Estado operativo de fuentes y servicios."),
+            dash_table.DataTable(
+                columns=[{"name": c, "id": c} for c in load_quality().columns],
+                data=load_quality().to_dict("records"),
+                page_size=10,
+                style_as_list_view=True,
+            ),
+        ],
+        className="methodology",
+    )
+
+    entity_section = html.Section(
+        [
+            html.Span("Entidades con mas alertas", className="section-eyebrow"),
+            html.H3("Top 10 por score promedio"),
+            plot_or(ranking, entity_fig, "Sin datos de entidades"),
+        ],
+        className="section-header",
+    )
+
+    zona_confiar = dcc.Tab(
+        label="CONFIAR", value="tab-confiar",
+        className="app-tab app-tab--zone",
+        selected_className="app-tab app-tab--selected",
+        children=[
+            agr_section,
+            hist_section,
+            method_section,
+            entity_section,
+            conc_section,
+            data_section,
+        ],
+    )
 
     # ── Tab: Proyecto ────────────────────────────────────
     tab_project = dcc.Tab(
-        label="Proyecto", className="app-tab",
+        label="Proyecto", value="tab-proyecto",
+        className="app-tab",
         selected_className="app-tab app-tab--selected",
         children=[
             html.Article(
@@ -1487,93 +1666,6 @@ def create_app() -> Any:
         ],
     )
 
-    # ── Zona CONFIAR: validacion AGR (titular) ────────────
-    lift_text = f"{agr_lift:.1f}x" if agr_lift else "—"
-    agr_section = html.Section(
-        [
-            html.Span("Validación independiente", className="section-eyebrow"),
-            html.H2("¿El score se concentra donde el control fiscal ya miró?"),
-            html.P(
-                "Cruzamos las entidades que la Auditoría General (AGR, dataset "
-                "wasc-xi4h) puso bajo vigilancia fiscal contra nuestro score. "
-                "El modelo no se entrena con esa etiqueta: es una prueba ciega.",
-                className="section-desc",
-            ),
-            html.Div(
-                [
-                    metric(lift_text, "Enriquecimiento en tasa de alta prioridad"),
-                    metric(
-                        f"{(agr.get('flagged') or {}).get('median_score', 0):.0f}",
-                        "Mediana score — entidad vigilada",
-                    ),
-                    metric(
-                        f"{(agr.get('baseline') or {}).get('median_score', 0):.0f}",
-                        "Mediana score — resto",
-                    ),
-                    metric(
-                        f"{(agr.get('flagged') or {}).get('n_processes', 0):,}",
-                        "Procesos en entidades vigiladas",
-                    ),
-                ],
-                className="metric-grid",
-            ),
-            plot_or(
-                pd.DataFrame([1]) if agr_fig else pd.DataFrame(),
-                agr_fig, "Sin datos AGR disponibles",
-            ),
-            html.Div(
-                "Auditoría AGR no prueba conducta indebida: mide selección para "
-                "revisión fiscal. Que el score enriquezca ese grupo es señal de "
-                "que el triage prioriza donde el control humano ya encontró "
-                "motivo de revisión, no una etiqueta de culpabilidad.",
-                className="inline-disclaimer",
-            ),
-        ],
-        className="confiar-hero",
-    )
-
-    zona_decidir = dcc.Tab(
-        label="1 · DECIDIR", className="app-tab",
-        selected_className="app-tab app-tab--selected",
-        children=[
-            html.Div(
-                [
-                    html.Label("Lente territorial"),
-                    dcc.Dropdown(
-                        id="dept-filter", options=dept_options, value="ALL",
-                        clearable=False, className="dept-dropdown",
-                    ),
-                ],
-                className="filter-row filter-row--territorial",
-            ),
-            *tab_cola.children,
-            html.Div(
-                [
-                    html.Span("Ranking completo", className="section-eyebrow"),
-                    html.H2("Explorar toda la cola priorizada"),
-                ],
-                className="section-header",
-            ),
-            *tab_ranking.children,
-        ],
-    )
-    zona_entender = dcc.Tab(
-        label="2 · ENTENDER", className="app-tab",
-        selected_className="app-tab app-tab--selected",
-        children=[*tab_detail.children, *tab_review.children],
-    )
-    zona_confiar = dcc.Tab(
-        label="3 · CONFIAR", className="app-tab",
-        selected_className="app-tab app-tab--selected",
-        children=[
-            agr_section,
-            *tab_dist.children,
-            *tab_method.children,
-            *tab_conc.children,
-            *tab_data.children,
-        ],
-    )
-
     # ── Layout ────────────────────────────────────────────
     app.layout = html.Div([
         html.Header(
@@ -1594,11 +1686,26 @@ def create_app() -> Any:
             ],
             className="app-header",
         ),
+        html.Div(
+            [
+                html.Label("Lente territorial"),
+                dcc.Dropdown(
+                    id="dept-filter", options=dept_options, value="ALL",
+                    clearable=False, className="dept-dropdown",
+                    placeholder="Filtrar por departamento...",
+                ),
+                dcc.Store(id="dept-store", data="ALL"),
+            ],
+            className="territorial-bar",
+        ),
         dcc.Tabs(
-            [tab_project, zona_decidir, zona_entender, zona_confiar],
+            id="main-tabs",
+            value="tab-decidir",
+            children=[tab_project, zona_decidir, zona_entender, zona_confiar],
             parent_className="app-tabs",
             className="app-tabs-container",
         ),
+        dcc.Store(id="nav-process-id", data=None),
     ])
 
     # ── Callbacks ─────────────────────────────────────────
@@ -1609,9 +1716,16 @@ def create_app() -> Any:
         return frame[frame["department"] == dept]
 
     @app.callback(
+        Output("dept-store", "data"),
+        Input("dept-filter", "value"),
+    )
+    def sync_dept_store(dept: str | None) -> str:
+        return dept or "ALL"
+
+    @app.callback(
         Output("ranking-table", "data"),
         Input("score-filter", "value"),
-        Input("dept-filter", "value"),
+        Input("dept-store", "data"),
     )
     def filter_ranking(min_s: int, dept: str | None) -> list[dict]:
         return ranking_table(
@@ -1620,7 +1734,7 @@ def create_app() -> Any:
 
     @app.callback(
         Output("cola-table", "data"),
-        Input("dept-filter", "value"),
+        Input("dept-store", "data"),
     )
     def filter_cola(dept: str | None) -> list[dict]:
         return cola_table(_by_dept(ranking, dept)).to_dict("records")
@@ -1629,18 +1743,28 @@ def create_app() -> Any:
         Output("dl-rank", "data"),
         Input("dl-rank-btn", "n_clicks"),
         State("score-filter", "value"),
+        State("dept-store", "data"),
         prevent_initial_call=True,
     )
-    def dl_rank(_n: int | None, min_s: int) -> dict | None:
-        return {"content": ranking_csv(ranking, min_s), "filename": "contratia-ranking.csv", "type": "text/csv"}
+    def dl_rank(_n: int | None, min_s: int, dept: str | None) -> dict | None:
+        return {
+            "content": ranking_csv(_by_dept(ranking, dept), min_s),
+            "filename": "contratia-ranking.csv",
+            "type": "text/csv",
+        }
 
     @app.callback(
         Output("dl-cola", "data"),
         Input("dl-cola-btn", "n_clicks"),
+        State("dept-store", "data"),
         prevent_initial_call=True,
     )
-    def dl_cola(_n: int | None) -> dict | None:
-        return {"content": cola_table(ranking).to_csv(index=False), "filename": "contratia-cola-semanal.csv", "type": "text/csv"}
+    def dl_cola(_n: int | None, dept: str | None) -> dict | None:
+        return {
+            "content": cola_table(_by_dept(ranking, dept)).to_csv(index=False),
+            "filename": "contratia-cola-semanal.csv",
+            "type": "text/csv",
+        }
 
     @app.callback(
         Output("detail-panel", "children"),
@@ -1664,7 +1788,67 @@ def create_app() -> Any:
         if det is None:
             return None
         pk = str(det.get("process_key", pid))
-        return {"content": _report_html(ranking, pid), "filename": f"contratia-{pk}.html", "type": "text/html"}
+        return {
+            "content": _report_html(ranking, pid),
+            "filename": f"contratia-{pk}.html",
+            "type": "text/html",
+        }
+
+    # ── Cross-tab navigation: DECIDIR → ENTENDER ─────────
+
+    def _find_pid_from_row(active_cell: dict | None, data: list[dict] | None) -> int | None:
+        if not active_cell or not data:
+            return None
+        row_idx = active_cell.get("row")
+        if row_idx is None or row_idx >= len(data):
+            return None
+        pid = data[row_idx].get("process_id")
+        if pid is not None:
+            try:
+                return int(pid)
+            except (ValueError, TypeError):
+                pass
+        pk = data[row_idx].get("process_key")
+        if pk is not None and not ranking.empty:
+            match = ranking[ranking["process_key"] == pk]
+            if not match.empty:
+                return int(match.iloc[0]["process_id"])
+        return None
+
+    @app.callback(
+        Output("nav-process-id", "data"),
+        Input("cola-table", "active_cell"),
+        Input("cola-table", "data"),
+        Input("ranking-table", "active_cell"),
+        Input("ranking-table", "data"),
+        prevent_initial_call=True,
+    )
+    def capture_nav_click(
+        cola_cell: dict | None, cola_data: list[dict] | None,
+        rank_cell: dict | None, rank_data: list[dict] | None,
+    ) -> int | None:
+        from dash import callback_context
+        if not callback_context.triggered:
+            return None
+        trigger = callback_context.triggered[0]["prop_id"]
+        if "cola-table" in trigger:
+            pid = _find_pid_from_row(cola_cell, cola_data)
+        elif "ranking-table" in trigger:
+            pid = _find_pid_from_row(rank_cell, rank_data)
+        else:
+            return None
+        return pid
+
+    @app.callback(
+        Output("main-tabs", "value"),
+        Output("detail-dropdown", "value"),
+        Input("nav-process-id", "data"),
+        prevent_initial_call=True,
+    )
+    def navigate_to_entender(pid: int | None) -> tuple[str, int | None]:
+        if pid is None:
+            return "tab-decidir", None
+        return "tab-entender", pid
 
     return app
 

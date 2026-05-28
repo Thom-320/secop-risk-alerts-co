@@ -75,7 +75,7 @@ class SentenceTransformerProvider:
 
 
 def get_similarity_provider() -> SimilarityProvider:
-    use_transformer = os.getenv("CONTRATIA_USE_TRANSFORMER_EMBEDDINGS", "0").strip() == "1"
+    use_transformer = os.getenv("CONTRATIA_USE_TRANSFORMER_EMBEDDINGS", "1").strip() == "1"
     if use_transformer:
         try:
             provider = SentenceTransformerProvider()

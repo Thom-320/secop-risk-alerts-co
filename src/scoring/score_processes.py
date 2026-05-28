@@ -88,18 +88,46 @@ def build_paa_matches(processes: pd.DataFrame, paa: pd.DataFrame) -> pd.DataFram
     exact["paa_match_confidence"] = np.where(exact["paa_item_id"].notna(), 1.0, 0.0)
 
     unmatched = exact[exact["paa_item_id"].isna()][processes.columns].copy()
+
+    # Filter PAA: exclude NODEFINIDO/empty references for semantic matching
+    paa_valid = paa[
+        (paa["related_process_reference_norm"].fillna("").ne(""))
+        & (paa["related_process_reference_norm"].fillna("").str.upper() != "NODEFINIDO")
+    ].copy()
+    # Also keep all PAA items for entity-key-based fallback (even NODEFINIDO)
+    paa_all = paa.copy()
+
     semantic_rows: list[dict[str, object]] = []
     grouped = unmatched.groupby(["entity_key", "process_year"], dropna=False)
     for (entity_key, year), group in grouped:
-        candidates = paa[(paa["entity_key"] == entity_key) & (paa["paa_year"] == year)].copy()
+        # First try: match against PAA items with valid references (same entity + year)
+        candidates = paa_valid[
+            (paa_valid["entity_key"] == entity_key) & (paa_valid["paa_year"] == year)
+        ].copy()
+        # Fallback: use all PAA items including NODEFINIDO if no valid-reference candidates
+        if candidates.empty:
+            candidates = paa_all[
+                (paa_all["entity_key"] == entity_key) & (paa_all["paa_year"] == year)
+            ].copy()
         if candidates.empty:
             continue
+
         process_texts = group["process_text"].fillna("").astype(str).tolist()
         paa_texts = candidates["paa_text"].fillna("").astype(str).tolist()
+
+        # Skip if all PAA texts are empty
+        if not any(t.strip() for t in paa_texts):
+            continue
+
         similarity = semantic_similarity_matrix(process_texts, paa_texts)
         for idx, (_, process_row) in enumerate(group.iterrows()):
             best_idx = int(similarity[idx].argmax())
             best_score = float(similarity[idx, best_idx])
+
+            # Skip very low similarity matches (noise)
+            if best_score < 0.15:
+                continue
+
             candidate = candidates.iloc[best_idx]
             confidence = best_score
             if process_row["modality_family"] == candidate["modality_family"]:
@@ -154,8 +182,7 @@ def build_paa_matches(processes: pd.DataFrame, paa: pd.DataFrame) -> pd.DataFram
 
 
 def build_semantic_comparables(processes: pd.DataFrame) -> pd.DataFrame:
-    from sklearn.feature_extraction.text import TfidfVectorizer
-    from sklearn.neighbors import NearestNeighbors
+    from src.scoring.semantic_similarity import semantic_similarity_matrix
 
     demo = processes[processes["demo_scope"] & processes["text_sufficient"]].copy()
     if demo.empty:
@@ -182,34 +209,28 @@ def build_semantic_comparables(processes: pd.DataFrame) -> pd.DataFrame:
         texts = group["process_text"].fillna("").astype(str).tolist()
         group_rows = list(group.iterrows())
 
-        # Use TF-IDF + NearestNeighbors for efficient top-K search
-        vectorizer = TfidfVectorizer(stop_words=None, min_df=1, ngram_range=(1, 2))
-        vectors = vectorizer.fit_transform(texts)
-
-        k = min(top_k + 1, len(texts))  # +1 because self is included
-        nn = NearestNeighbors(n_neighbors=k, metric="cosine", algorithm="brute")
-        nn.fit(vectors)
-        distances, indices = nn.kneighbors(vectors)
+        similarity_matrix = semantic_similarity_matrix(texts)
 
         for row_idx, (_idx, row) in enumerate(group_rows):
-            for rank, neighbor_idx in enumerate(indices[row_idx]):
-                if neighbor_idx == row_idx:
-                    continue
+            similarities = similarity_matrix[row_idx]
+            similarities[row_idx] = -1.0
+            top_indices = similarities.argsort()[::-1][:top_k]
+
+            for rank, neighbor_idx in enumerate(top_indices, start=1):
+                if similarities[neighbor_idx] <= 0:
+                    break
                 candidate = group.iloc[neighbor_idx]
-                sim = 1.0 - distances[row_idx][rank]  # cosine distance -> similarity
                 rows.append(
                     {
                         "process_key": row["process_key"],
                         "comparable_process_key": candidate["process_key"],
-                        "similarity": float(sim),
+                        "similarity": float(similarities[neighbor_idx]),
                         "rank": rank,
                         "comparable_label": comparable_label(candidate),
                         "comparable_value": candidate["base_price"],
                         "comparable_duration_days": candidate["duration_days"],
                     }
                 )
-                if rank >= top_k - 1:
-                    break
     return pd.DataFrame(rows)
 
 

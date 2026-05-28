@@ -769,6 +769,165 @@ html, body {
 
 .reasons-list li:last-child { border-bottom: 0; }
 
+/* ── Reasons section ────────────────────────────────────── */
+
+.reasons-section {
+  margin: 32px 48px;
+  padding: 28px 0;
+  border-top: 1px solid var(--rule);
+  border-bottom: 1px solid var(--rule);
+}
+
+.reasons-section h3 {
+  margin: 0 0 8px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  color: var(--coral);
+  text-transform: uppercase;
+}
+
+.section-intro {
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.5;
+  margin: 0 0 20px;
+  max-width: 68ch;
+}
+
+/* ── Reason cards ───────────────────────────────────────── */
+
+.reason-card {
+  background: var(--surface);
+  border: 1px solid var(--rule);
+  border-radius: 0;
+  padding: 20px 24px;
+  margin-bottom: 12px;
+}
+
+.reason-card:last-child { margin-bottom: 0; }
+
+.reason-tag {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--coral);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+.reason-value {
+  display: block;
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--ink);
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+  margin-bottom: 10px;
+}
+
+.reason-explanation {
+  color: var(--ink-2);
+  font-size: 14px;
+  line-height: 1.6;
+  margin: 0;
+  max-width: 68ch;
+}
+
+/* ── Detail hero card ───────────────────────────────────── */
+
+.detail-card--hero {
+  padding: 32px 48px;
+  border-bottom: 1px solid var(--rule);
+  margin-bottom: 0;
+}
+
+.detail-card--hero h2 {
+  font-family: var(--font-display);
+  font-size: 24px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+  margin: 0 0 12px;
+  line-height: 1.2;
+}
+
+.detail-description {
+  color: var(--ink-2);
+  font-size: 14.5px;
+  line-height: 1.6;
+  margin: 0 0 16px;
+  max-width: 72ch;
+}
+
+.detail-meta {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+
+.detail-entity {
+  font-weight: 600;
+  color: var(--ink);
+  font-size: 14px;
+}
+
+.detail-dept,
+.detail-modality {
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.detail-actions {
+  margin-top: 16px;
+}
+
+/* ── Value comparison metric ────────────────────────────── */
+
+.metric-card--comparison {
+  position: relative;
+}
+
+.metric-value-main {
+  display: block;
+  font-family: var(--font-display);
+  font-size: 28px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums lining-nums;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+  line-height: 1;
+}
+
+.metric-reference {
+  display: block;
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 6px;
+}
+
+/* ── Ratio metric ───────────────────────────────────────── */
+
+.metric-card--ratio .metric-ratio {
+  display: block;
+  font-family: var(--font-display);
+  font-size: 28px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums lining-nums;
+  letter-spacing: -0.02em;
+  line-height: 1;
+}
+
+.metric-ratio--high { color: var(--coral); }
+.metric-ratio--medium { color: var(--amber); }
+.metric-ratio--low { color: var(--teal); }
+.metric-ratio--neutral { color: var(--muted); }
+
 /* ── Formula strip ──────────────────────────────────────── */
 
 .formula-strip {
@@ -912,6 +1071,130 @@ html, body {
   color: var(--ink);
 }
 
+/* ── Territorial bar (global filter) ───────────────────── */
+
+.territorial-bar {
+  display: flex;
+  align-items: flex-end;
+  gap: 24px;
+  padding: 20px 48px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--rule);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.territorial-bar label {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--coral);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+  white-space: nowrap;
+}
+
+.dept-dropdown {
+  min-width: 280px;
+  max-width: 400px;
+  font-family: var(--font-sans);
+  font-size: 14px;
+}
+
+.dept-dropdown .Select-control {
+  border: 1px solid var(--rule-strong) !important;
+  border-radius: var(--radius-s) !important;
+  min-height: 38px;
+}
+
+.dept-dropdown .Select-value-label {
+  color: var(--ink) !important;
+  font-weight: 500;
+}
+
+/* ── Zone tab styling ──────────────────────────────────── */
+
+.app-tab--zone {
+  font-weight: 600 !important;
+  letter-spacing: 0.04em !important;
+  text-transform: uppercase;
+  font-size: 12px !important;
+}
+
+.app-tab--zone.app-tab--selected {
+  border-bottom-width: 2px !important;
+}
+
+/* ── AGR context panel (ENTENDER detail) ───────────────── */
+
+.agr-context-panel {
+  margin: 32px 48px;
+  padding: 28px 0;
+  border-top: 1px solid var(--rule);
+  border-bottom: 1px solid var(--rule);
+}
+
+.agr-context-panel--active {
+  border-left: 3px solid var(--amber);
+  padding-left: 24px;
+}
+
+.agr-disclaimer {
+  color: var(--muted);
+  font-size: 12px;
+  font-style: italic;
+  margin: 12px 0 0;
+  line-height: 1.5;
+}
+
+.agr-findings-table {
+  margin: 12px 0 0 !important;
+  width: 100% !important;
+}
+
+/* ── Concentration context panel ───────────────────────── */
+
+.conc-context-panel {
+  margin: 32px 48px;
+  padding: 28px 0;
+  border-top: 1px solid var(--rule);
+  border-bottom: 1px solid var(--rule);
+}
+
+.conc-table {
+  margin: 12px 0 0 !important;
+  width: 100% !important;
+}
+
+/* ── CONFIAR hero section ──────────────────────────────── */
+
+.confiar-hero {
+  padding: 40px 48px 0;
+}
+
+.confiar-hero .section-header {
+  padding: 0;
+}
+
+.confiar-hero .metric-grid {
+  padding: 0;
+  margin-top: 24px;
+}
+
+/* ── Chart panel generic (remove hardcoded label) ──────── */
+
+.chart-panel::before {
+  content: "";
+}
+
+.chart-panel::after {
+  content: "";
+  display: none;
+}
+
 /* ── Responsive ─────────────────────────────────────────── */
 
 @media (max-width: 1200px) {
@@ -937,6 +1220,9 @@ html, body {
   .metric-card { border-left: 0; border-top: 1px solid var(--rule); padding: 20px 0; }
   .decision-strip > *:first-child::before { display: none; }
 
+  .territorial-bar { padding: 16px 24px; flex-wrap: wrap; }
+  .dept-dropdown { min-width: 200px; max-width: 100%; }
+
   .inline-disclaimer,
   .filter-row,
   .empty-state,
@@ -950,7 +1236,10 @@ html, body {
   .breakdown-section,
   .dist-grid,
   .comps-heading,
-  .detail-badges { margin-left: 24px; margin-right: 24px; padding-left: 0; padding-right: 0; }
+  .detail-badges,
+  .agr-context-panel,
+  .conc-context-panel,
+  .confiar-hero { margin-left: 24px; margin-right: 24px; padding-left: 0; padding-right: 0; }
 
   .simple-table { width: calc(100% - 48px); margin-left: 24px; margin-right: 24px; }
 

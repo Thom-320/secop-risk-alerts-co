@@ -590,8 +590,7 @@ def load_risk_outputs(conn: Any) -> None:
 
 
 def load_semantic_comparables(conn: Any, max_processes: int = 500) -> None:
-    from sklearn.feature_extraction.text import TfidfVectorizer
-    from sklearn.metrics.pairwise import cosine_similarity
+    from src.scoring.semantic_similarity import semantic_similarity_matrix
 
     with conn.cursor() as cur:
         cur.execute(
@@ -613,15 +612,16 @@ def load_semantic_comparables(conn: Any, max_processes: int = 500) -> None:
 
     process_ids = [int(row[0]) for row in rows]
     texts = [f"{row[1]} {row[2]} {row[3]}" for row in rows]
-    matrix = TfidfVectorizer(max_features=4000, ngram_range=(1, 2)).fit_transform(texts)
-    similarities = cosine_similarity(matrix)
+    similarity_matrix = semantic_similarity_matrix(texts)
 
     with conn.cursor() as cur:
         for idx, process_id in enumerate(process_ids):
+            similarities = similarity_matrix[idx]
+            similarities[idx] = -1.0
             candidates = [
                 (process_ids[j], float(score))
-                for j, score in enumerate(similarities[idx])
-                if j != idx and score > 0
+                for j, score in enumerate(similarities)
+                if score > 0
             ]
             candidates.sort(key=lambda item: item[1], reverse=True)
             for rank, (comparable_process_id, similarity) in enumerate(candidates[:3], start=1):

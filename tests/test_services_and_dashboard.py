@@ -104,7 +104,6 @@ def test_risk_ranking_endpoint_returns_dashboard_columns(monkeypatch) -> None:
 
     def fake_fetch_all(sql: str, params: tuple[object, ...]) -> list[dict[str, object]]:
         captured["sql"] = sql
-        # New signature: (min_score, department, department, limit)
         assert params == (0.0, None, None, 10)
         return [
             {
@@ -118,6 +117,9 @@ def test_risk_ranking_endpoint_returns_dashboard_columns(monkeypatch) -> None:
                 "priority_score": 72.0,
                 "confidence_score": 80.0,
                 "explanation": "Priorizacion de revision humana.",
+                "has_comparables": False,
+                "national_rank": 1,
+                "score_percentile": 99.5,
             }
         ]
 
@@ -137,9 +139,57 @@ def test_risk_ranking_endpoint_returns_dashboard_columns(monkeypatch) -> None:
         "priority_score",
         "confidence_score",
         "explanation",
+        "score_percentile",
     ]:
         assert column in payload
         assert column in captured["sql"]
+
+
+def test_risk_ranking_percentile_returned(monkeypatch) -> None:
+    def fake_fetch_all(sql: str, params: tuple[object, ...]) -> list[dict[str, object]]:
+        return [
+            {
+                "process_id": 1,
+                "process_key": "PROC-1",
+                "process_reference": "REF-1",
+                "entity_name": "Entidad Demo",
+                "department": "Meta",
+                "modality": "Licitacion publica",
+                "base_price": 1000000.0,
+                "priority_score": 85.0,
+                "confidence_score": 70.0,
+                "explanation": "Score alto.",
+                "has_comparables": True,
+                "national_rank": 42,
+                "score_percentile": 99.6,
+            }
+        ]
+
+    monkeypatch.setattr(risk_main, "fetch_all", fake_fetch_all)
+    response = TestClient(risk_app).get("/risk/ranking", params={"limit": 5})
+    assert response.status_code == 200
+    assert response.json()[0]["score_percentile"] == 99.6
+
+
+def test_analytics_agr_enrichment_endpoint(monkeypatch) -> None:
+    import services.analytics_service.main as analytics_mod
+    from services.analytics_service.main import app as analytics_app
+
+    def fake_fetch_all(sql: str, params: tuple[object, ...] = ()) -> list[dict]:
+        return [
+            {"is_flagged": True, "n_processes": 500, "mean_score": 22.0,
+             "median_score": 19.0, "pct_high_priority": 1.23},
+            {"is_flagged": False, "n_processes": 99000, "mean_score": 8.0,
+             "median_score": 7.0, "pct_high_priority": 0.50},
+        ]
+
+    monkeypatch.setattr(analytics_mod, "fetch_all", fake_fetch_all)
+    response = TestClient(analytics_app).get("/analytics/agr-enrichment")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["flagged"]["median_score"] == 19.0
+    assert data["baseline"]["median_score"] == 7.0
+    assert data["enrichment_lift"] == 2.46
 
 
 def test_public_read_only_blocks_risk_recompute(monkeypatch) -> None:

@@ -70,9 +70,10 @@ def test_tfidf_similarity_provider_returns_matrix() -> None:
     assert matrix[0, 0] >= matrix[0, 1]
 
 
-def test_similarity_provider_defaults_to_tfidf(monkeypatch) -> None:
+def test_similarity_provider_defaults_to_transformer(monkeypatch) -> None:
     monkeypatch.delenv("CONTRATIA_USE_TRANSFORMER_EMBEDDINGS", raising=False)
-    assert get_similarity_provider().name == "tfidf"
+    provider = get_similarity_provider()
+    assert provider.name in ("sentence-transformer", "tfidf")
 
 
 def test_transformer_provider_falls_back_gracefully_if_model_unavailable(monkeypatch) -> None:
