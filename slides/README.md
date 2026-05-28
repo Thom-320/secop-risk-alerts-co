@@ -1,101 +1,60 @@
-# Deck final - ContratIA Abierta
+# Deck — ContratIA Abierta
 
-Esta carpeta contiene el deck final de 12 diapositivas para la sustentacion de
-15 minutos del proyecto Transparencia360 / ContratIA Abierta.
+Deck único y canónico para la sustentación. Diseño editorial (HTML), 19 slides,
+con la evidencia real del proyecto (validación AGR 2.46×, caso Puerto Gaitán 3.1×,
+90.431 procesos reales, embeddings funcionando).
 
-## Entregables
+## Entregable canónico (lo único que necesitas)
 
-- `contratia_abierta_deck.md`: fuente Markdown del deck.
-- `contratia_abierta_speaker_notes.md`: notas de exposicion en espanol.
-- `contratia_abierta_deck.pptx`: deck editable.
-- `contratia_abierta_deck.pdf`: exportacion PDF.
-- `contratia_abierta_beamer.pdf`: version LaTeX/Beamer optimizada para presentar.
-- `latex/contratia_abierta_beamer.tex`: fuente LaTeX de la version Beamer.
-- `html/contratia_abierta_interactive.html`: version HTML interactiva con navegacion, pantalla completa y notas.
-- `html/export/contratia_abierta_interactive.pptx`: exportacion editable desde el HTML.
-- `html/export/contratia_abierta_interactive.pdf`: exportacion PDF desde el HTML.
-- `assets/`: capturas reales del dashboard y diagramas generados desde el repo.
+- **`html/contratia_abierta.html`** — el deck. Ábrelo en Chrome y navega con `←/→`.
+- **`html/deck-stage.js`** — componente de navegación (debe estar junto al HTML).
+- **`contratia_abierta.pdf`** — exportación PDF (19 páginas, una por slide).
 
-La carpeta `presentation/` mantiene una copia compatible:
+Guion de sustentación técnico y detallado: **`docs/pitch_tecnico.md`**.
 
-- `presentation/slides.md`
-- `presentation/speaker_notes.md`
-- `presentation/export/slides.pptx`
-- `presentation/export/slides.pdf`
-- `presentation/export/slides_interactive.pptx`
-- `presentation/export/slides_interactive.pdf`
-- `presentation/html/contratia_abierta_interactive.html`
+## Cómo presentar
 
-## Regeneracion
+1. Abre `html/contratia_abierta.html` en Chrome (se ve mejor en vivo, fuentes
+   cargadas, navegación con flechas y pantalla completa).
+2. Ten el dashboard vivo en otra pestaña: `make demo-full` → `http://localhost:8050`.
+3. Sigue `docs/pitch_tecnico.md` slide por slide.
 
-Desde la raiz del repositorio:
+## Regenerar el PDF desde el HTML
 
 ```bash
-make db-up
-make etl-demo
-make mongo-load
-make services-up
-npm install
-npm run slides:assets
-npm run slides:capture
-npm run slides:build
-soffice --headless --convert-to pdf --outdir slides slides/contratia_abierta_deck.pptx
+"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" \
+  --headless=new --disable-gpu --virtual-time-budget=20000 \
+  --run-all-compositor-stages-before-draw --no-pdf-header-footer \
+  --print-to-pdf=slides/contratia_abierta.pdf \
+  "file://$PWD/slides/html/contratia_abierta.html"
 ```
 
-Version LaTeX/Beamer:
+El deck usa `@media print` (una slide por página A4 horizontal) vía `deck-stage.js`.
 
-```bash
-latexmk -xelatex -interaction=nonstopmode -halt-on-error -outdir=slides/latex/build slides/latex/contratia_abierta_beamer.tex
-cp slides/latex/build/contratia_abierta_beamer.pdf slides/contratia_abierta_beamer.pdf
-cp slides/contratia_abierta_beamer.pdf presentation/export/slides_latex.pdf
+## Estructura
+
+```
+slides/
+├── html/
+│   ├── contratia_abierta.html   ← deck canónico
+│   └── deck-stage.js            ← navegación + print
+├── contratia_abierta.pdf        ← export PDF
+├── assets/                      ← screenshots reales + diagramas
+├── scripts/generate_assets.py   ← regenera diagramas
+├── PROMPT.md · INSTRUCCIONES.md  ← brief de generación
+└── archive/                     ← versiones anteriores (pptx, beamer, etc.) — no usar
 ```
 
-Verificacion visual:
+## Evidencia usada en el deck
 
-```bash
-pdftoppm -png -r 110 slides/contratia_abierta_beamer.pdf slides/latex/build/rendered/slide
-```
+- 90.431 procesos reales scoreados (Meta + Casanare).
+- 33 objetos PostgreSQL · 5 colecciones MongoDB · 3 APIs FastAPI · 71 tests.
+- Validación AGR (control fiscal) 2.46× de enriquecimiento — prueba ciega.
+- Caso real Puerto Gaitán 3.1× + contraejemplo honesto Casanare 1.0×.
+- Embeddings MiniLM multilingüe funcionando (sim 0.61 vs 0.14).
 
-Version HTML interactiva:
+## Criterios de diseño
 
-```bash
-open slides/html/contratia_abierta_interactive.html
-npm run slides:html
-```
-
-Luego sincroniza la copia historica:
-
-```bash
-cp slides/contratia_abierta_deck.md presentation/slides.md
-cp slides/contratia_abierta_speaker_notes.md presentation/speaker_notes.md
-cp slides/contratia_abierta_deck.pptx presentation/export/slides.pptx
-cp slides/contratia_abierta_deck.pdf presentation/export/slides.pdf
-cp slides/assets/*.png presentation/assets/
-cp slides/html/contratia_abierta_interactive.html presentation/html/contratia_abierta_interactive.html
-cp slides/html/export/contratia_abierta_interactive.pptx presentation/export/slides_interactive.pptx
-cp slides/html/export/contratia_abierta_interactive.pdf presentation/export/slides_interactive.pdf
-```
-
-## Evidencia usada
-
-Las metricas salen de:
-
-- `validation/final_validation.json`
-- `validation/table_counts.csv`
-
-Metricas usadas en el deck:
-
-- 27 tablas relacionales y 33 objetos publicos.
-- 17.229 procesos en `procurement_process`.
-- MongoDB con documentos en las colecciones requeridas.
-- Health checks de contratos, prioridad y analitica en HTTP 200.
-- Suite automatizada no integral pasando (ver `docs/testing_evidence.md`).
-
-## Criterios de diseno
-
-- Fondo claro, tipografia de sistema y acento azul institucional.
-- Maximo 12 diapositivas.
-- Texto visible reducido; detalles en notas.
-- Capturas y diagramas reales del repositorio.
-- Sin visuales genericos de IA, robots, cerebros, circuitos o promesas vagas.
-- Lenguaje etico: priorizacion de revision humana, no prueba conductas indebidas.
+- Editorial: Newsreader serif + Inter + JetBrains Mono. Navy / coral / teal.
+- Lenguaje ético: prioriza revisión humana, no prueba conductas indebidas.
+- Sin visuales genéricos de IA. Esquemas y datos reales del repositorio.
