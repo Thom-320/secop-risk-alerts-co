@@ -21,7 +21,7 @@ Un **único artifact HTML** que cumple todas estas condiciones:
 
 ### PRODUCTO
 
-**ContratIA Abierta** — sistema de IA explicable que **prioriza revisión humana** de contratación pública en Colombia. **No detecta corrupción.** Convierte miles de procesos SECOP en una cola priorizada y auditable. Datos abiertos oficiales del ecosistema Datos Abiertos Colombia. Demo en Meta + Casanare (Orinoquía). Concurso: **Datos al Ecosistema 2026 — IA para Colombia**.
+**ContratIA Abierta** — sistema de IA explicable que **prioriza revisión humana** de contratación pública en Colombia. **No emite juicios de corrupción.** Convierte miles de procesos SECOP en una cola priorizada y auditable. Datos abiertos oficiales del ecosistema Datos Abiertos Colombia. Demo en Meta + Casanare (Orinoquía). Concurso: **Datos al Ecosistema 2026 — IA para Colombia**.
 
 ### AUDIENCIA Y TONO
 
