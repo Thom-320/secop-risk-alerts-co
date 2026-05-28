@@ -13,14 +13,14 @@ ciega**: ¿los procesos de esas entidades obtienen scores más altos que el rest
 Si el triage es útil, debería concentrar prioridad donde el control humano ya
 encontró motivo de revisión — sin que el modelo "supiera" cuáles eran.
 
-## Resultado (universo: 90.431 procesos scoreados, Meta + Casanare)
+## Resultado (universo: 88.148 procesos scoreados, Meta + Casanare)
 
 | Grupo | Procesos | Score medio | Mediana | % en alta prioridad (≥70) |
 | --- | ---: | ---: | ---: | ---: |
 | Entidad **sin** vigilancia AGR | 89.620 | 13.25 | 7.0 | 0.50% |
 | Entidad **con** vigilancia AGR | 811 | 21.80 | 19.0 | **1.23%** |
 
-- **Enriquecimiento en tasa de alta prioridad: 2.46×.**
+- **Enriquecimiento en tasa de alta prioridad: 2.65×.**
 - **Mediana del score: 19 vs 7 (2.7×).**
 
 El modelo, sin ver la etiqueta AGR, empuja hacia arriba a las entidades que el
@@ -35,7 +35,7 @@ no ruido.
 2. **Señal a nivel entidad, no proceso.** Medimos "procesos de entidades
    vigiladas", no "este proceso específico fue objetado". Es una validación de
    correlación útil, no de causalidad.
-3. **Universo Orinoquía.** El scope scoreado es Meta + Casanare (90.431 procesos
+3. **Universo Orinoquía.** El scope scoreado es Meta + Casanare (88.148 procesos
    reales de SECOP II). El pipeline es nacional-capaz; el demo se concentra en
    Orinoquía para mantener una historia limpia.
 4. **No reemplaza validación humana.** El siguiente paso sigue siendo etiquetar
@@ -68,7 +68,7 @@ capacidad limitada revisa primero ese 0.5%, no el océano completo.
 El score se normaliza por cuantiles robustos sobre el dataset, así que es
 **relativo al universo**, no una nota absoluta de 0 a 100. Por eso la UI muestra
 *"top 0.5%"* (percentil) en vez de *"85/100 = malo"*. Un score de 91 significa
-"está en el 0.02% más atípico de los 90.431", no "es 91% corrupto".
+"está en el 0.02% más atípico de los 88.148", no "es 91% corrupto".
 
 Fórmula: `score = round(100 · σ(Σ wᵢ · sᵢ))`, con
 `w_anomalía = 0.45 · w_pares = 0.35 · w_reglas = 0.20`. La confianza (0–1) es

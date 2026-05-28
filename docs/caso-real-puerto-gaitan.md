@@ -25,7 +25,7 @@ país. El control fiscal documentó irregularidades reiteradas:
 | Métrica | Puerto Gaitán | Universo nacional |
 | --- | ---: | ---: |
 | Tasa de procesos en alta prioridad (score ≥ 70) | **1.56%** | 0.51% |
-| Enriquecimiento | **3.1×** | 1.0× (línea base) |
+| Enriquecimiento | **2.5×** | 1.0× (línea base) |
 | Score máximo de un proceso | **88** (top ~0.1%) | — |
 
 El proceso de Puerto Gaitán con mayor score que marcamos es una
@@ -47,10 +47,10 @@ millones**. Sería fácil esperar que nuestro sistema lo "marcara" — pero:
 
 | Entidad | Enriquecimiento vs nacional |
 | --- | ---: |
-| Municipio de Puerto Gaitán | 3.1× |
-| Departamento del Meta | 2.9× |
-| **Gobernación de Casanare** | **1.0× (promedio)** |
-| Alcaldía de Villavicencio | 0.7× (por debajo) |
+| Municipio de Puerto Gaitán | 2.5× |
+| Departamento del Meta | 2.7× |
+| **Gobernación de Casanare** | **1.1× (promedio)** |
+| Alcaldía de Villavicencio | 0.6× (por debajo) |
 
 La Gobernación de Casanare puntúa en el **promedio**. ¿Por qué? Porque los
 escándalos condenados son de administraciones de hace **10+ años** (p. ej. la
@@ -67,7 +67,7 @@ malo" sería injusta con la administración actual y sería ruido, no señal.
 
 **Prueba:**
 - El triage no ordena humo: concentra prioridad donde hay irregularidad pública
-  vigente y documentada (Puerto Gaitán, 3.1×).
+  vigente y documentada (Puerto Gaitán, 2.5×).
 - Discrimina por estructura del proceso actual, no por reputación de la entidad
   (Casanare en promedio).
 

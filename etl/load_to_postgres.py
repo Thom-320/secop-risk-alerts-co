@@ -287,8 +287,42 @@ def seed_hierarchy(conn: Any) -> None:
         )
 
 
+def dedupe_process_phases(processes: pd.DataFrame) -> pd.DataFrame:
+    """Collapse duplicate SECOP phase-rows (same procurement appears once per
+    phase, e.g. 'Evaluación' and 'Fase de Selección') into one canonical row.
+
+    SECOP publishes the same procurement multiple times across phases with
+    distinct id_del_proceso but the same referencia_del_proceso. Without this,
+    a process appears twice in the ranking and shows up as a similarity-1.0
+    "self" comparable of its own twin. We keep the most-advanced phase: the one
+    with the highest adjudicated value (falls back to the latest one).
+    """
+    if processes.empty or "referencia_del_proceso" not in processes.columns:
+        return processes
+    d = processes.copy()
+    d["_nref"] = (
+        d["referencia_del_proceso"].fillna("").astype(str)
+        .str.upper().str.strip().str.replace(r"\s*\(.*$", "", regex=True)
+    )
+    ent_col = "nit_entidad" if "nit_entidad" in d.columns else (
+        "codigo_entidad" if "codigo_entidad" in d.columns else None
+    )
+    d["_ent"] = d[ent_col].fillna("").astype(str) if ent_col else ""
+    d["_adj"] = pd.to_numeric(
+        d.get("valor_total_adjudicacion"), errors="coerce"
+    ).fillna(0)
+    has_ref = d["_nref"].ne("")
+    keep = (
+        d[has_ref]
+        .sort_values("_adj", ascending=False)
+        .drop_duplicates(subset=["_ent", "_nref"], keep="first")
+    )
+    out = pd.concat([keep, d[~has_ref]], ignore_index=True)
+    return out.drop(columns=["_nref", "_ent", "_adj"])
+
+
 def load_processes(conn: Any, processes: pd.DataFrame, limit: int) -> dict[str, int]:
-    processes = processes.head(limit).copy()
+    processes = dedupe_process_phases(processes).head(limit).copy()
     extraction_run_id = create_extraction_run(conn, len(processes))
     process_ids: dict[str, int] = {}
     for idx, row in processes.iterrows():

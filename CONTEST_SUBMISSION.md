@@ -18,7 +18,7 @@ IA explicable que **prioriza revisión humana** de la contratación pública col
 2. **Diapositivas** — [slides/contratia_abierta_deck_v3.pdf](slides/contratia_abierta_deck_v3.pdf) (13 slides, ES).
 3. **Tesis ética** — [docs/ethics-note.md](docs/ethics-note.md) (1 página).
 4. **Score y límites** — [docs/model-card.md](docs/model-card.md).
-5. **Evidencia técnica** — [docs/testing_evidence.md](docs/testing_evidence.md) — 71 tests pasan, 90.431 procesos con scoring real de IA.
+5. **Evidencia técnica** — [docs/testing_evidence.md](docs/testing_evidence.md) — 71 tests pasan, 88.148 procesos con scoring real de IA.
 
 ---
 
@@ -129,12 +129,12 @@ Resultado: `https://contratia-api.onrender.com/health` + `https://contratia-dash
 **Listo:**
 - ✓ 71 tests pasan, lint estable
 - ✓ ETL reproducible con datos reales de Socrata (4 datasets oficiales)
-- ✓ 90.431 procesos con scoring real de IA (IsolationForest + PAA + reglas)
+- ✓ 88.148 procesos con scoring real de IA (IsolationForest + PAA + reglas)
 - ✓ 56.717 matches PAA (62.5% cobertura fuerte)
 - ✓ 6.003 comparables semánticos
 - ✓ Schema PostgreSQL con triggers, CTE, window functions, vistas
 - ✓ 3 microservicios FastAPI con `/health` 200
-- ✓ MongoDB 10 colecciones con 90.431 eventos de riesgo
+- ✓ MongoDB 10 colecciones con 88.148 eventos de riesgo
 - ✓ UI Dash oficial + API lean
 - ✓ Documentación: model card, data cards, ethics note, CRISP-ML, fairness territorial
 - ✓ Dockerfile + render.yaml para deploy público

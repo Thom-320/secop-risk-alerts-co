@@ -58,7 +58,7 @@ priorización**, que es exactamente lo que un sistema de datos puede resolver bi
 y de forma defendible."
 
 **Si preguntan por el número:** "Los 2M+ son orden de magnitud del universo
-nacional SECOP; nuestro universo scoreado en el demo es 90.431 procesos reales de
+nacional SECOP; nuestro universo scoreado en el demo es 88.148 procesos reales de
 Meta y Casanare."
 
 ---
@@ -165,7 +165,7 @@ plan-vs-valor), y **confianza** aparte (0–1, cobertura de datos). La fórmula 
 
 **El punto que separa esto de 'humo de IA' (dilo):** "El score se normaliza por
 **cuantiles robustos del dataset**, así que es relativo, no absoluto. Un score de
-91 significa 'top 0.02% más atípico de los 90.431', no '91% corrupto'. Por eso la
+91 significa 'top 0.02% más atípico de los 88.148', no '91% corrupto'. Por eso la
 UI muestra percentil. La distribución es de cola: mediana 7, p95 ≈ 45, solo 0.5%
 supera 70. Eso es triage real: recorta el océano a un puñado."
 
@@ -188,7 +188,7 @@ territorial departamento → municipio. **Transacciones** que escriben el score 
 su evento de auditoría de forma atómica."
 
 **Demo en vivo si lo piden (ten la query lista):** el `percent_rank()` del
-ranking, o la window de concentración. Muéstrala corriendo contra los 90.431.
+ranking, o la window de concentración. Muéstrala corriendo contra los 88.148.
 
 **Si preguntan por concurrencia/aislamiento:** "Las escrituras de score + evento
 van en una transacción; el nivel por defecto de Postgres (READ COMMITTED) es
@@ -233,7 +233,7 @@ naturaleza del dato, no por moda."
 
 ## SLIDE 12 — Evidencia (números duros)
 
-**Narración:** "Números reproducibles de `make validate-final`: 90.431 procesos
+**Narración:** "Números reproducibles de `make validate-final`: 88.148 procesos
 scoreados, 33 objetos PostgreSQL, 5 colecciones MongoDB con documentos, 3 APIs
 con health 200, 71 tests pytest. Validaciones cubiertas: integridad de esquema,
 auditoría de joins con fill rates, compuerta PAA, y bounds del scoring."
@@ -259,7 +259,7 @@ comparables, alineación PAA, contexto fiscal. **CONFIAR**: la validación."
 Contraloría documentó irregularidades **vigentes** en Puerto Gaitán: contratos de
 agua/acueducto con hallazgo de más de $14.700 millones, sistemas fotovoltaicos
 por $8.901 millones. Nuestro sistema, **sin haber visto esa información**, marca
-Puerto Gaitán 3.1× sobre la tasa nacional, y su proceso top priorizado es una
+Puerto Gaitán 2.5× sobre la tasa nacional, y su proceso top priorizado es una
 construcción de acueducto de $42.408 millones — misma entidad, misma categoría
 que señaló la Contraloría."
 
@@ -297,7 +297,7 @@ el demo no dependa de descargar el modelo."
 ## SLIDE 16 — Validación y límites
 
 **Narración:** "Honesto, sin teatro. Validado: 71 tests, distribución de triage
-real, enriquecimiento AGR 2.46×, caso Puerto Gaitán 3.1×, embeddings funcionando.
+real, enriquecimiento AGR 2.65×, caso Puerto Gaitán 2.5×, embeddings funcionando.
 Pendiente declarado: validación humana de 100 casos con dos revisores, benchmark
 formal embeddings vs TF-IDF, despliegue público, encuesta de usabilidad."
 
@@ -333,7 +333,7 @@ que escanea docs y UI y **falla el build** si aparece lenguaje acusatorio. La
 ## SLIDE 19 — Cierre
 
 **Narración:** "Cierro con la frase que resume todo: sin entrenar contra ninguna
-etiqueta de corrupción, el sistema prioriza 3.1× los contratos de Puerto Gaitán,
+etiqueta de corrupción, el sistema prioriza 2.5× los contratos de Puerto Gaitán,
 donde la Contraloría halló irregularidades vigentes. Detecta estructura, no
 reputación. Prioriza revisión humana con evidencia trazable."
 
@@ -358,7 +358,7 @@ inspeccionable y cada score guarda su `model_hash`.
 
 **P: ¿No están reentrenando contra la Contraloría (leakage)?**
 R: No. El control fiscal AGR vive en tablas separadas y solo se usa para
-validación retrospectiva. Nunca es feature ni target. El 2.46× es una prueba
+validación retrospectiva. Nunca es feature ni target. El 2.65× es una prueba
 ciega precisamente por eso.
 
 **P: ¿Qué pasa con concurrencia en el recompute?**
@@ -427,9 +427,9 @@ porque ahí es donde el evaluador DB va a hacer las primeras preguntas duras.
 | 11 MongoDB | Polyglot, por qué Mongo | Responde aquí la pregunta "¿por qué no todo Postgres?" |
 | 12 Evidencia | Números duros reproducibles | |
 | 13 Dashboard | DECIDIR/ENTENDER/CONFIAR | **Cambia al dashboard vivo aquí** |
-| 14 Caso real | Puerto Gaitán 3.1× + Casanare | El clímax; pausa y dale peso |
+| 14 Caso real | Puerto Gaitán 2.5× + Casanare | El clímax; pausa y dale peso |
 | 15 Matching | Cruces + embeddings funcionando | |
-| 16 Validación | Validado vs pendiente, AGR 2.46× | |
+| 16 Validación | Validado vs pendiente, AGR 2.65× | |
 | 17 Roadmap | Orinoquía → nacional | |
 | 18 Riesgos | Qué puede salir mal + CI ético | |
 | 19 Cierre | Frase final | B cierra |

@@ -606,17 +606,17 @@
   "El problema operativo es de triage, no de detección. Hay cientos de miles de procesos al año en SECOP — la cifra exacta está por confirmar con Colombia Compra Eficiente, por eso aparece con asterisco. La capacidad humana es de decenas de revisores con tiempo limitado. La decisión real es semanal: qué revisamos primero. El sistema convierte ese océano en una cola priorizada y auditable.",
   "Arquitectura end-to-end: extracción Socrata con Polars y Parquet versionado. Transformación con build process master y auditoría de joins. Score híbrido como pieza protagonista — destacada en coral en el diagrama. Almacenamiento dual: Postgres como fuente de verdad, Mongo para documentos y logs. Tres servicios FastAPI. Dashboard Dash. Todo orquestado con Make y Docker Compose.",
   "Modelo de datos: 33 objetos públicos en Postgres. Las 8 tablas centrales modelan entidad, proceso, contrato, plan anual, scoring, comparables, razones y auditoría. Dos piezas marcadas con estrella: risk_assessment y paa_process_match — son los componentes que ningún otro proyecto del concurso va a tener. Constraints CHECK garantizan score entre 0 y 100 y confidence entre 0 y 1.",
-  "Cuatro datasets oficiales. SECOP II procesos como canónico — marcado con estrella. SECOP Integrado como baseline histórico. Plan Anual de Adquisiciones como ancla de planeación. Resultados AGR como contexto fiscal visible — no es etiqueta del modelo. Métricas: 90.431 procesos scoreados, 4.494 items PAA, 68.916 razones explicables generadas. Atribución 100% datos abiertos oficiales.",
+  "Cuatro datasets oficiales. SECOP II procesos como canónico — marcado con estrella. SECOP Integrado como baseline histórico. Plan Anual de Adquisiciones como ancla de planeación. Resultados AGR como contexto fiscal visible — no es etiqueta del modelo. Métricas: 88.148 procesos scoreados, 4.494 items PAA, 68.916 razones explicables generadas. Atribución 100% datos abiertos oficiales.",
   "Pipeline reproducible en cinco pasos. Extracción Socrata con paginación y fallback Parquet. Limpieza y dedup por process_key. Matching plan-ejecución con TF-IDF y backend opcional de embeddings. Scoring híbrido. Evidencia trazable: cada paso deja artefacto auditable en data marts. Tres comandos reproducen el sistema completo: product-pipeline, demo-full, validate-final.",
   "El score combina cuatro componentes auditables. Reglas heurísticas, desviación contra pares UNSPSC, anomalía estadística por IsolationForest, y confianza por cobertura de datos. Pesos visibles: rules 0.45, peer 0.35, anomaly 0.20. Fórmula: 100 por sigmoide de la suma ponderada. Confidence aparte, entre cero y uno. Cuatro tiers de interpretación: típico, leve, notable, alta prioridad.",
   "SQL de ingeniería real, no almacenamiento básico. Triggers para audit log e historial. Window functions para concentración por entidad y proveedor. CTE recursiva para jerarquía territorial. Transacciones atómicas para score más evento de auditoría. Dos ejemplos en pantalla: window function con CTE para top-5 proveedores, y transacción atómica con trigger para scoring + auditoría.",
   "Tres microservicios FastAPI separados por dominio. Contracts en 8001 para procesos y revisión humana. Risk en 8002 para scoring y comparables. Analytics en 8003 para agregados. Health 200 en los tres. Docker Compose, make academic-services-up, y validate-final exige los tres vivos. Si Docker no está activo, la ruta lean (Parquet + DuckDB) sigue funcionando.",
   "Almacenamiento dual: PostgreSQL para datos transaccionales y relaciones, MongoDB para logs y eventos. 5 colecciones Mongo: project_context, etl_logs, risk_events, report_snapshots, user_actions. Tabla comparativa muestra cuándo usar cada uno. Schema flexible de Mongo permite evolucionar logs sin migraciones.",
-  "Evidencia de ingeniería con números duros. 90.431 procesos reales scoreados. 33 objetos Postgres. 5 de 5 colecciones Mongo con documentos. 3 APIs vivas. 71 tests pytest pasan. 21 documentos técnicos. Columna lateral: validaciones cubiertas incluyendo schema integrity, join audit, compuerta PAA y bounds del scoring.",
+  "Evidencia de ingeniería con números duros. 88.148 procesos reales scoreados. 33 objetos Postgres. 5 de 5 colecciones Mongo con documentos. 3 APIs vivas. 71 tests pytest pasan. 21 documentos técnicos. Columna lateral: validaciones cubiertas incluyendo schema integrity, join audit, compuerta PAA y bounds del scoring.",
   "Dashboard de tres zonas: DECIDIR (KPIs + cola de revisión), ENTENDER (ficha del proceso con score desglosado y contexto AGR), CONFIAR (validación + metodología). Filtro territorial global persistente entre zonas. Score como percentil nacional calculado con percent_rank() en PostgreSQL.",
   "Casebook del demo. Cinco procesos representativos con score, razón principal y comparable. Los datos exactos son placeholders — entran desde data/marts/ranking.parquet. Caso 5 es crítico: muestra cómo el sistema reporta 'evidencia insuficiente' en lugar de forzar un score cuando hay pocos pares. Esa es la honestidad operativa del producto.",
   "Cómo cruzamos datos. Plan contra ejecución con TF-IDF coseno mayor a 0.55 más filtros de entidad y año. Entidad contra contratos baseline vía crosswalk de códigos. Cobertura típica documentada por cruce. Cuando no hay match fuerte el sistema lo dice — no fuerza un enlace.",
-  "Validación y límites honestos. Software: 71 tests, lint estable, validate-final ok. Datos: 90.431 procesos reales scoreados (Meta + Casanare). Validación independiente vs control fiscal AGR: 2.46x de enriquecimiento; caso real Puerto Gaitán 3.1x. Compuerta PAA top-1 con confianza ≥ 0.75. Pendientes reconocidos: validación humana de 100 casos, benchmark embeddings contra TF-IDF, despliegue público read-only. Honesto mejor que teatro.",
+  "Validación y límites honestos. Software: 71 tests, lint estable, validate-final ok. Datos: 88.148 procesos reales scoreados (Meta + Casanare). Validación independiente vs control fiscal AGR: 2.65x de enriquecimiento; caso real Puerto Gaitán 2.5x. Compuerta PAA top-1 con confianza ≥ 0.75. Pendientes reconocidos: validación humana de 100 casos, benchmark embeddings contra TF-IDF, despliegue público read-only. Honesto mejor que teatro.",
   "Roadmap de escalado. Mes uno: pilotos con dos oficinas de control en Orinoquía más validación humana de 100 casos. Mes dos y tres: backend de embeddings activable y despliegue read-only. Mes cuatro y cinco: escalado por departamento. Mes seis: cobertura nacional con cuotas Socrata. Costo marginal por departamento ≈ infra de un Postgres pequeño.",
   "Riesgos identificados con probabilidad e impacto y mitigaciones concretas. Volumen Socrata: scope demo de 24 meses más Parquet partitioned. Joins imperfectos: NIT primero más crosswalk mantenido. Misinterpretación como detector — fila destacada en coral: disclaimer persistente. Sesgo a entidades pequeñas: mínimo de pares y evidencia insuficiente en lugar de score forzado.",
   "Cierre. Una revisión manual imposible se convierte en una cola priorizada y auditable. ContratIA Abierta. Thomas Chisica. Ingeniería de Datos. Universidad del Rosario. Categoría Gobernanza y Transparencia. Región Meta y Casanare. Gracias."
@@ -1122,7 +1122,7 @@
         <div class="ed-hero-grid" style="grid-template-columns:repeat(4,1fr);">
           <div class="cell">
             <div class="lbl">Procesos scoreados</div>
-            <div class="num" style="font-size:54px;">90.431</div>
+            <div class="num" style="font-size:54px;">88.148</div>
             <div class="unit">reales · Meta + Casanare</div>
           </div>
           <div class="cell">
@@ -1596,7 +1596,7 @@
         <div class="ed-evid" style="flex:1;border-top:.5px solid var(--ink);border-bottom:.5px solid var(--ink);">
           <div class="cell">
             <div class="lbl">Procesos scoreados</div>
-            <div class="num">90.431</div>
+            <div class="num">88.148</div>
             <div class="hint">reales · Meta + Casanare</div>
           </div>
           <div class="cell">
@@ -1741,23 +1741,23 @@
           </div>
           <div class="card left-bar teal">
             <div class="label" style="color:var(--teal);">Nuestro sistema · a ciegas</div>
-            <div style="font-size:13px;color:var(--ink-2);margin-top:8px;line-height:1.55;">Marca Puerto Gaitán <strong>3.1× sobre la tasa nacional</strong>. Su proceso top priorizado es una <strong>construcción de acueducto de $42.408 millones</strong> (score 87) — misma entidad y categoría que señaló la Contraloría.</div>
+            <div style="font-size:13px;color:var(--ink-2);margin-top:8px;line-height:1.55;">Marca Puerto Gaitán <strong>2.5× sobre la tasa nacional</strong>. Su proceso top priorizado es una <strong>construcción de acueducto de $42.408 millones</strong> (score 87) — misma entidad y categoría que señaló la Contraloría.</div>
           </div>
         </div>
 
         <div style="flex:0 0 44%;display:flex;flex-direction:column;gap:14px;">
           <div class="card" style="text-align:center;padding:18px;">
             <div class="label">Puerto Gaitán vs tasa nacional de alta prioridad</div>
-            <div class="value serif" style="font-size:72px;color:var(--coral);">3.1×</div>
+            <div class="value serif" style="font-size:72px;color:var(--coral);">2.5×</div>
           </div>
           <div>
             <div style="font-family:var(--font-mono);font-size:10px;letter-spacing:.16em;color:var(--navy);text-transform:uppercase;font-weight:600;margin-bottom:8px;">El contraejemplo que da credibilidad</div>
             <table class="ed-t" style="width:100%;">
               <tbody>
-                <tr><td>Municipio de Puerto Gaitán</td><td class="num" style="text-align:right;color:var(--coral);font-weight:700;">3.1×</td></tr>
-                <tr><td>Departamento del Meta</td><td class="num" style="text-align:right;color:var(--coral);font-weight:700;">2.9×</td></tr>
-                <tr><td>Gobernación de Casanare</td><td class="num" style="text-align:right;color:var(--muted);font-weight:700;">1.0× (promedio)</td></tr>
-                <tr><td>Alcaldía de Villavicencio</td><td class="num" style="text-align:right;color:var(--muted);font-weight:700;">0.7× (debajo)</td></tr>
+                <tr><td>Departamento del Meta</td><td class="num" style="text-align:right;color:var(--coral);font-weight:700;">2.7×</td></tr>
+                <tr><td>Municipio de Puerto Gaitán</td><td class="num" style="text-align:right;color:var(--coral);font-weight:700;">2.5×</td></tr>
+                <tr><td>Gobernación de Casanare</td><td class="num" style="text-align:right;color:var(--muted);font-weight:700;">1.1× (promedio)</td></tr>
+                <tr><td>Alcaldía de Villavicencio</td><td class="num" style="text-align:right;color:var(--muted);font-weight:700;">0.6× (debajo)</td></tr>
               </tbody>
             </table>
             <div style="font-size:11px;color:var(--muted);font-style:italic;margin-top:8px;line-height:1.45;">Casanare (escándalos de hace 10+ años) puntúa en el promedio: el sistema detecta estructura del proceso actual, no reputación histórica. No es una lista negra.</div>
@@ -1841,7 +1841,7 @@
         <span class="right">16 / 19 · lo validado · lo pendiente</span>
       </div>
       <h1 class="ed-title">Lo validado y lo pendiente,<br/><em>sin teatro.</em></h1>
-      <p class="ed-sub">Universo real scoreado (scope Meta + Casanare): <strong>90.431 procesos</strong>. Distribución de triage: mediana <strong>7</strong> · p95 ≈ <strong>45</strong> · solo <strong>0.5%</strong> supera 70. Validación independiente vs control fiscal AGR: <strong>2.46× de enriquecimiento</strong>.</p>
+      <p class="ed-sub">Universo real scoreado (scope Meta + Casanare): <strong>88.148 procesos</strong>. Distribución de triage: mediana <strong>7</strong> · p95 ≈ <strong>45</strong> · solo <strong>0.5%</strong> supera 70. Validación independiente vs control fiscal AGR: <strong>2.65× de enriquecimiento</strong>.</p>
 
       <div class="ed-body" style="gap:24px;">
         <div style="flex:1;border-top:.5px solid var(--ink);padding-top:16px;">
@@ -1851,9 +1851,9 @@
             <div class="vbar"><div class="vlabel">APIs /health</div><div class="vtrack"><div class="vfill" style="width:100%;background:var(--teal);"></div></div><div class="vval">3 / 3</div></div>
             <div class="vbar"><div class="vlabel">Objetos PG</div><div class="vtrack"><div class="vfill" style="width:100%;background:var(--navy);"></div></div><div class="vval">33</div></div>
             <div class="vbar"><div class="vlabel">Colecciones Mongo</div><div class="vtrack"><div class="vfill" style="width:100%;background:var(--navy);"></div></div><div class="vval">5 / 5</div></div>
-            <div class="vbar"><div class="vlabel">Procesos scoreados</div><div class="vtrack"><div class="vfill" style="width:100%;background:var(--coral);"></div></div><div class="vval">90.431</div></div>
-            <div class="vbar"><div class="vlabel">Enriquecimiento AGR</div><div class="vtrack"><div class="vfill" style="width:82%;background:var(--coral);"></div></div><div class="vval">2.46×</div></div>
-            <div class="vbar"><div class="vlabel">Caso real Puerto Gaitán</div><div class="vtrack"><div class="vfill" style="width:90%;background:var(--coral);"></div></div><div class="vval">3.1×</div></div>
+            <div class="vbar"><div class="vlabel">Procesos scoreados</div><div class="vtrack"><div class="vfill" style="width:100%;background:var(--coral);"></div></div><div class="vval">88.148</div></div>
+            <div class="vbar"><div class="vlabel">Enriquecimiento AGR</div><div class="vtrack"><div class="vfill" style="width:82%;background:var(--coral);"></div></div><div class="vval">2.65×</div></div>
+            <div class="vbar"><div class="vlabel">Caso real Puerto Gaitán</div><div class="vtrack"><div class="vfill" style="width:90%;background:var(--coral);"></div></div><div class="vval">2.5×</div></div>
             <div class="vbar"><div class="vlabel">Lenguaje prohibido</div><div class="vtrack"><div class="vfill" style="width:100%;background:var(--teal);"></div></div><div class="vval">0</div></div>
           </div>
         </div>
@@ -1863,8 +1863,8 @@
             <div style="font-family:var(--font-mono);font-size:10.5px;letter-spacing:.14em;color:var(--teal);text-transform:uppercase;font-weight:600;">validado</div>
             <ul class="checks" style="margin-top:8px;padding:0;">
               <li><span class="ok">✓</span><span>Software: <span class="mono">71 tests</span> · lint estable</span></li>
-              <li><span class="ok">✓</span><span>Datos: 90.431 procesos reales scoreados</span></li>
-              <li><span class="ok">✓</span><span>Validación AGR 2.46× + caso Puerto Gaitán 3.1×</span></li>
+              <li><span class="ok">✓</span><span>Datos: 88.148 procesos reales scoreados</span></li>
+              <li><span class="ok">✓</span><span>Validación AGR 2.65× + caso Puerto Gaitán 2.5×</span></li>
               <li><span class="ok">✓</span><span>Embeddings MiniLM funcionando (0.61 vs 0.14)</span></li>
             </ul>
           </div>
