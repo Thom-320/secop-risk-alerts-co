@@ -380,6 +380,53 @@ Cinco minutos desde un clone limpio. Lo puedo correr ahora.
 
 ---
 
+## División entre dos expositores
+
+19 slides, ~15 minutos, un solo punto de relevo limpio al terminar la slide 8.
+Cada quien dueño de un bloque coherente.
+
+### Expositor A — "El problema y la arquitectura" (slides 1–8, ~7 min)
+
+| Slide | Foco | Frase de transición al siguiente |
+| --- | --- | --- |
+| 1 Portada | Abre con la tesis de una frase | "Empecemos por el problema." |
+| 2 Tesis | Qué hace / qué no hace | "¿Por qué importa? Por la escala." |
+| 3 Problema | Triage, no detección | "Así lo resolvemos, capa por capa." |
+| 4 Arquitectura | 5 capas, Score Engine, polyglot | "Veamos la fuente de verdad: el modelo relacional." |
+| 5 Modelo de datos | ERD, constraints, las 2 piezas ★ | "Cuatro fuentes alimentan esto." |
+| 6 Fuentes | 4 datasets, AGR como contexto | "Y se procesan en un pipeline reproducible." |
+| 7 Pipeline | 5 pasos, artefacto auditable | "El paso de scoring merece detalle." |
+| 8 Score | 4 componentes, fórmula, percentil | **Relevo:** "Mi compañero/a les muestra ahora cómo está construido por dentro y la evidencia de que funciona." |
+
+A es quien más cómodo debe estar con **modelo de datos y normalización** (slides 4–5),
+porque ahí es donde el evaluador DB va a hacer las primeras preguntas duras.
+
+### Expositor B — "La ingeniería profunda y la evidencia" (slides 9–19, ~8 min)
+
+| Slide | Foco | Nota |
+| --- | --- | --- |
+| 9 SQL | Triggers, window, CTE, transacciones | Bloque donde B se luce; ten lista la query en vivo |
+| 10 Microservicios | 3 servicios, healthchecks, read-only | |
+| 11 MongoDB | Polyglot, por qué Mongo | Responde aquí la pregunta "¿por qué no todo Postgres?" |
+| 12 Evidencia | Números duros reproducibles | |
+| 13 Dashboard | DECIDIR/ENTENDER/CONFIAR | **Cambia al dashboard vivo aquí** |
+| 14 Caso real | Puerto Gaitán 3.1× + Casanare | El clímax; pausa y dale peso |
+| 15 Matching | Cruces + embeddings funcionando | |
+| 16 Validación | Validado vs pendiente, AGR 2.46× | |
+| 17 Roadmap | Orinoquía → nacional | |
+| 18 Riesgos | Qué puede salir mal + CI ético | |
+| 19 Cierre | Frase final | B cierra |
+
+B es quien debe dominar **SQL, concurrencia y el caso Puerto Gaitán**. Es quien
+recibe casi todas las preguntas técnicas profundas y de validación.
+
+### Reparto del Q&A
+- Preguntas de **modelo de datos, normalización, índices, persistencia poliglota** → A (y B apoya en Mongo).
+- Preguntas de **SQL, concurrencia, scoring, validación, leakage, embeddings** → B.
+- Si una pregunta se traba, el otro complementa en una frase. Nunca se pisan.
+
+---
+
 ## Errores a evitar en la sustentación
 
 - No uses lenguaje acusatorio (la palabra con C, "fraude", "irregularidad") como
