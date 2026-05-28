@@ -20,3 +20,5 @@ class RiskRankingRow(BaseModel):
     confidence_score: float | None = Field(default=None, ge=0, le=100)
     explanation: str | None = None
     has_comparables: bool = False
+    national_rank: int | None = None
+    score_percentile: float | None = Field(default=None, ge=0, le=100)

@@ -29,9 +29,30 @@ def health() -> Health:
 
 
 @app.get("/risk/ranking", response_model=list[RiskRankingRow])
-def ranking(limit: int = Query(default=100, ge=1, le=500)) -> list[dict]:
+def ranking(
+    limit: int = Query(default=100, ge=1, le=500),
+    department: str | None = Query(default=None),
+    min_score: float = Query(default=0.0, ge=0, le=100),
+) -> list[dict]:
+    """Cola de revisión priorizada.
+
+    El percentil se calcula SIEMPRE sobre el universo nacional scoreado
+    (`percent_rank` global), no sobre el subconjunto filtrado, para que
+    "top 0.5%" mantenga el mismo significado al filtrar por departamento.
+    """
     return fetch_all(
         """
+        WITH scored AS (
+            SELECT v.*,
+                   round((100.0 * percent_rank() OVER (
+                       ORDER BY v.priority_score ASC NULLS FIRST
+                   ))::numeric, 2) AS score_percentile,
+                   EXISTS (
+                       SELECT 1 FROM semantic_comparable sc
+                       WHERE sc.process_id = v.process_id
+                   ) AS has_comparables
+            FROM v_ranking_processes v
+        )
         SELECT process_id,
                process_key,
                process_reference,
@@ -42,23 +63,19 @@ def ranking(limit: int = Query(default=100, ge=1, le=500)) -> list[dict]:
                priority_score::float AS priority_score,
                confidence_score::float AS confidence_score,
                explanation,
-               EXISTS (
-                   SELECT 1
-                   FROM semantic_comparable sc
-                   WHERE sc.process_id = v_ranking_processes.process_id
-               ) AS has_comparables
-        FROM v_ranking_processes
-        ORDER BY EXISTS (
-                     SELECT 1
-                     FROM semantic_comparable sc
-                     WHERE sc.process_id = v_ranking_processes.process_id
-                 ) DESC,
+               has_comparables,
+               national_rank,
+               score_percentile::float AS score_percentile
+        FROM scored
+        WHERE priority_score >= %s
+          AND (%s::text IS NULL OR department = %s::text)
+        ORDER BY has_comparables DESC,
                  priority_score DESC NULLS LAST,
                  confidence_score DESC NULLS LAST,
                  process_id
         LIMIT %s
         """,
-        (limit,),
+        (min_score, department, department, limit),
     )
 
 

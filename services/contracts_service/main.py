@@ -86,6 +86,57 @@ def provider(provider_id: int) -> dict:
     )
 
 
+@app.get("/processes/{process_id}/fiscal-context")
+def fiscal_context(process_id: int) -> dict:
+    """Contexto fiscal AGR de la entidad del proceso.
+
+    Se muestra como CONTEXTO, nunca como etiqueta del modelo: que una
+    entidad haya sido vigilada por el control fiscal no prueba conducta
+    indebida en este proceso.
+    """
+    rows = fetch_all(
+        """
+        SELECT ff.year, ff.finding_type, ff.description
+        FROM procurement_process p
+        JOIN fiscal_control_subject fcs ON fcs.entity_id = p.entity_id
+        JOIN fiscal_finding ff ON ff.fiscal_subject_id = fcs.fiscal_subject_id
+        WHERE p.process_id = %s
+        ORDER BY ff.year DESC
+        """,
+        (process_id,),
+    )
+    return {
+        "process_id": process_id,
+        "entity_under_fiscal_review": len(rows) > 0,
+        "findings": rows,
+        "disclaimer": (
+            "Contexto: la entidad figura en vigilancia del control fiscal "
+            "(AGR). No prueba conducta indebida en este proceso."
+        ),
+    }
+
+
+@app.get("/processes/{process_id}/concentration")
+def process_concentration(process_id: int) -> list[dict]:
+    """Concentración proveedor-entidad del proceso, como contexto del caso
+    (no como ranking público acusatorio)."""
+    return fetch_all(
+        """
+        SELECT vc.provider_name,
+               vc.awarded_contracts,
+               vc.awarded_value::float AS awarded_value,
+               vc.entity_value_share::float AS entity_value_share,
+               vc.provider_rank_in_entity
+        FROM procurement_process p
+        JOIN v_entity_provider_concentration vc ON vc.entity_id = p.entity_id
+        WHERE p.process_id = %s
+        ORDER BY vc.entity_value_share DESC NULLS LAST
+        LIMIT 5
+        """,
+        (process_id,),
+    )
+
+
 @app.get("/processes/{process_id}/history")
 def process_history(process_id: int) -> list[dict]:
     return fetch_all(
