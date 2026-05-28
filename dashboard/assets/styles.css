@@ -628,13 +628,166 @@ html, body {
 
 .page p { color: var(--muted); font-size: 15px; line-height: 1.6; }
 
-/* ── Responsive ────────────────────────────────────────────── */
+/* ── Section header ──────────────────────────────────────── */
+
+.section-header {
+  padding: 32px 48px 0;
+}
+
+.section-header h2 {
+  margin: 0 0 8px;
+  font-family: var(--font-display);
+  font-size: 24px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+}
+
+.section-header h3 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.section-desc {
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.5;
+  margin: 0 0 4px;
+  max-width: 68ch;
+}
+
+/* ── Score breakdown (Detalle tab) ──────────────────────── */
+
+.breakdown-section {
+  margin: 32px 48px;
+  padding: 28px 0;
+  border-top: 1px solid var(--rule);
+  border-bottom: 1px solid var(--rule);
+}
+
+.breakdown-section h3 {
+  margin: 0 0 20px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  color: var(--coral);
+  text-transform: uppercase;
+}
+
+.breakdown-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0;
+}
+
+.breakdown-item {
+  border-left: 1px solid var(--rule);
+  padding: 0 24px 8px;
+}
+
+.breakdown-item:first-child {
+  border-left: 0;
+  padding-left: 0;
+}
+
+.breakdown-label {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--muted);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+.breakdown-value {
+  display: block;
+  font-family: var(--font-display);
+  font-size: 32px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums lining-nums;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+  line-height: 1;
+}
+
+.breakdown-total {
+  color: var(--coral);
+}
+
+.breakdown-note {
+  display: block;
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 8px;
+}
+
+/* ── Detail badges ──────────────────────────────────────── */
+
+.detail-badges {
+  padding: 0 48px 16px;
+}
+
+/* ── Comparables heading ────────────────────────────────── */
+
+.comps-heading {
+  margin: 32px 48px 0;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  color: var(--coral);
+  text-transform: uppercase;
+}
+
+/* ── Distribution grid (2 columns) ──────────────────────── */
+
+.dist-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+  margin: 0 48px 40px;
+  border-top: 1px solid var(--rule);
+  border-bottom: 1px solid var(--rule);
+}
+
+.dist-col {
+  padding: 28px 0;
+}
+
+.dist-col:first-child {
+  border-right: 1px solid var(--rule);
+  padding-right: 28px;
+}
+
+.dist-col:last-child {
+  padding-left: 28px;
+}
+
+.dist-col h3 {
+  margin: 4px 0 16px;
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+/* ── Responsive ─────────────────────────────────────────── */
 
 @media (max-width: 1200px) {
   .decision-strip { grid-template-columns: repeat(3, 1fr); }
   .decision-strip > *:nth-child(4),
   .decision-strip > *:nth-child(5) { display: none; }
   .metric-grid { grid-template-columns: repeat(3, 1fr); }
+  .breakdown-grid { grid-template-columns: repeat(2, 1fr); }
+  .dist-grid { grid-template-columns: 1fr; }
+  .dist-col:first-child { border-right: 0; padding-right: 0; border-bottom: 1px solid var(--rule); padding-bottom: 28px; }
+  .dist-col:last-child { padding-left: 0; padding-top: 28px; }
 }
 
 @media (max-width: 760px) {
@@ -657,7 +810,16 @@ html, body {
   .review-checklist,
   .dash-table-container,
   .concentration-list,
-  .chart-panel { margin-left: 24px; margin-right: 24px; }
+  .chart-panel,
+  .section-header,
+  .breakdown-section,
+  .dist-grid,
+  .comps-heading,
+  .detail-badges { margin-left: 24px; margin-right: 24px; padding-left: 0; padding-right: 0; }
 
   .simple-table { width: calc(100% - 48px); margin-left: 24px; margin-right: 24px; }
+
+  .breakdown-grid { grid-template-columns: 1fr; }
+  .breakdown-item { border-left: 0; border-top: 1px solid var(--rule); padding: 16px 0 0; }
+  .breakdown-item:first-child { border-top: 0; }
 }
