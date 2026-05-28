@@ -591,66 +591,266 @@ def detail_panel(detail: dict, comps: pd.DataFrame) -> list[Any]:
     # Parse explanation into individual reasons
     explanation = str(detail.get("explanation", ""))
     reasons = [r.strip() for r in explanation.split("|") if r.strip()]
-    reason_items = [html.Li(r) for r in reasons] if reasons else [html.Li("Sin señales")]
+
+    # Build rich reason cards
+    reason_cards = _build_reason_cards(detail, reasons)
 
     # SECOP link
     secop_url = detail.get("process_url") or detail.get("source_url")
     secop_btn = []
     if secop_url and str(secop_url).startswith("http"):
         secop_btn = [html.A(
-            "Abrir en SECOP",
+            "Abrir en SECOP \u2197",
             href=str(secop_url), target="_blank",
             className="secop-link",
         )]
 
+    # Process description
+    desc = str(detail.get("description") or detail.get("process_description") or "")
+    if len(desc) > 300:
+        desc = desc[:297] + "..."
+
     return [
+        # Header with title and key info
         html.Section(
             [
-                html.Span("Ficha ejecutiva", className="card-label"),
-                html.H2(str(detail.get("process_key", ""))),
-                html.P(str(detail.get("process_reference", ""))),
+                html.Span("Proceso", className="card-label"),
+                html.H2(str(detail.get("process_title") or detail.get("process_key", ""))),
+                html.P(desc, className="detail-description"),
+                html.Div(
+                    [
+                        html.Span(str(detail.get("entity_name", "")), className="detail-entity"),
+                        html.Span(f" \u00b7 {detail.get('department', '')}", className="detail-dept"),
+                        html.Span(f" \u00b7 {detail.get('modality', '')}", className="detail-modality"),
+                    ],
+                    className="detail-meta",
+                ),
+                html.Div(secop_btn, className="detail-actions"),
             ],
-            className="detail-card",
+            className="detail-card detail-card--hero",
         ),
+        # Key metrics
         html.Section(
             [
-                metric(str(detail.get("entity_name", "")), "Entidad"),
-                metric(str(detail.get("department", "")), "Departamento"),
-                metric(str(detail.get("modality", "")), "Modalidad"),
-                metric(str(detail.get("priority_score", "")), "Score"),
-                metric(str(detail.get("confidence_score", "")), "Confianza"),
+                _value_metric(
+                    detail.get("base_price"),
+                    "Valor base",
+                    detail.get("peer_price_median"),
+                    "Mediana de pares",
+                ),
+                _ratio_metric(
+                    detail.get("value_deviation_ratio"),
+                    "Desviacion vs pares",
+                    "Cuanto mas caro que procesos similares",
+                ),
+                _simple_metric(detail.get("priority_score"), "Score"),
+                _simple_metric(detail.get("confidence_score"), "Confianza"),
             ],
             className="metric-grid detail-metrics",
         ),
+        # PAA badge
         html.Div(
-            [
-                paa_badge(detail.get("paa_match_status")),
-                *secop_btn,
-            ],
+            [paa_badge(detail.get("paa_match_status"))],
             className="detail-badges",
         ),
+        # Score breakdown
         score_breakdown(detail),
+        # Why this process was flagged
         html.Section(
             [
-                html.H3("Razones de priorizacion"),
-                html.Ul(reason_items, className="reasons-list"),
+                html.H3("Por que este proceso fue flagged"),
+                html.P(
+                    "El sistema comparo este proceso con otros similares "
+                    "(misma modalidad, categoria y departamento). Estas son "
+                    "las senales que encontr:",
+                    className="section-intro",
+                ),
+                *reason_cards,
             ],
-            className="review-checklist",
+            className="reasons-section",
         ),
+        # What to review
         html.Section(
             [
                 html.H3("Que revisar manualmente"),
                 html.Ul([
-                    html.Li("Objeto, valor, modalidad y estado en SECOP."),
-                    html.Li("Coherencia con PAA y comparables."),
-                    html.Li("Soporte documental antes de escalar."),
+                    html.Li("Abrir el proceso en SECOP y revisar objeto, valor y estado."),
+                    html.Li("Verificar si el valor justifica la desviacion vs pares."),
+                    html.Li("Revisar coherencia con PAA si existe planificacion."),
+                    html.Li("Consultar comparables para contexto."),
                 ]),
             ],
             className="review-checklist",
         ),
+        # Comparables
         html.H3("Comparables semanticos", className="comps-heading"),
         comps_table(comps),
     ]
+
+
+def _value_metric(
+    value: Any, label: str,
+    reference: Any, ref_label: str,
+) -> Any:
+    """Show a value with its reference for comparison."""
+    v = pd.to_numeric(pd.Series([value]), errors="coerce").iloc[0]
+    r = pd.to_numeric(pd.Series([reference]), errors="coerce").iloc[0]
+    v_text = f"${v:,.0f}" if not pd.isna(v) else "Sin dato"
+    r_text = f"${r:,.0f}" if not pd.isna(r) else "Sin dato"
+    return html.Div(
+        [
+            html.Span(label, className="card-label"),
+            html.Strong(v_text, className="metric-value-main"),
+            html.Span(f"{ref_label}: {r_text}", className="metric-reference"),
+        ],
+        className="metric-card metric-card--comparison",
+    )
+
+
+def _ratio_metric(
+    ratio: Any, label: str, note: str,
+) -> Any:
+    """Show a deviation ratio with explanation."""
+    r = pd.to_numeric(pd.Series([ratio]), errors="coerce").iloc[0]
+    if pd.isna(r):
+        text = "Sin dato"
+        level = "neutral"
+    elif r >= 2.5:
+        text = f"{r:.1f}x la mediana"
+        level = "high"
+    elif r >= 1.8:
+        text = f"{r:.1f}x la mediana"
+        level = "medium"
+    else:
+        text = f"{r:.1f}x la mediana"
+        level = "low"
+    return html.Div(
+        [
+            html.Span(label, className="card-label"),
+            html.Strong(text, className=f"metric-ratio metric-ratio--{level}"),
+            html.Span(note, className="metric-reference"),
+        ],
+        className="metric-card metric-card--ratio",
+    )
+
+
+def _simple_metric(value: Any, label: str) -> Any:
+    v = pd.to_numeric(pd.Series([value]), errors="coerce").iloc[0]
+    text = f"{v:.0f}" if not pd.isna(v) else "Sin dato"
+    return html.Div(
+        [
+            html.Span(label, className="card-label"),
+            html.Strong(text, className="metric-value-main"),
+        ],
+        className="metric-card",
+    )
+
+
+def _build_reason_cards(detail: dict, reasons: list[str]) -> list[Any]:
+    """Build detailed reason cards with specific data."""
+    cards = []
+    for reason in reasons:
+        if "monto" in reason.lower() or "valor" in reason.lower():
+            cards.append(_amount_reason_card(detail, reason))
+        elif "duracion" in reason.lower() or "duraci" in reason.lower():
+            cards.append(_duration_reason_card(detail, reason))
+        elif "paa" in reason.lower() or "plan" in reason.lower():
+            cards.append(_paa_reason_card(detail, reason))
+        elif "competencia" in reason.lower() or "respuesta" in reason.lower():
+            cards.append(_competition_reason_card(detail, reason))
+        else:
+            cards.append(_generic_reason_card(reason))
+    return cards
+
+
+def _amount_reason_card(detail: dict, reason: str) -> Any:
+    price = pd.to_numeric(pd.Series([detail.get("base_price")]), errors="coerce").iloc[0]
+    median = pd.to_numeric(pd.Series([detail.get("peer_price_median")]), errors="coerce").iloc[0]
+    ratio = pd.to_numeric(pd.Series([detail.get("value_deviation_ratio")]), errors="coerce").iloc[0]
+    return html.Div(
+        [
+            html.Div("MONTO", className="reason-tag"),
+            html.Strong(
+                f"${price:,.0f}" if not pd.isna(price) else "Sin dato",
+                className="reason-value",
+            ),
+            html.P(
+                f"Este proceso tiene un valor {ratio:.1f}x mas alto que la mediana "
+                f"de procesos comparables (${median:,.0f}). "
+                f"Los procesos comparables son de la misma modalidad, "
+                f"categoria y departamento.",
+                className="reason-explanation",
+            ),
+        ],
+        className="reason-card",
+    )
+
+
+def _duration_reason_card(detail: dict, reason: str) -> Any:
+    duration = pd.to_numeric(pd.Series([detail.get("duration_days")]), errors="coerce").iloc[0]
+    median = pd.to_numeric(pd.Series([detail.get("peer_duration_median")]), errors="coerce").iloc[0]
+    ratio = pd.to_numeric(pd.Series([detail.get("duration_deviation_ratio")]), errors="coerce").iloc[0]
+    return html.Div(
+        [
+            html.Div("DURACION", className="reason-tag"),
+            html.Strong(
+                f"{duration:.0f} dias" if not pd.isna(duration) else "Sin dato",
+                className="reason-value",
+            ),
+            html.P(
+                f"La duracion es {ratio:.1f}x la mediana de procesos "
+                f"similares ({median:.0f} dias).",
+                className="reason-explanation",
+            ),
+        ],
+        className="reason-card",
+    )
+
+
+def _paa_reason_card(detail: dict, reason: str) -> Any:
+    return html.Div(
+        [
+            html.Div("PAA", className="reason-tag"),
+            html.Strong("Sin match", className="reason-value"),
+            html.P(
+                "Este proceso no encontro un item correspondiente en el "
+                "Plan Anual de Adquisiciones. Esto puede indicar que fue "
+                "una compra no planificada, o que la referencia no coincide "
+                "con el PAA cargado.",
+                className="reason-explanation",
+            ),
+        ],
+        className="reason-card",
+    )
+
+
+def _competition_reason_card(detail: dict, reason: str) -> Any:
+    responses = pd.to_numeric(pd.Series([detail.get("response_count")]), errors="coerce").iloc[0]
+    return html.Div(
+        [
+            html.Div("COMPETENCIA", className="reason-tag"),
+            html.Strong(
+                f"{responses:.0f} respuestas" if not pd.isna(responses) else "Sin dato",
+                className="reason-value",
+            ),
+            html.P(
+                "Pocas respuestas al procedimiento pueden indicar baja "
+                "competencia entre proveedores.",
+                className="reason-explanation",
+            ),
+        ],
+        className="reason-card",
+    )
+
+
+def _generic_reason_card(reason: str) -> Any:
+    return html.Div(
+        [
+            html.Div("SEÑAL", className="reason-tag"),
+            html.Strong(reason, className="reason-value"),
+        ],
+        className="reason-card",
+    )
 
 
 # ── Chart builders ───────────────────────────────────────────
@@ -783,6 +983,54 @@ def build_entity_bar(ranking: pd.DataFrame) -> go.Figure | None:
     return fig
 
 
+def load_agr_enrichment() -> dict:
+    """Validation experiment: do AGR-audited entities score higher?"""
+    try:
+        return svc_json(ANALYTICS_URL, "/analytics/agr-enrichment")
+    except Exception:
+        return {}
+
+
+def build_agr_chart(agr: dict) -> go.Figure | None:
+    """Grouped bars: high-priority rate, flagged vs baseline."""
+    flagged = agr.get("flagged") or {}
+    baseline = agr.get("baseline") or {}
+    if not flagged or not baseline:
+        return None
+    cats = ["% en alta prioridad", "Mediana del score"]
+    base_vals = [baseline.get("pct_high_priority", 0), baseline.get("median_score", 0)]
+    flag_vals = [flagged.get("pct_high_priority", 0), flagged.get("median_score", 0)]
+    fig = go.Figure()
+    fig.add_bar(
+        name="Entidad sin vigilancia AGR", x=cats, y=base_vals,
+        marker_color="#BFC3C9",
+        text=[f"{v:.2f}" if i == 0 else f"{v:.0f}" for i, v in enumerate(base_vals)],
+        textposition="outside",
+        textfont={"family": "Inter, system-ui, sans-serif", "size": 12, "color": "#5A6478"},
+    )
+    fig.add_bar(
+        name="Entidad vigilada por AGR", x=cats, y=flag_vals,
+        marker_color="#E35A4B",
+        text=[f"{v:.2f}" if i == 0 else f"{v:.0f}" for i, v in enumerate(flag_vals)],
+        textposition="outside",
+        textfont={"family": "Inter, system-ui, sans-serif", "size": 12, "color": "#0B1E33"},
+    )
+    fig.update_layout(
+        barmode="group",
+        paper_bgcolor="#FFFFFF", plot_bgcolor="#FFFFFF",
+        height=360, margin={"l": 40, "r": 40, "t": 56, "b": 40},
+        font={"family": "Inter, system-ui, sans-serif", "color": "#0B1E33", "size": 12},
+        legend={"orientation": "h", "y": 1.12, "x": 0, "font": {"size": 11}},
+        title=None,
+    )
+    fig.update_xaxes(title=None, gridcolor="rgba(0,0,0,0)", showline=False, ticks="")
+    fig.update_yaxes(
+        title=None, gridcolor="#EEF2F8", zerolinecolor="#E3E8F0",
+        showline=False, ticks="",
+    )
+    return fig
+
+
 # ── App factory ───────────────────────────────────────────────
 
 
@@ -803,7 +1051,14 @@ def create_app() -> Any:
     total_proc = int(overview["processes"].sum()) if not overview.empty else 0
     total_ent = int(overview["entities"].sum()) if "entities" in overview else 0
     total_prov = int(overview["providers"].sum()) if "providers" in overview else 0
-    high_share = float((ranking["priority_score"].fillna(0) >= 70).mean()) if not ranking.empty else 0.0
+    # High-priority share over the FULL scored universe (not the truncated
+    # top-N ranking, which would inflate it). Weighted by department size.
+    if not overview.empty and "pct_high_priority" in overview.columns:
+        _n = pd.to_numeric(overview["processes"], errors="coerce").fillna(0)
+        _p = pd.to_numeric(overview["pct_high_priority"], errors="coerce").fillna(0)
+        high_share = float((_p * _n).sum() / _n.sum() / 100.0) if _n.sum() else 0.0
+    else:
+        high_share = 0.0
     paa_share = float(plan["confidence"].fillna(0).ge(0.75).mean()) if not plan.empty else 0.0
     top_cand = top_candidate(ranking)
     top_score = top_cand.get("priority_score")
@@ -813,6 +1068,16 @@ def create_app() -> Any:
     hist_fig = build_score_hist(ranking)
     paa_fig = build_paa_pie(ranking)
     entity_fig = build_entity_bar(ranking)
+
+    agr = load_agr_enrichment()
+    agr_fig = build_agr_chart(agr)
+    agr_lift = agr.get("enrichment_lift")
+
+    # Territorial filter options (national universe with territorial lens)
+    dept_options = [{"label": "Toda la Orinoquía (Meta + Casanare)", "value": "ALL"}]
+    if not ranking.empty and "department" in ranking.columns:
+        for d in sorted(x for x in ranking["department"].dropna().unique()):
+            dept_options.append({"label": str(d), "value": str(d)})
 
     if not concentration.empty:
         concentration = concentration.sort_values("awarded_value", ascending=False).head(12)
@@ -1222,6 +1487,93 @@ def create_app() -> Any:
         ],
     )
 
+    # ── Zona CONFIAR: validacion AGR (titular) ────────────
+    lift_text = f"{agr_lift:.1f}x" if agr_lift else "—"
+    agr_section = html.Section(
+        [
+            html.Span("Validación independiente", className="section-eyebrow"),
+            html.H2("¿El score se concentra donde el control fiscal ya miró?"),
+            html.P(
+                "Cruzamos las entidades que la Auditoría General (AGR, dataset "
+                "wasc-xi4h) puso bajo vigilancia fiscal contra nuestro score. "
+                "El modelo no se entrena con esa etiqueta: es una prueba ciega.",
+                className="section-desc",
+            ),
+            html.Div(
+                [
+                    metric(lift_text, "Enriquecimiento en tasa de alta prioridad"),
+                    metric(
+                        f"{(agr.get('flagged') or {}).get('median_score', 0):.0f}",
+                        "Mediana score — entidad vigilada",
+                    ),
+                    metric(
+                        f"{(agr.get('baseline') or {}).get('median_score', 0):.0f}",
+                        "Mediana score — resto",
+                    ),
+                    metric(
+                        f"{(agr.get('flagged') or {}).get('n_processes', 0):,}",
+                        "Procesos en entidades vigiladas",
+                    ),
+                ],
+                className="metric-grid",
+            ),
+            plot_or(
+                pd.DataFrame([1]) if agr_fig else pd.DataFrame(),
+                agr_fig, "Sin datos AGR disponibles",
+            ),
+            html.Div(
+                "Auditoría AGR no prueba conducta indebida: mide selección para "
+                "revisión fiscal. Que el score enriquezca ese grupo es señal de "
+                "que el triage prioriza donde el control humano ya encontró "
+                "motivo de revisión, no una etiqueta de culpabilidad.",
+                className="inline-disclaimer",
+            ),
+        ],
+        className="confiar-hero",
+    )
+
+    zona_decidir = dcc.Tab(
+        label="1 · DECIDIR", className="app-tab",
+        selected_className="app-tab app-tab--selected",
+        children=[
+            html.Div(
+                [
+                    html.Label("Lente territorial"),
+                    dcc.Dropdown(
+                        id="dept-filter", options=dept_options, value="ALL",
+                        clearable=False, className="dept-dropdown",
+                    ),
+                ],
+                className="filter-row filter-row--territorial",
+            ),
+            *tab_cola.children,
+            html.Div(
+                [
+                    html.Span("Ranking completo", className="section-eyebrow"),
+                    html.H2("Explorar toda la cola priorizada"),
+                ],
+                className="section-header",
+            ),
+            *tab_ranking.children,
+        ],
+    )
+    zona_entender = dcc.Tab(
+        label="2 · ENTENDER", className="app-tab",
+        selected_className="app-tab app-tab--selected",
+        children=[*tab_detail.children, *tab_review.children],
+    )
+    zona_confiar = dcc.Tab(
+        label="3 · CONFIAR", className="app-tab",
+        selected_className="app-tab app-tab--selected",
+        children=[
+            agr_section,
+            *tab_dist.children,
+            *tab_method.children,
+            *tab_conc.children,
+            *tab_data.children,
+        ],
+    )
+
     # ── Layout ────────────────────────────────────────────
     app.layout = html.Div([
         html.Header(
@@ -1243,8 +1595,7 @@ def create_app() -> Any:
             className="app-header",
         ),
         dcc.Tabs(
-            [tab_project, tab_cola, tab_ranking, tab_detail, tab_dist,
-             tab_conc, tab_method, tab_data, tab_review],
+            [tab_project, zona_decidir, zona_entender, zona_confiar],
             parent_className="app-tabs",
             className="app-tabs-container",
         ),
@@ -1252,11 +1603,27 @@ def create_app() -> Any:
 
     # ── Callbacks ─────────────────────────────────────────
 
-    @app.callback(Output("ranking-table", "data"), Input("score-filter", "value"))
-    def filter_ranking(min_s: int) -> list[dict]:
+    def _by_dept(frame: pd.DataFrame, dept: str | None) -> pd.DataFrame:
+        if frame.empty or not dept or dept == "ALL" or "department" not in frame:
+            return frame
+        return frame[frame["department"] == dept]
+
+    @app.callback(
+        Output("ranking-table", "data"),
+        Input("score-filter", "value"),
+        Input("dept-filter", "value"),
+    )
+    def filter_ranking(min_s: int, dept: str | None) -> list[dict]:
         return ranking_table(
-            pd.DataFrame(filtered_records(ranking, min_s)),
+            pd.DataFrame(filtered_records(_by_dept(ranking, dept), min_s)),
         ).to_dict("records")
+
+    @app.callback(
+        Output("cola-table", "data"),
+        Input("dept-filter", "value"),
+    )
+    def filter_cola(dept: str | None) -> list[dict]:
+        return cola_table(_by_dept(ranking, dept)).to_dict("records")
 
     @app.callback(
         Output("dl-rank", "data"),

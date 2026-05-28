@@ -104,7 +104,8 @@ def test_risk_ranking_endpoint_returns_dashboard_columns(monkeypatch) -> None:
 
     def fake_fetch_all(sql: str, params: tuple[object, ...]) -> list[dict[str, object]]:
         captured["sql"] = sql
-        assert params == (10,)
+        # New signature: (min_score, department, department, limit)
+        assert params == (0.0, None, None, 10)
         return [
             {
                 "process_id": 1,
