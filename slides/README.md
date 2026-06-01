@@ -40,9 +40,7 @@ slides/
 │   └── deck-stage.js            ← navegación + print
 ├── contratia_abierta.pdf        ← export PDF
 ├── assets/                      ← screenshots reales + diagramas
-├── scripts/generate_assets.py   ← regenera diagramas
-├── PROMPT.md · INSTRUCCIONES.md  ← brief de generación
-└── archive/                     ← versiones anteriores (pptx, beamer, etc.) — no usar
+└── scripts/generate_assets.py   ← regenera diagramas
 ```
 
 ## Evidencia usada en el deck

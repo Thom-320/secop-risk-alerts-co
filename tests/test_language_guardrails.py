@@ -32,7 +32,6 @@ PUBLIC_SCAN_DIRS = [
 ]
 
 PUBLIC_SCAN_EXCLUDES = (
-    "docs/agent_handoffs/",
     "docs/legacy/raw_metadata/",
 )
 

@@ -13,7 +13,6 @@ from etl.common import ROOT
 REQUIRED_DOCS = [
     "README.md",
     "docs/product_route.md",
-    "docs/contest_submission_checklist.md",
     "docs/demo-guide.md",
     "docs/demo-casebook.md",
     "docs/model-card.md",
@@ -51,7 +50,6 @@ FORBIDDEN_CLAIMS = [
 
 SCAN_PATHS = ["README.md", "PRODUCT.md", "SECURITY.md", "src", "dashboard", "docs", "slides"]
 SCAN_EXCLUDES = (
-    "docs/agent_handoffs/",
     "docs/audit/",
     "docs/legacy/",
 )

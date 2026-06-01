@@ -1,88 +1,93 @@
 # ContratIA Abierta
 
-**ContratIA Abierta** es un sistema de **ingeniería de datos** que prioriza la
-revisión humana de la contratación pública colombiana usando datos abiertos de
-SECOP.
+ContratIA Abierta is a data-engineering system for Colombian public-procurement
+review. It turns open SECOP data into an explainable queue: which processes
+should be inspected first, why they were prioritized, and what human review
+should happen next.
 
-El sistema no acusa, no prueba corrupción y no reemplaza auditoría jurídica o fiscal; prioriza revisión humana con evidencia trazable.
+The system does not accuse, prove corruption, or replace legal or fiscal
+auditing. It supports human review with traceable evidence and explicit
+limitations.
 
-La idea central es convertir datos abiertos de contratación pública en una cola
-explicable: qué revisar primero, por qué, y qué acción humana sigue. La
-herramienta produce alertas explicables y reportes de apoyo; nunca declara
-responsabilidad individual ni conclusiones jurídicas.
+## Product Preview
 
-## Arquitectura única (una sola lane)
+| Review queue | Process detail | Validation summary |
+| --- | --- | --- |
+| <img src="presentation/assets/screenshot_ranking.png" alt="Ranked procurement review queue" width="280"> | <img src="presentation/assets/screenshot_process_detail.png" alt="Process-level risk explanation" width="280"> | <img src="presentation/assets/validation_summary.png" alt="Validation summary" width="280"> |
 
-Hay **una sola arquitectura oficial** de extremo a extremo:
+## Architecture
 
+There is one official end-to-end architecture:
+
+```text
+Socrata API -> ETL (Polars + Parquet) -> PostgreSQL + MongoDB
+            -> FastAPI x3 (contracts, risk, analytics) -> Dash
 ```
-Socrata API → ETL (Polars + Parquet) → PostgreSQL + MongoDB
-            → FastAPI ×3 (contracts · risk · analytics) → Dash (DECIDIR/ENTENDER/CONFIAR)
-```
 
-| Componente | Detalle |
+| Component | Detail |
 | --- | --- |
-| **Comando** | `make demo-full && make validate-final` |
-| **UI** | Dash `dashboard/dash_app.py` — zonas DECIDIR / ENTENDER / CONFIAR |
-| **API** | Microservicios FastAPI `services/*` (puertos 8001/8002/8003) |
-| **Storage** | PostgreSQL (33 objetos, fuente de verdad) + MongoDB (evidencia/eventos) |
-| **Evidencia** | 90.431 procesos scoreados (Meta + Casanare), validación AGR 2.5×, caso real Puerto Gaitán 3.1× |
+| Main command | `make demo-full && make validate-final` |
+| UI | Dash dashboard in `dashboard/dash_app.py` |
+| Product fallback | Streamlit UI and FastAPI route for offline demos |
+| APIs | FastAPI services in `services/*` on ports 8001, 8002, and 8003 |
+| Storage | PostgreSQL as relational source of truth; MongoDB for evidence and events |
+| Evidence | 90,431 scored processes, AGR validation lift of 2.5x, Puerto Gaitan case study of 3.1x |
 
-> Nota: `src/app/streamlit_app.py` y `src/api/main.py` (ruta lean Parquet) quedan
-> como **fallback offline interno deprecado**, no como un segundo producto. El
-> pipeline de scoring (`src/scoring`, `src/features`) es compartido por ambas
-> rutas; la lane oficial es el stack full descrito arriba.
+`src/app/streamlit_app.py` and `src/api/main.py` remain as an offline product
+path, not as a separate product. The scoring code in `src/scoring` and
+`src/features` is shared across the full-stack and lean routes.
 
-## Fuentes de datos
+## Data Sources
 
-- `p6dx-8zbt`: SECOP II Procesos de Contratación.
-- `rpmr-utcd`: SECOP Integrado.
-- `9sue-ezhx`: SECOP II Plan Anual de Adquisiciones Detalle.
-- `wasc-xi4h`: ejecución/control fiscal como contexto visible.
+- `p6dx-8zbt`: SECOP II procurement processes.
+- `rpmr-utcd`: integrated SECOP records.
+- `9sue-ezhx`: SECOP II annual procurement-plan detail.
+- `wasc-xi4h`: fiscal-control context.
 
-El contexto fiscal se muestra como evidencia contextual y no como etiqueta del
-modelo. La ausencia o presencia de contexto fiscal no prueba conducta indebida.
+Fiscal-control records are used as contextual evidence, not as labels of
+wrongdoing. Their presence or absence does not prove individual responsibility.
 
-## Quickstart oficial académico full-stack
+## Full-Stack Quickstart
 
-Instalar dependencias:
+Install dependencies:
 
 ```bash
 uv sync --python 3.11 --extra dev
 ```
 
-Levantar la ruta completa:
+Run the full academic demo:
 
 ```bash
 make demo-full
 make validate-final
 ```
 
-Comandos equivalentes por etapa:
+Equivalent staged commands:
 
 ```bash
 make academic-db-up
 make academic-db-schema
 make academic-etl
 make academic-services-up
-make validate-final
+make academic-demo
+make validate-academic
 ```
 
-Endpoints locales:
+Local endpoints:
 
 - Contracts service: `http://localhost:8001/health`
 - Risk service: `http://localhost:8002/health`
 - Analytics service: `http://localhost:8003/health`
-- Dash académico: `http://localhost:8050`
+- Dash dashboard: `http://localhost:8050`
 
-`validate-final` exige PostgreSQL, MongoDB y servicios vivos. Si Docker,
-OrbStack o los puertos no están disponibles, el JSON marca bloqueadores de
-integración y no declara éxito falso.
+`validate-final` requires PostgreSQL, MongoDB, and the services to be running.
+If Docker, OrbStack, or the local ports are unavailable, the validation JSON
+reports integration blockers instead of declaring a false success.
 
-## Plus offline / producto lean
+## Lean Product Route
 
-Generar artefactos de producto. Por defecto usa fixtures versionables de muestra
-para evitar descargas completas de Socrata en CI o clones limpios:
+The lean route creates product artifacts from versioned sample fixtures by
+default. It is useful for clean clones, CI, and machines without Docker.
 
 ```bash
 make product-pipeline
@@ -90,59 +95,42 @@ make product-ui
 make product-api
 ```
 
-Usar fuentes Socrata reales cuando se quiera reconstruir con datos abiertos
-actuales:
+Use current Socrata data when rebuilding from live open-data sources:
 
 ```bash
 make product-pipeline PRODUCT_SOURCE_MODE=download
 ```
 
-Endpoints locales:
+Local endpoints:
 
-- Streamlit producto: `http://localhost:8501`
-- FastAPI producto: `http://localhost:8000`
-- Health producto: `http://localhost:8000/health`
+- Streamlit product UI: `http://localhost:8501`
+- FastAPI product API: `http://localhost:8000`
+- Product health endpoint: `http://localhost:8000/health`
 
-Validación del producto lean:
+Validate the lean route:
 
 ```bash
 make validate-product
 ```
 
-`validate-product` no requiere PostgreSQL, MongoDB ni Docker. Si faltan marts,
-el reporte indicará: `Ejecute make product-pipeline`.
-
-## Targets legacy
-
-Los targets antiguos se conservan como alias para no romper flujos previos:
-
-- `make db-up` -> `make academic-db-up`
-- `make db-schema` -> `make academic-db-schema`
-- `make db-migrate` -> `make academic-db-schema`
-- `make etl-demo` -> `make academic-etl`
-- `make services-up` -> `make academic-services-up`
-- `make demo-full` -> `make academic-demo`
-- `make validate-final` -> `make product-pipeline` + `make validate-product` + `make validate-academic`
-
 ## Scoring
 
-El score combina señales interpretables:
+The priority score combines interpretable signals:
 
-- componente de anomalía;
-- desviación frente a pares comparables;
-- reglas explícitas;
-- confianza de datos;
-- razones visibles.
+- anomaly component;
+- deviation from comparable procurement processes;
+- explicit rules;
+- data-confidence score;
+- visible reason codes.
 
-La similitud textual usa NLP clásico con TF-IDF y coseno para matching
-PAA/proceso y comparables. La dependencia `sentence-transformers` está disponible
-como proveedor opcional (`CONTRATIA_USE_TRANSFORMER_EMBEDDINGS=1`), con fallback
-automático a TF-IDF si el modelo no está disponible. CI y validaciones locales
-usan TF-IDF por defecto para evitar descargas pesadas.
+Text similarity uses TF-IDF and cosine similarity for process-to-plan matching
+and comparable-process search. `sentence-transformers` is available as an
+optional provider through `CONTRATIA_USE_TRANSFORMER_EMBEDDINGS=1`; CI and local
+validation default to TF-IDF to avoid heavyweight downloads.
 
-## Evidencia y límites
+## Documentation
 
-Documentos principales:
+Core documents:
 
 - `docs/product_route.md`
 - `docs/academic_route.md`
@@ -155,25 +143,29 @@ Documentos principales:
 - `docs/human_validation_results.md`
 - `docs/deployment.md`
 
-Pendientes humanos que no se fabrican:
+The public-facing product name used in some deliverables is `Transparencia360`.
+The repository name and implementation remain `ContratIA Abierta`.
 
-- encuesta UX con 5 usuarios reales;
-- validación manual con revisores;
-- URL pública de despliegue;
-- registro en “Usos” si aplica al concurso.
+Human-only work that is intentionally not fabricated:
 
-## Calidad
+- UX survey with real users;
+- manual validation by reviewers;
+- public deployment URL;
+- external registry submission if needed.
+
+## Quality
 
 ```bash
 make lint
 make test
 make demo-full
 make validate-final
-# opcional:
+
+# Optional lean route:
 make product-pipeline && make validate-product
 ```
 
-## Licencia
+## License
 
-Código bajo MIT. Los datos provienen de fuentes abiertas oficiales de Colombia y
-conservan sus condiciones de uso originales.
+Code is released under MIT. The datasets come from official Colombian open-data
+sources and retain their original terms of use.

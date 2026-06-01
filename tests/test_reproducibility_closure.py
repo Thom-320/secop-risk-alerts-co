@@ -96,9 +96,15 @@ def test_slide_scripts_are_portable() -> None:
 # ---------------------------------------------------------------------------
 
 def test_public_scripts_do_not_pin_local_user_path() -> None:
-    for relative in ["scripts/launch_overnight_agents.sh"]:
-        content = (ROOT / relative).read_text()
-        assert "/Users/thom" not in content
+    result = subprocess.run(
+        ["git", "grep", "-n", "/Users/thom", "--", "scripts"],
+        cwd=ROOT,
+        text=True,
+        capture_output=True,
+    )
+    assert result.stdout.strip() == "", (
+        "Hardcoded /Users/thom found in scripts/:\n" + result.stdout
+    )
 
 
 # ---------------------------------------------------------------------------

@@ -34,11 +34,8 @@ Salidas:
 - `slides/html/export/contratia_abierta_interactive.pdf`
 - `slides/html/export/frames/slide-XX.png`
 
-La copia compatible para entrega queda en:
-
-- `presentation/html/contratia_abierta_interactive.html`
-- `presentation/export/slides_interactive.pptx`
-- `presentation/export/slides_interactive.pdf`
+Los artefactos exportados quedan en `slides/html/export/` y se regeneran
+localmente cuando hace falta una version PDF o PPTX.
 
 ## Verificacion visual
 

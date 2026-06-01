@@ -86,13 +86,12 @@ descarga completa puede requerir múltiples intentos o reducir el scope
 territorial con `EXTRACT_SCOPE=demo`. La evidencia con datos reales presentada
 aquí usa scope Meta/Casanare (13.999 procesos) y pasa validación completa.
 
-## Mejoras acumuladas (esta ronda final — contest readiness)
+## Mejoras acumuladas (cierre de portfolio)
 
 - `src/scoring/semantic_similarity.py`: SentenceTransformerProvider opcional con `CONTRATIA_USE_TRANSFORMER_EMBEDDINGS=1` y fallback automático a TF-IDF.
-- Test coverage: +4 tests para provider transformer, +1 test para contest-critical docs non-emptiness.
+- Test coverage: +4 tests para provider transformer, +1 test para documentacion critica no vacia.
 - Demo casebook: 5 casos reales con process_key, entidad, score, confianza, razones y acción humana desde datos SECOP reales.
-- Checklists (`class_submission_checklist.md`, `contest_submission_checklist.md`): marcados con [x] para todo lo cumplido, [ ] solo para pendientes humanos reales.
-- README: clarificada la ruta de concurso (lean) vs evidencia de ingeniería (full-stack).
+- README: clarificada la ruta de producto liviana vs evidencia de ingeniería full-stack.
 - `final_repo_audit.md`: corregida contradicción sobre estado Git.
 - `reporte_final.md`, `project_report.md`: tildes corregidas, tablas actualizadas, test count 71.
 - Slides: conteo de tests 71, disclaimer ético.

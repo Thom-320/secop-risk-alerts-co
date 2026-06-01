@@ -1,16 +1,11 @@
 # Presentacion final
 
-Esta carpeta conserva la copia compatible del deck final generado en `slides/`.
+Esta carpeta conserva una copia legible del deck final generado en `slides/`.
 
 - `slides.md`: fuente Markdown reflejada desde `slides/contratia_abierta_deck.md`.
 - `speaker_notes.md`: notas reflejadas desde `slides/contratia_abierta_speaker_notes.md`.
 - `assets/`: capturas reales y diagramas usados en el deck.
-- `export/slides.pptx`: PowerPoint editable.
-- `export/slides.pdf`: PDF listo para revisar o presentar.
-- `export/slides_latex.pdf`: version LaTeX/Beamer para presentacion sobria.
 - `html/contratia_abierta_interactive.html`: version HTML interactiva.
-- `export/slides_interactive.pptx`: export editable generado desde el HTML.
-- `export/slides_interactive.pdf`: PDF generado desde el HTML.
 
 La fuente canonica esta en `slides/`. Para regenerar todo, usa:
 
@@ -30,8 +25,6 @@ Para la version LaTeX:
 
 ```bash
 latexmk -xelatex -interaction=nonstopmode -halt-on-error -outdir=slides/latex/build slides/latex/contratia_abierta_beamer.tex
-cp slides/latex/build/contratia_abierta_beamer.pdf slides/contratia_abierta_beamer.pdf
-cp slides/contratia_abierta_beamer.pdf presentation/export/slides_latex.pdf
 ```
 
 Para la version HTML interactiva:
@@ -40,6 +33,7 @@ Para la version HTML interactiva:
 open slides/html/contratia_abierta_interactive.html
 npm run slides:html
 cp slides/html/contratia_abierta_interactive.html presentation/html/contratia_abierta_interactive.html
-cp slides/html/export/contratia_abierta_interactive.pptx presentation/export/slides_interactive.pptx
-cp slides/html/export/contratia_abierta_interactive.pdf presentation/export/slides_interactive.pdf
 ```
+
+Los binarios exportados se regeneran localmente y no hacen parte de la rama
+publica del portfolio.

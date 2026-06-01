@@ -88,11 +88,8 @@ def test_required_docs_exist() -> None:
         "docs/demo-casebook.md",
         "docs/usability_survey_template.md",
         "docs/usability_results.md",
-        "docs/ai_usage_disclosure.md",
         "docs/product_route.md",
         "docs/academic_route.md",
-        "docs/contest_submission_checklist.md",
-        "docs/class_submission_checklist.md",
         "docs/model-card.md",
         "docs/ethics-note.md",
         "docs/reproducibility.md",
@@ -104,8 +101,6 @@ def test_required_docs_exist() -> None:
         "docs/deployment.md",
         "docs/product_route.md",
         "docs/academic_route.md",
-        "docs/contest_submission_checklist.md",
-        "docs/class_submission_checklist.md",
         "docs/diagrams/architecture.mmd",
         "docs/diagrams/er_diagram.mmd",
         "docs/diagrams/microservices.mmd",
@@ -195,12 +190,10 @@ def test_demo_and_validation_docs_have_expected_markers() -> None:
             assert marker in content
 
 
-def test_route_docs_and_checklists_are_non_empty() -> None:
+def test_route_and_portfolio_docs_are_non_empty() -> None:
     for relative in [
         "docs/product_route.md",
         "docs/academic_route.md",
-        "docs/contest_submission_checklist.md",
-        "docs/class_submission_checklist.md",
         "docs/ethics-note.md",
         "docs/reproducibility.md",
     ]:
@@ -260,8 +253,6 @@ def test_slide_sources_do_not_keep_stale_39_test_claim() -> None:
     )
     for relative in [
         "slides/README.md",
-        "slides/PROMPT.md",
-        "slides/INSTRUCCIONES.md",
         "slides/html/contratia_abierta.html",
         "presentation/slides.md",
         "presentation/speaker_notes.md",

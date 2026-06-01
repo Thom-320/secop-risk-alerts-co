@@ -145,9 +145,8 @@ del curso. Streamlit/Parquet queda documentado como modo plus offline.
 # 8. Evidencias de gerencia
 
 - README con ruta oficial `make demo-full && make validate-final`.
-- `docs/academic_route.md`, `docs/product_route.md` y
-  `docs/class_submission_checklist.md`.
-- Auditorías en `docs/audit/` y reportes de handoff en `docs/agent_handoffs/`.
+- `docs/academic_route.md`, `docs/product_route.md` y documentación de reproducibilidad.
+- Auditorías técnicas en `docs/audit/`.
 - Bitácora Git y comandos reproducibles en Makefile.
 
 # 9. Evidencias de diseño

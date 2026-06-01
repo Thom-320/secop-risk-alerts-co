@@ -8,7 +8,7 @@ Git state at final remote review:
 - `main` contains the integrated closing work.
 - Generated validation artifacts exist locally but should not be committed unless explicitly versioned.
 - No known blockers in committed source.
-- All audit/handoff files in `docs/agent_handoffs/` are artifacts of the closing process, not deliverables.
+- Historical maintenance notes under `docs/audit/` are not product deliverables.
 
 ## Top-level files
 
@@ -30,8 +30,8 @@ Data: `data/raw/`, `data/marts/`, `data/sample/`
 - `README.md`: Dual routes (product lean + academic full-stack), ethical disclaimer, data sources.
 - `Makefile`: All targets present (product-*, academic-*, validate-*, legacy aliases).
 - `pyproject.toml`: Project metadata, dependencies via uv.
-- `validation/product_validation.json`: ok=true, 420 ranking rows, 17 docs, 0 forbidden claims.
-- `validation/final_validation.json`: ok=true, mode=academic-fullstack, 33 tables, 13,999 rows, 36 docs.
+- `validation/product_validation.json`: ok=true, 420 ranking rows, public docs, 0 forbidden claims.
+- `validation/final_validation.json`: ok=true, mode=academic-fullstack, 33 tables, 13,999 rows, public docs.
 
 ## No blockers
 

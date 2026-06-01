@@ -1170,8 +1170,25 @@ def _build_reason_cards(detail: dict, reasons: list[str]) -> list[Any]:
 
 def _amount_reason_card(detail: dict, reason: str) -> Any:
     price = pd.to_numeric(pd.Series([detail.get("base_price")]), errors="coerce").iloc[0]
-    median = pd.to_numeric(pd.Series([detail.get("peer_price_median")]), errors="coerce").iloc[0]
-    ratio = pd.to_numeric(pd.Series([detail.get("value_deviation_ratio")]), errors="coerce").iloc[0]
+    # Use the fine value-context (modality + UNSPSC), not the coarse "Nx la
+    # mediana" that explodes for large contracts in heterogeneous groups.
+    pct = pd.to_numeric(pd.Series([detail.get("value_percentile")]), errors="coerce").iloc[0]
+    median = pd.to_numeric(pd.Series([detail.get("value_peer_median")]), errors="coerce").iloc[0]
+    n = pd.to_numeric(pd.Series([detail.get("value_peer_count")]), errors="coerce").iloc[0]
+    if not pd.isna(pct):
+        top = max(0.1, 100 - float(pct))
+        n_txt = f"{int(n):,} procesos" if not pd.isna(n) else "su categoría"
+        med_txt = f"${median:,.0f}" if not pd.isna(median) else "sin dato"
+        body = (
+            f"Su valor está en el top {top:.0f}% de {n_txt} comparables de la "
+            f"misma modalidad y categoría (mediana del grupo: {med_txt}). "
+            f"Un valor alto frente a sus pares directos amerita revisión."
+        )
+    else:
+        body = (
+            "Valor alto frente a procesos comparables de su modalidad y "
+            "categoría. Pares insuficientes para un percentil estable."
+        )
     return html.Div(
         [
             html.Div("MONTO", className="reason-tag"),
@@ -1179,13 +1196,7 @@ def _amount_reason_card(detail: dict, reason: str) -> Any:
                 f"${price:,.0f}" if not pd.isna(price) else "Sin dato",
                 className="reason-value",
             ),
-            html.P(
-                f"Este proceso tiene un valor {ratio:.1f}x mas alto que la mediana "
-                f"de procesos comparables (${median:,.0f}). "
-                f"Los procesos comparables son de la misma modalidad, "
-                f"categoria y departamento.",
-                className="reason-explanation",
-            ),
+            html.P(body, className="reason-explanation"),
         ],
         className="reason-card",
     )
