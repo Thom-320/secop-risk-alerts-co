@@ -9,6 +9,17 @@ The system does not accuse, prove corruption, or replace legal or fiscal
 auditing. It supports human review with traceable evidence and explicit
 limitations.
 
+## Read in five minutes
+
+1. Read the [model card](docs/model-card.md) and [ethics note](docs/ethics-note.md) to understand what the priority score means.
+2. Inspect the [validation summary](docs/validation-summary.md): software checks and fixture-based demos are distinct from operational evaluation.
+3. Use the **lean product route** below for a fixture-based local demo without PostgreSQL or MongoDB; the full-stack route requires those services.
+
+**Current evidence boundary:** [human validation is pending](docs/human_validation_results.md).
+Historical lift figures and screenshots do not establish present-day predictive
+accuracy, calibrated risk or confirmed wrongdoing. A public service is not
+required to inspect or reproduce the local demonstration.
+
 ## Product Preview
 
 | Review queue | Process detail | Validation summary |
@@ -31,7 +42,7 @@ Socrata API -> ETL (Polars + Parquet) -> PostgreSQL + MongoDB
 | Product fallback | Streamlit UI and FastAPI route for offline demos |
 | APIs | FastAPI services in `services/*` on ports 8001, 8002, and 8003 |
 | Storage | PostgreSQL as relational source of truth; MongoDB for evidence and events |
-| Evidence | 90,431 scored processes, AGR validation lift of 2.5x, Puerto Gaitan case study of 3.1x |
+| Evaluation scope | Automated integration checks and fixture-based demonstrations; human validation remains pending. See [validation summary](docs/validation-summary.md). |
 
 `src/app/streamlit_app.py` and `src/api/main.py` remain as an offline product
 path, not as a separate product. The scoring code in `src/scoring` and
@@ -132,16 +143,16 @@ validation default to TF-IDF to avoid heavyweight downloads.
 
 Core documents:
 
-- `docs/product_route.md`
-- `docs/academic_route.md`
-- `docs/model-card.md`
-- `docs/ethics-note.md`
-- `docs/demo-guide.md`
-- `docs/demo-casebook.md`
-- `docs/validation-summary.md`
-- `docs/human_validation_protocol.md`
-- `docs/human_validation_results.md`
-- `docs/deployment.md`
+- [Lean product route](docs/product_route.md)
+- [Full academic route](docs/academic_route.md)
+- [Model card](docs/model-card.md)
+- [Ethics note](docs/ethics-note.md)
+- [Demo guide](docs/demo-guide.md)
+- [Demo casebook](docs/demo-casebook.md)
+- [Validation summary](docs/validation-summary.md)
+- [Human validation protocol](docs/human_validation_protocol.md)
+- [Human validation status](docs/human_validation_results.md)
+- [Deployment instructions](docs/deployment.md)
 
 The public-facing product name used in some deliverables is `Transparencia360`.
 The repository name and implementation remain `ContratIA Abierta`.
