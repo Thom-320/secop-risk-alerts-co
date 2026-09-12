@@ -11,6 +11,12 @@ limitations.
 
 ## Read in five minutes
 
+**Engineering contribution:** inspect the path from open records through ETL,
+shared features and scoring to APIs and a human-review interface. The useful
+artifact is a traceable data system with explicit evaluation boundaries, not a
+claim that a priority score detects corruption. This complements the learning
+projects with data engineering and software integration.
+
 1. Read the [model card](docs/model-card.md) and [ethics note](docs/ethics-note.md) to understand what the priority score means.
 2. Inspect the [validation summary](docs/validation-summary.md): software checks and fixture-based demos are distinct from operational evaluation.
 3. Use the **lean product route** below for a fixture-based local demo without PostgreSQL or MongoDB; the full-stack route requires those services.
