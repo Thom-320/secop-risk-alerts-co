@@ -22,7 +22,8 @@ projects with data engineering and software integration.
 3. Use the **lean product route** below for a fixture-based local demo without PostgreSQL or MongoDB; the full-stack route requires those services.
 
 **Current evidence boundary:** [human validation is pending](docs/human_validation_results.md).
-Historical lift figures and screenshots do not establish present-day predictive
+No validated lift or accuracy figures are published here; the analytics service's
+enrichment lift is descriptive, and screenshots do not establish predictive
 accuracy, calibrated risk or confirmed wrongdoing. A public service is not
 required to inspect or reproduce the local demonstration.
 
